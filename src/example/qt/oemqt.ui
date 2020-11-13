@@ -1,0 +1,1003 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Oem</class>
+ <widget class="QMainWindow" name="Oem">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>458</width>
+    <height>548</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Oem Tester</string>
+  </property>
+  <widget class="QWidget" name="_central">
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <item>
+     <layout class="QVBoxLayout" name="image"/>
+    </item>
+    <item>
+     <spacer name="verticalSpacer">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>20</width>
+        <height>40</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+    <item>
+     <widget class="QTabWidget" name="_tabs">
+      <property name="currentIndex">
+       <number>0</number>
+      </property>
+      <widget class="QWidget" name="_ble">
+       <attribute name="title">
+        <string>BLE</string>
+       </attribute>
+       <layout class="QGridLayout" name="gridLayout">
+        <item row="0" column="0" colspan="2">
+         <widget class="QPushButton" name="blesearch">
+          <property name="text">
+           <string>Search</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="1" colspan="2">
+         <widget class="QPushButton" name="ap">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>100</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>AP</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="0">
+         <widget class="QPushButton" name="wifi">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>100</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>Wi-Fi</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="6">
+         <widget class="QPushButton" name="bleconnect">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>100</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>Connect</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="3" colspan="4">
+         <spacer name="horizontalSpacer">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>1</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="5" column="4">
+         <spacer name="_blespacer">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="3" column="3" colspan="4">
+         <spacer name="horizontalSpacer_2">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>1</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="0" column="2" colspan="4">
+         <widget class="QComboBox" name="bleprobes">
+          <property name="minimumSize">
+           <size>
+            <width>200</width>
+            <height>0</height>
+           </size>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="4" colspan="3">
+         <widget class="QLineEdit" name="password">
+          <property name="minimumSize">
+           <size>
+            <width>200</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>Password</string>
+          </property>
+          <property name="echoMode">
+           <enum>QLineEdit::Password</enum>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0" colspan="2">
+         <widget class="QPushButton" name="poweron">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>Power On</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="0" colspan="4">
+         <widget class="QLineEdit" name="ssid">
+          <property name="minimumSize">
+           <size>
+            <width>200</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>SSID</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="2">
+         <widget class="QPushButton" name="poweroff">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>Power Off</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="_tcp">
+       <attribute name="title">
+        <string>TCP</string>
+       </attribute>
+       <layout class="QGridLayout" name="gridLayout_3">
+        <item row="3" column="0" colspan="4">
+         <widget class="QProgressBar" name="progress">
+          <property name="toolTip">
+           <string>Software Update Progress</string>
+          </property>
+          <property name="value">
+           <number>0</number>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="0" colspan="4">
+         <spacer name="verticalSpacer_2">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="1" column="2">
+         <widget class="QPushButton" name="freeze">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="text">
+           <string>Run</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="3">
+         <widget class="QComboBox" name="workflows">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="0">
+         <widget class="QLabel" name="_probeslist">
+          <property name="text">
+           <string>Probes</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="0">
+         <widget class="QLabel" name="_ip">
+          <property name="text">
+           <string>IP Address</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="3">
+         <widget class="QPushButton" name="update">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="text">
+           <string>Update</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="QLineEdit" name="port">
+          <property name="inputMask">
+           <string>#####</string>
+          </property>
+          <property name="text">
+           <string>11000</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="2">
+         <widget class="QPushButton" name="connect">
+          <property name="text">
+           <string>Connect</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="1">
+         <widget class="QComboBox" name="probes"/>
+        </item>
+        <item row="0" column="3">
+         <widget class="QPushButton" name="load">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="text">
+           <string>Load</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="2">
+         <widget class="QLabel" name="_workflows">
+          <property name="text">
+           <string>Workflows</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="_port">
+          <property name="text">
+           <string>Port</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QLineEdit" name="ip">
+          <property name="inputMask">
+           <string>000.000.000.000</string>
+          </property>
+          <property name="text">
+           <string>192.168.1.1</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="_prms">
+       <attribute name="title">
+        <string>Params</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_2">
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout">
+          <item>
+           <layout class="QVBoxLayout" name="verticalLayout_3">
+            <item>
+             <widget class="QPushButton" name="decdepth">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
+              <property name="text">
+               <string>Depth -</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="incdepth">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
+              <property name="text">
+               <string>Depth +</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QVBoxLayout" name="verticalLayout_4">
+            <item>
+             <widget class="QSlider" name="tgctop">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>16777215</width>
+                <height>16777215</height>
+               </size>
+              </property>
+              <property name="minimum">
+               <number>-20</number>
+              </property>
+              <property name="maximum">
+               <number>20</number>
+              </property>
+              <property name="pageStep">
+               <number>5</number>
+              </property>
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QSlider" name="tgcmid">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>16777215</width>
+                <height>16777215</height>
+               </size>
+              </property>
+              <property name="minimum">
+               <number>-20</number>
+              </property>
+              <property name="maximum">
+               <number>20</number>
+              </property>
+              <property name="pageStep">
+               <number>5</number>
+              </property>
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QSlider" name="tgcbottom">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>16777215</width>
+                <height>16777215</height>
+               </size>
+              </property>
+              <property name="minimum">
+               <number>-20</number>
+              </property>
+              <property name="maximum">
+               <number>20</number>
+              </property>
+              <property name="pageStep">
+               <number>5</number>
+              </property>
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_2">
+          <item>
+           <widget class="QDial" name="gain">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>50</width>
+              <height>50</height>
+             </size>
+            </property>
+            <property name="toolTip">
+             <string>Gain</string>
+            </property>
+            <property name="minimum">
+             <number>1</number>
+            </property>
+            <property name="maximum">
+             <number>100</number>
+            </property>
+            <property name="value">
+             <number>50</number>
+            </property>
+            <property name="notchTarget">
+             <double>10.000000000000000</double>
+            </property>
+            <property name="notchesVisible">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QDial" name="cfigain">
+            <property name="maximumSize">
+             <size>
+              <width>50</width>
+              <height>50</height>
+             </size>
+            </property>
+            <property name="toolTip">
+             <string>Color Gain</string>
+            </property>
+            <property name="minimum">
+             <number>1</number>
+            </property>
+            <property name="maximum">
+             <number>100</number>
+            </property>
+            <property name="value">
+             <number>50</number>
+            </property>
+            <property name="notchTarget">
+             <double>10.000000000000000</double>
+            </property>
+            <property name="notchesVisible">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QDial" name="rfzoom">
+            <property name="maximumSize">
+             <size>
+              <width>50</width>
+              <height>50</height>
+             </size>
+            </property>
+            <property name="toolTip">
+             <string>RF Signal Zoom</string>
+            </property>
+            <property name="minimum">
+             <number>1</number>
+            </property>
+            <property name="maximum">
+             <number>100</number>
+            </property>
+            <property name="value">
+             <number>10</number>
+            </property>
+            <property name="wrapping">
+             <bool>false</bool>
+            </property>
+            <property name="notchTarget">
+             <double>10.000000000000000</double>
+            </property>
+            <property name="notchesVisible">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_3">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="QComboBox" name="modes">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="_prmsspacer">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+    </item>
+    <item>
+     <widget class="QLabel" name="probeStatus">
+      <property name="toolTip">
+       <string>Probe Status</string>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::StyledPanel</enum>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QStatusBar" name="status"/>
+ </widget>
+ <layoutdefault spacing="6" margin="11"/>
+ <tabstops>
+  <tabstop>_tabs</tabstop>
+  <tabstop>blesearch</tabstop>
+  <tabstop>bleprobes</tabstop>
+  <tabstop>bleconnect</tabstop>
+  <tabstop>poweron</tabstop>
+  <tabstop>poweroff</tabstop>
+  <tabstop>ssid</tabstop>
+  <tabstop>password</tabstop>
+  <tabstop>wifi</tabstop>
+  <tabstop>ap</tabstop>
+  <tabstop>freeze</tabstop>
+  <tabstop>workflows</tabstop>
+  <tabstop>update</tabstop>
+  <tabstop>port</tabstop>
+  <tabstop>connect</tabstop>
+  <tabstop>probes</tabstop>
+  <tabstop>load</tabstop>
+  <tabstop>ip</tabstop>
+  <tabstop>decdepth</tabstop>
+  <tabstop>incdepth</tabstop>
+  <tabstop>tgctop</tabstop>
+  <tabstop>tgcmid</tabstop>
+  <tabstop>tgcbottom</tabstop>
+  <tabstop>gain</tabstop>
+  <tabstop>cfigain</tabstop>
+  <tabstop>rfzoom</tabstop>
+  <tabstop>modes</tabstop>
+ </tabstops>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>update</sender>
+   <signal>clicked()</signal>
+   <receiver>Oem</receiver>
+   <slot>onUpdate()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>411</x>
+     <y>358</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>230</x>
+     <y>217</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>freeze</sender>
+   <signal>clicked()</signal>
+   <receiver>Oem</receiver>
+   <slot>onFreeze()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>412</x>
+     <y>381</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>264</x>
+     <y>229</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>connect</sender>
+   <signal>clicked()</signal>
+   <receiver>Oem</receiver>
+   <slot>onConnect()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>478</x>
+     <y>371</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>264</x>
+     <y>215</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>load</sender>
+   <signal>clicked()</signal>
+   <receiver>Oem</receiver>
+   <slot>onLoad()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>411</x>
+     <y>327</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>230</x>
+     <y>217</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>probes</sender>
+   <signal>currentIndexChanged(QString)</signal>
+   <receiver>Oem</receiver>
+   <slot>onProbeSelected(QString)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>161</x>
+     <y>360</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>241</x>
+     <y>217</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>incdepth</sender>
+   <signal>clicked()</signal>
+   <receiver>Oem</receiver>
+   <slot>incDepth()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>183</x>
+     <y>355</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>241</x>
+     <y>228</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>decdepth</sender>
+   <signal>clicked()</signal>
+   <receiver>Oem</receiver>
+   <slot>decDepth()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>66</x>
+     <y>355</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>241</x>
+     <y>228</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>tgctop</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>Oem</receiver>
+   <slot>tgcTop(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>371</x>
+     <y>303</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>241</x>
+     <y>228</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>tgcmid</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>Oem</receiver>
+   <slot>tgcMid(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>371</x>
+     <y>334</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>241</x>
+     <y>228</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>tgcbottom</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>Oem</receiver>
+   <slot>tgcBottom(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>371</x>
+     <y>360</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>241</x>
+     <y>228</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>blesearch</sender>
+   <signal>clicked()</signal>
+   <receiver>Oem</receiver>
+   <slot>onBleSearch()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>136</x>
+     <y>269</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>264</x>
+     <y>274</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>bleprobes</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>Oem</receiver>
+   <slot>onBleProbe(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>253</x>
+     <y>280</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>253</x>
+     <y>285</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>bleconnect</sender>
+   <signal>clicked()</signal>
+   <receiver>Oem</receiver>
+   <slot>onBleConnect()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>411</x>
+     <y>280</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>253</x>
+     <y>285</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>poweron</sender>
+   <signal>clicked()</signal>
+   <receiver>Oem</receiver>
+   <slot>onPowerOn()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>96</x>
+     <y>280</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>253</x>
+     <y>285</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>poweroff</sender>
+   <signal>clicked()</signal>
+   <receiver>Oem</receiver>
+   <slot>onPowerOff()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>253</x>
+     <y>280</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>253</x>
+     <y>285</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>wifi</sender>
+   <signal>clicked()</signal>
+   <receiver>Oem</receiver>
+   <slot>onWiFi()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>59</x>
+     <y>414</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>228</x>
+     <y>291</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>ap</sender>
+   <signal>clicked()</signal>
+   <receiver>Oem</receiver>
+   <slot>onAp()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>148</x>
+     <y>414</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>228</x>
+     <y>291</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>modes</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>Oem</receiver>
+   <slot>onMode(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>235</x>
+     <y>389</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>235</x>
+     <y>271</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>rfzoom</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>Oem</receiver>
+   <slot>onZoom(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>44</x>
+     <y>384</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>228</x>
+     <y>238</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>gain</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>Oem</receiver>
+   <slot>onGain(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>44</x>
+     <y>429</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>228</x>
+     <y>273</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>cfigain</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>Oem</receiver>
+   <slot>onColorGain(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>101</x>
+     <y>375</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>228</x>
+     <y>273</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <slots>
+  <slot>onConnect()</slot>
+  <slot>onFreeze()</slot>
+  <slot>onLoad()</slot>
+  <slot>onUpdate()</slot>
+  <slot>onProbeSelected(QString)</slot>
+  <slot>decDepth()</slot>
+  <slot>incDepth()</slot>
+  <slot>tgcTop(int)</slot>
+  <slot>tgcMid(int)</slot>
+  <slot>tgcBottom(int)</slot>
+  <slot>onBleSearch()</slot>
+  <slot>onBleProbe(int)</slot>
+  <slot>onBleConnect()</slot>
+  <slot>onPowerOn()</slot>
+  <slot>onPowerOff()</slot>
+  <slot>onWiFi()</slot>
+  <slot>onAp()</slot>
+  <slot>onMode(int)</slot>
+  <slot>onZoom(int)</slot>
+  <slot>onGain(int)</slot>
+  <slot>onColorGain(int)</slot>
+ </slots>
+</ui>
