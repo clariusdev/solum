@@ -6,6 +6,12 @@
 #define CONNECT_SWUPDATE    3   ///< software update required
 #define CONNECT_ERROR       -1  ///< connection call error
 
+#define CERT_INVALID        -1  ///< certificate is not valid
+
+#define IMAGING_NOTREADY    0   ///< imaging is not ready, probe and application need to be loaded
+#define IMAGING_READY       1   ///< imaging is ready
+#define IMAGING_CERTEXPIRED 2   ///< cannot image due to expired certificate
+
 #define POWERDOWN_IDLE      0   ///< probe was idle from imaging for extended period
 #define POWERDOWN_TOOHOT    1   ///< probe got too hot
 #define POWERDOWN_BATTERY   2   ///< low battery
@@ -16,6 +22,9 @@
 #define SWUPDATE_BATTERY    2   ///< battery is too low to perform update
 #define SWUPDATE_CORRUPT    3   ///< probe file system may be corrupt
 #define SWUPDATE_ERROR      -1  ///< software update error
+
+#define BUTTON_UP           0   ///< button up identifier
+#define BUTTON_DOWN         1   ///< button down identifier
 
 #define PARAM_DEPTH         0   ///< imaging depth in cm
 #define PARAM_GAIN          1   ///< gain in percent
@@ -110,16 +119,19 @@ typedef struct _ClariusPosInfo
 /// @param[in] sz the size of the string buffer
 typedef void (*ClariusListFn)(const char* list, int sz);
 /// connection callback function
-/// @param[in] ret the return code
+/// @param[in] ret the return code, see CONNECT_ definitions above
 /// @param[in] port udp port used for streaming
 /// @param[in] status the status message
 typedef void (*ClariusConnectFn)(int ret, int port, const char* status);
+/// certification callback function
+/// @param[in] ret the return code, see CERT_ definitions above
+typedef void (*ClariusCertFn)(int daysValid);
 /// powering down callback function
-/// @param[in] ret the return code
+/// @param[in] ret the return code, see POWERDOWN_ definitions above
 /// @param[in] tm time for when probe is powering down, 0 for immediately
 typedef void (*ClariusPowerDownFn)(int ret, int tm);
 /// software update callback function
-/// @param[in] ret the return code
+/// @param[in] ret the return code, see SWUPDATE_ definitions above
 typedef void (*ClariusSwUpdateFn)(int ret);
 /// new data callback function
 /// @param[in] newImage pointer to the new greyscale image information
@@ -134,15 +146,15 @@ typedef void (*ClariusNewRawImageFn)(const void* newImage, const ClariusRawImage
 /// @param[in] pos the positional information data tagged with the image
 typedef void (*ClariusNewProcessedImageFn)(const void* newImage, const ClariusProcessedImageInfo* nfo, int npos, const ClariusPosInfo* pos);
 /// imaging callback function
-/// @param[in] ready 1 = ready for imaging, 0 = not ready to image
+/// @param[in] ready the ready code, see IMAGING_ defintions above
 /// @param[in] imaging 1 = running , 0 = stopped
 typedef void (*ClariusImagingFn)(int ready, int imaging);
 /// button callback function
-/// @param[in] btn 0 = up, 1 = down
+/// @param[in] btn see BUTTON_ definitions above
 /// @param[in] clicks # of clicks performed
 typedef void (*ClariusButtonFn)(int btn, int clicks);
 /// progress callback function
-/// @param[in] progress the current progress
+/// @param[in] progress the current progress in percent
 typedef void (*ClariusProgressFn)(int progress);
 /// error callback function
 /// @param[in] msg the error message with associated error that occurred

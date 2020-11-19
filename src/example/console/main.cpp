@@ -47,6 +47,18 @@ void connectFn(int ret, int port, const char* status)
         PRINT << "streaming port: " << port;
 }
 
+/// callback for certification status
+/// @param[in] daysValid # of days valid for certificate
+void certFn(int daysValid)
+{
+    if (daysValid == CERT_INVALID)
+        ERROR << "certificate invalid or not found";
+    else if (!daysValid)
+        ERROR << "certificate expired";
+    else
+        PRINT << "certificate valid for (" << daysValid << ") more days";
+}
+
 /// callback for probe powering down
 /// @param[in] ret power down status code
 /// @param[in] tm time when the probe is powering down
@@ -72,8 +84,10 @@ void swUpdateFn(int ret)
 /// @param[in] imaging 1 = running, 0 = stopped
 void imagingFn(int ready, int imaging)
 {
-    if (ready)
+    if (ready == IMAGING_READY)
         PRINT << "ready to image: " << ((imaging) ? "imaging running" : "imaging stopped");
+    else if (ready == IMAGING_CERTEXPIRED)
+        ERROR << "certificate needs updating prior to imaging";
     else
         ERROR << "not ready to image";
 }
@@ -83,7 +97,7 @@ void imagingFn(int ready, int imaging)
 /// @param[in] clicks # of clicks used
 void buttonFn(int btn, int clicks)
 {
-    PRINT << (btn ? "down" : "up") << " button pressed, clicks: " << clicks;
+    PRINT << ((btn == BUTTON_DOWN) ? "down" : "up") << " button pressed, clicks: " << clicks;
 }
 
 /// callback for software update progress
@@ -419,7 +433,7 @@ int init(int& argc, char** argv)
     PRINT << "starting clarius oem program...";
 
     // initialize with callbacks
-    if (cusOemInit(argc, argv, keydir.c_str(), connectFn, powerDownFn, newProcessedImageFn,
+    if (cusOemInit(argc, argv, keydir.c_str(), connectFn, certFn, powerDownFn, newProcessedImageFn,
                    newRawImageFn, imagingFn, buttonFn, errorFn, width, height) < 0)
     {
         ERROR << "could not initialize oem module" << std::endl;

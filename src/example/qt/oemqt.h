@@ -11,16 +11,17 @@ class UltrasoundImage;
 class RfSignal;
 
 #define CONNECT_EVENT   static_cast<QEvent::Type>(QEvent::User + 1)
-#define POWER_EVENT     static_cast<QEvent::Type>(QEvent::User + 2)
-#define SWUPDATE_EVENT  static_cast<QEvent::Type>(QEvent::User + 3)
-#define LIST_EVENT      static_cast<QEvent::Type>(QEvent::User + 4)
-#define IMAGE_EVENT     static_cast<QEvent::Type>(QEvent::User + 5)
-#define PRESCAN_EVENT   static_cast<QEvent::Type>(QEvent::User + 6)
-#define RF_EVENT        static_cast<QEvent::Type>(QEvent::User + 7)
-#define IMAGING_EVENT   static_cast<QEvent::Type>(QEvent::User + 8)
-#define BUTTON_EVENT    static_cast<QEvent::Type>(QEvent::User + 9)
-#define ERROR_EVENT     static_cast<QEvent::Type>(QEvent::User + 10)
-#define PROGRESS_EVENT  static_cast<QEvent::Type>(QEvent::User + 11)
+#define CERT_EVENT      static_cast<QEvent::Type>(QEvent::User + 2)
+#define POWER_EVENT     static_cast<QEvent::Type>(QEvent::User + 3)
+#define SWUPDATE_EVENT  static_cast<QEvent::Type>(QEvent::User + 4)
+#define LIST_EVENT      static_cast<QEvent::Type>(QEvent::User + 5)
+#define IMAGE_EVENT     static_cast<QEvent::Type>(QEvent::User + 6)
+#define PRESCAN_EVENT   static_cast<QEvent::Type>(QEvent::User + 7)
+#define RF_EVENT        static_cast<QEvent::Type>(QEvent::User + 8)
+#define IMAGING_EVENT   static_cast<QEvent::Type>(QEvent::User + 9)
+#define BUTTON_EVENT    static_cast<QEvent::Type>(QEvent::User + 10)
+#define ERROR_EVENT     static_cast<QEvent::Type>(QEvent::User + 11)
+#define PROGRESS_EVENT  static_cast<QEvent::Type>(QEvent::User + 12)
 
 namespace event
 {
@@ -47,6 +48,21 @@ namespace event
         int code_;          ///< connection code
         int port_;          ///< connection port
         QString message_;   ///< message
+    };
+
+    /// wrapper for certificate validation events that can be posted from the api callbacks
+    class Cert : public QEvent
+    {
+    public:
+        /// default constructor
+        /// @param[in] daysValid days valid for certificate
+        Cert(int daysValid) : QEvent(CERT_EVENT), daysValid_(daysValid) { }
+        /// retrieves the days valid
+        /// @return the days valid
+        int daysValid() const { return daysValid_; }
+
+    protected:
+        int daysValid_;     ///< days valid
     };
 
     /// wrapper for power down events that can be posted from the api callbacks
@@ -184,16 +200,16 @@ namespace event
         /// default constructor
         /// @param[in] rdy the ready state
         /// @param[in] imaging the imaging state
-        Imaging(bool rdy, bool imaging) : QEvent(IMAGING_EVENT), ready_(rdy), imaging_(imaging) { }
+        Imaging(int rdy, bool imaging) : QEvent(IMAGING_EVENT), ready_(rdy), imaging_(imaging) { }
         /// retrieves the ready state from the event
         /// @return the event's encapsulated ready state
-        bool ready() const { return ready_; }
+        int ready() const { return ready_; }
         /// retrieves the imaging state from the event
         /// @return the event's encapsulated imaging state
         bool imaging() const { return imaging_; }
 
     private:
-        bool ready_;    ///< the ready state
+        int ready_;     ///< the ready state
         bool imaging_;  ///< the imaging state
     };
 
@@ -255,13 +271,13 @@ class Oem : public QMainWindow
 
 public:
     explicit Oem(QWidget *parent = nullptr);
-    ~Oem();
+    ~Oem() override;
 
     static Oem* instance();
 
 protected:
-    virtual bool event(QEvent *event);
-    virtual void closeEvent(QCloseEvent *event);
+    virtual bool event(QEvent *event) override;
+    virtual void closeEvent(QCloseEvent *event) override;
 
 private:
     void loadProbes(const QStringList& probes);
@@ -270,9 +286,10 @@ private:
     void newPrescanImage(const void* img, int w, int h, int bpp, bool jpg);
     void newRfImage(const void* rf, int l, int s, int ss);
     void setConnected(int code, int port, const QString& msg);
+    void certification(int daysValid);
     void poweringDown(int code, int tm);
     void softwareUpdate(int code);
-    void imagingState(bool ready, bool imaging);
+    void imagingState(int code, bool imaging);
     void onButton(int btn, int clicks);
     void setProgress(int progress);
     void setError(const QString& err);

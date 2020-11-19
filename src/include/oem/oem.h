@@ -9,6 +9,7 @@ extern "C"
     /// @param[in] argv the arguments to pass to the library, possibly required for qt graphics buffer initialization
     /// @param[in] dir the directory to store security keys
     /// @param[in] connect connection status callback
+    /// @param[in] cert certificate status callback
     /// @param[in] power probe power down callback
     /// @param[in] newProcessedImage new processed image callback (scan-converted image)
     /// @param[in] newRawImage new raw image callback - (pre scan-converted image)
@@ -20,7 +21,7 @@ extern "C"
     /// @retval -1 the initialization was not successful
     /// @note must be called before any other functions will succeed
     OEM_EXPORT int cusOemInit(int argc, char** argv, const char* dir,
-        ClariusConnectFn connect, ClariusPowerDownFn power,
+        ClariusConnectFn connect, ClariusCertFn cert, ClariusPowerDownFn power,
         ClariusNewProcessedImageFn newProcessedImage, ClariusNewRawImageFn newRawImage,
         ClariusImagingFn imaging, ClariusButtonFn btn, ClariusErrorFn err,
         int width, int height);
@@ -51,6 +52,13 @@ extern "C"
     /// @retval 1 there is currently a connection
     /// @retval -1 the module is not initialized
     OEM_EXPORT int cusOemIsConnected();
+
+    /// attempts to update a connected probe with a new certificate
+    /// @param[in] cert the certificate provided by Clarius
+    /// @return success of the call
+    /// @retval 0 the certificate update attempt was successful
+    /// @retval -1 the certificate update attempt was not successful
+    OEM_EXPORT int cusOemCertUpdate(const char* cert);
 
     /// performs a software update once connected
     /// @param[in] fn the callback function that reports the status

@@ -20,6 +20,11 @@ int main(int argc, char *argv[])
         {
             QApplication::postEvent(Oem::instance(), new event::Connection(code, port, QString::fromLatin1(msg)));
         },
+        // cert callback
+        [](int daysValid)
+        {
+            QApplication::postEvent(Oem::instance(), new event::Cert(daysValid));
+        },
         // power down callback
         [](int code, int tm)
         {
@@ -60,7 +65,7 @@ int main(int argc, char *argv[])
         [](int ready, int imaging)
         {
             // post event here, as the gui (statusbar) will be updated directly, and it needs to come from the application thread
-            QApplication::postEvent(Oem::instance(), new event::Imaging(ready ? true : false, imaging ? true : false));
+            QApplication::postEvent(Oem::instance(), new event::Imaging(ready, imaging ? true : false));
         },
         // button press callback
         [](int btn, int clicks)

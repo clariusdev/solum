@@ -6,7 +6,6 @@ namespace
     {
         return QUuid("f9eb3fae-947a-4e5b-ab7c-c799e91ed780");
     }
-
     QBluetoothUuid wifiPublishedUuid()
     {
         return QUuid("f9eb3fae-947a-4e5b-ab7c-c799e91ed781");

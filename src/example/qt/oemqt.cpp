@@ -183,6 +183,12 @@ bool Oem::event(QEvent *event)
         setConnected(evt->code(), evt->port(), evt->message());
         return true;
     }
+    else if (event->type() == CERT_EVENT)
+    {
+        auto evt = static_cast<event::Cert*>(event);
+        certification(evt->daysValid());
+        return true;
+    }
     else if (event->type() == POWER_EVENT)
     {
         auto evt = static_cast<event::PowerDown*>(event);
@@ -275,21 +281,30 @@ void Oem::setConnected(int code, int port, const QString& msg)
         timer_.stop();
         connected_ = false;
         ui_->status->showMessage(QStringLiteral("Disconnected"));
-        ui_->connect->setText("Connect");
+        ui_->connect->setText(QStringLiteral("Connect"));
+        ui_->cert->clear();
         ui_->freeze->setEnabled(false);
         ui_->update->setEnabled(false);
         ui_->load->setEnabled(false);
         // disable controls upon disconnect
-        imagingState(false, false);
+        imagingState(IMAGING_NOTREADY, false);
     }
     else if (code == CONNECT_FAILED || code == CONNECT_ERROR)
-    {
         ui_->status->showMessage(QStringLiteral("Error connecting: %1").arg(msg));
-    }
     else if (code == CONNECT_SWUPDATE)
-    {
-        ui_->status->showMessage(QStringLiteral("Software update required before imaging"));
-    }
+        ui_->status->showMessage(QStringLiteral("Software update required prior to imaging"));
+}
+
+/// called when a new certification message has been sent
+/// @param[in] daysValid # of days valid for certificate
+void Oem::certification(int daysValid)
+{
+    if (daysValid == CERT_INVALID)
+        ui_->cert->setText(QStringLiteral("Invalid"));
+    else if (!daysValid)
+        ui_->cert->setText(QStringLiteral("Expired"));
+    else
+        ui_->cert->setText(QStringLiteral("%1 Days").arg(daysValid));
 }
 
 /// called when there's a power down event
@@ -320,10 +335,11 @@ void Oem::softwareUpdate(int code)
 }
 
 /// called when the imaging state changes
-/// @param[in] ready the ready state
+/// @param[in] code the imaging ready code
 /// @param[in] imaging the imaging state
-void Oem::imagingState(bool ready, bool imaging)
+void Oem::imagingState(int code, bool imaging)
 {
+    bool ready = (code == IMAGING_READY);
     ui_->freeze->setEnabled(ready ? true : false);
     ui_->decdepth->setEnabled(ready ? true : false);
     ui_->incdepth->setEnabled(ready ? true : false);
@@ -343,6 +359,8 @@ void Oem::imagingState(bool ready, bool imaging)
         getParams();
         image_->checkRoi();
     }
+    else if (code == IMAGING_CERTEXPIRED)
+        ui_->status->showMessage(QStringLiteral("Certificate needs updating prior to imaging"));
 }
 
 /// called when there is a button press on the ultrasound
@@ -350,7 +368,7 @@ void Oem::imagingState(bool ready, bool imaging)
 /// @param[in] clicks # of clicks used
 void Oem::onButton(int btn, int clicks)
 {
-    ui_->status->showMessage(QStringLiteral("Button %1 Pressed, %2 Clicks").arg(btn ? QStringLiteral("Down") : QStringLiteral("Up")).arg(clicks));
+    ui_->status->showMessage(QStringLiteral("Button %1 Pressed, %2 Clicks").arg((btn == BUTTON_DOWN) ? QStringLiteral("Down") : QStringLiteral("Up")).arg(clicks));
 }
 
 /// called when the download progress changes
@@ -399,14 +417,14 @@ void Oem::onConnect()
     if (!connected_)
     {
         if (cusOemConnect(ui_->ip->text().toStdString().c_str(), ui_->port->text().toInt()) < 0)
-            ui_->status->showMessage("Connection failed");
+            ui_->status->showMessage(QStringLiteral("Connection failed"));
         else
-            ui_->status->showMessage("Trying connection");
+            ui_->status->showMessage(QStringLiteral("Trying connection"));
     }
     else
     {
         if (cusOemDisconnect() < 0)
-            ui_->status->showMessage("Disconnect failed");
+            ui_->status->showMessage(QStringLiteral("Disconnect failed"));
     }
 }
 
@@ -417,9 +435,9 @@ void Oem::onFreeze()
         return;
 
     if (cusOemRun(imaging_ ? 0 : 1) < 0)
-        ui_->status->showMessage("Error requesting imaging run/stop");
+        ui_->status->showMessage(QStringLiteral("Error requesting imaging run/stop"));
     else
-        imagingState(true, !imaging_);
+        imagingState(IMAGING_READY, !imaging_);
 }
 
 /// initiates a software update
@@ -439,7 +457,7 @@ void Oem::onUpdate()
         {
             QApplication::postEvent(Oem::instance(), new event::Progress(progress));
         }) < 0)
-        ui_->status->showMessage("Error requesting software update");
+        ui_->status->showMessage(QStringLiteral("Error requesting software update"));
 }
 
 /// initiates a workflow load
@@ -449,7 +467,7 @@ void Oem::onLoad()
         return;
 
     if (cusOemLoadApplication(ui_->probes->currentText().toStdString().c_str(), ui_->workflows->currentText().toStdString().c_str()) < 0)
-        ui_->status->showMessage("Error requesting application load");
+        ui_->status->showMessage(QStringLiteral("Error requesting application load"));
 }
 
 /// called when user selects a new probe definition
@@ -548,7 +566,7 @@ void Oem::getParams()
 void Oem::onMode(int mode)
 {
     if (cusOemSetMode(mode) < 0)
-        ui_->status->showMessage("Error setting imaging mode");
+        ui_->status->showMessage(QStringLiteral("Error setting imaging mode"));
     else
     {
         signal_->setVisible(mode == MODE_RF);

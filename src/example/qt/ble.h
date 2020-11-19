@@ -9,7 +9,7 @@ class Ble : public QObject
 
 public:
     Ble();
-    virtual ~Ble();
+    virtual ~Ble() override;
 
     void search();
     bool connectToProbe(const QString& name);
