@@ -2,6 +2,18 @@
 
 namespace
 {
+    QBluetoothUuid powerUuid()
+    {
+        return QUuid("8c853b6a-2297-44c1-8277-73627c8d2abc");
+    }
+    QBluetoothUuid powerPublishedUuid()
+    {
+        return QUuid("8c853b6a-2297-44c1-8277-73627c8d2abd");
+    }
+    QBluetoothUuid powerRequestUuid()
+    {
+        return QUuid("8c853b6a-2297-44c1-8277-73627c8d2abe");
+    }
     QBluetoothUuid wifiUuid()
     {
         return QUuid("f9eb3fae-947a-4e5b-ab7c-c799e91ed780");
@@ -125,13 +137,40 @@ void Ble::onService(const QBluetoothUuid& u)
     if (!probe_)
         return;
 
-    if (u == QBluetoothUuid::ImmediateAlert)
+    if (u == powerUuid())
     {
         power_.reset(probe_->createServiceObject(u));
         QObject::connect(power_.get(), &QLowEnergyService::stateChanged, this, [this](QLowEnergyService::ServiceState s)
         {
+            auto emitPowered = [this](const QLowEnergyCharacteristic& ch, const QByteArray& v)
+            {
+                auto uid = ch.uuid();
+                if (uid == powerPublishedUuid() && !v.isEmpty())
+                    emit powered(static_cast<bool>(v[0]));
+            };
+            QObject::connect(power_.get(), &QLowEnergyService::characteristicChanged, this, [emitPowered](const QLowEnergyCharacteristic& ch, const QByteArray& v)
+            {
+                emitPowered(ch, v);
+            });
+            QObject::connect(power_.get(), &QLowEnergyService::characteristicRead, this, [emitPowered](const QLowEnergyCharacteristic& ch, const QByteArray& v)
+            {
+                emitPowered(ch, v);
+            });
             if (s == QLowEnergyService::ServiceDiscovered)
+            {
                 emit powerReady(true);
+
+                auto ch = power_->characteristic(powerPublishedUuid());
+                if (ch.isValid())
+                {
+                    // subscribe to notifications
+                    auto de = ch.descriptor(QBluetoothUuid::ClientCharacteristicConfiguration);
+                    if (de.isValid())
+                        power_->writeDescriptor(de, QByteArray::fromHex("0100"));
+                    // engage a first read of the wifi info
+                    power_->readCharacteristic(ch);
+                }
+            }
         });
     }
     else if (u == wifiUuid())
@@ -190,16 +229,17 @@ void Ble::onDiscoveryFinished()
 
 /// powers the probe on or off
 /// @param[in] en set to true to power on, false to power off
+/// @return success of the request
 bool Ble::power(bool en)
 {
     if (!power_ || power_->state() != QLowEnergyService::ServiceDiscovered)
         return false;
 
-    auto ch = power_->characteristic(QBluetoothUuid::AlertLevel);
+    auto ch = power_->characteristic(powerRequestUuid());
     if (!ch.isValid())
         return false;
 
-    power_->writeCharacteristic(ch, QByteArray::fromHex(en ? "02" : "01"), QLowEnergyService::WriteWithoutResponse);
+    power_->writeCharacteristic(ch, QByteArray::fromHex(en ? "01" : "00"), QLowEnergyService::WriteWithoutResponse);
     return true;
 }
 

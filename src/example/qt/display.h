@@ -1,7 +1,5 @@
 #pragma once
 
-#include <QtWidgets/QtWidgets>
-
 /// ultrasound image display
 class UltrasoundImage : public QGraphicsView
 {

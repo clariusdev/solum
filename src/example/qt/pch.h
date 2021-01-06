@@ -17,6 +17,9 @@
 #include <QtWidgets/QtWidgets>
 #include <QtGui/QtGui>
 #include <QtBluetooth/QtBluetooth>
+#include <Qt3DCore/Qt3DCore>
+#include <Qt3DRender/Qt3DRender>
+#include <Qt3DExtras/Qt3DExtras>
 
 #ifdef __clang__
     #pragma clang diagnostic pop

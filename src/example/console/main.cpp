@@ -196,6 +196,8 @@ void processEventLoop(std::atomic_bool& quit)
             return PARAM_DEPTH;
         else if (p == "G" || p == "g")
             return PARAM_GAIN;
+        else if (p == "I" || p == "i")
+            return PARAM_IMU;
 
         return -1;
     };
@@ -304,7 +306,7 @@ void processEventLoop(std::atomic_bool& quit)
         }
         else if (cmd == "F" || cmd == "f")
         {
-            PRINT << "select parameter [d=depth, g=gain]: ";
+            PRINT << "select parameter [d=depth, g=gain, i=imu]: ";
             std::getline(std::cin, buf1);
             v = cusOemGetParam(param(buf1));
             if (v == -1)
@@ -314,7 +316,7 @@ void processEventLoop(std::atomic_bool& quit)
         }
         else if (cmd == "V" || cmd == "v")
         {
-            PRINT << "select parameter [d=depth, g=gain]: ";
+            PRINT << "select parameter [d=depth, g=gain, i=imu]: ";
             std::getline(std::cin, buf1);
             PRINT << "set value: ";
             std::getline(std::cin, buf2);

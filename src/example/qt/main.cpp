@@ -31,15 +31,18 @@ int main(int argc, char *argv[])
             QApplication::postEvent(Oem::instance(), new event::PowerDown(code, tm));
         },
         // new image callback
-        [](const void* img, const ClariusProcessedImageInfo* nfo, int, const ClariusPosInfo*)
+        [](const void* img, const ClariusProcessedImageInfo* nfo, int npos, const ClariusPosInfo* pos)
         {
             // we need to perform a deep copy of the image data since we have to post the event (yes this happens a lot with this api)
             size_t sz = nfo->width * nfo->height * (nfo->bitsPerPixel / 8);
             if (_image.size() <  sz)
                 _image.resize(sz);
             memcpy(_image.data(), img, sz);
+            QQuaternion imu;
+            if (npos && pos)
+                imu = QQuaternion(static_cast<float>(pos[0].qw), static_cast<float>(pos[0].qx), static_cast<float>(pos[0].qy), static_cast<float>(pos[0].qz));
 
-            QApplication::postEvent(Oem::instance(), new event::Image(IMAGE_EVENT, _image.data(), nfo->width, nfo->height, nfo->bitsPerPixel));
+            QApplication::postEvent(Oem::instance(), new event::Image(IMAGE_EVENT, _image.data(), nfo->width, nfo->height, nfo->bitsPerPixel, imu));
         },
         // new raw data callback
         [](const void* data, const ClariusRawImageInfo* nfo, int, const ClariusPosInfo*)

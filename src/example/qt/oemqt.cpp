@@ -1,7 +1,10 @@
 #include "oemqt.h"
 #include "display.h"
+#include "3d.h"
 #include "ui_oemqt.h"
 #include <oem/oem.h>
+
+#define IMU_TAB     3
 
 std::unique_ptr<Oem> Oem::oem_;
 
@@ -19,12 +22,25 @@ Oem* Oem::instance()
 Oem::Oem(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_(false), ui_(new Ui::Oem)
 {
     ui_->setupUi(this);
+    setWindowIcon(QIcon(":/res/logo.png"));
     image_ = new UltrasoundImage(this);
     signal_ = new RfSignal(this);
     ui_->image->addWidget(image_);
     ui_->image->addWidget(signal_);
+    render_ = new ProbeRender(QGuiApplication::primaryScreen());
+    ui_->render->addWidget(QWidget::createWindowContainer(render_));
+    auto reset = new QPushButton(QStringLiteral("Reset"), this);
+    ui_->render->addWidget(reset);
+    render_->init(QStringLiteral("scanner.obj"));
+    render_->show();
     ui_->rfzoom->setVisible(false);
     ui_->cfigain->setVisible(false);
+    ui_->_tabs->setTabEnabled(IMU_TAB, false);
+
+    QObject::connect(reset, &QPushButton::clicked, [this]()
+    {
+        render_->reset();
+    });
 
     // load probes list
     cusOemProbes([](const char* list, int)
@@ -33,10 +49,10 @@ Oem::Oem(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_(fal
     });
 
     ui_->modes->blockSignals(true);
-    ui_->modes->addItem("B Mode");
-    ui_->modes->addItem("RF");
-    ui_->modes->addItem("CFI");
-    ui_->modes->addItem("PDI");
+    ui_->modes->addItem(QStringLiteral("B Mode"));
+    ui_->modes->addItem(QStringLiteral("RF"));
+    ui_->modes->addItem(QStringLiteral("CFI"));
+    ui_->modes->addItem(QStringLiteral("PDI"));
     ui_->modes->blockSignals(false);
 
     // connect status timer
@@ -60,21 +76,27 @@ Oem::Oem(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_(fal
             ui_->bleprobes->setCurrentIndex(0);
     });
 
-    // connect power service ready
+    // power service ready
     connect(&ble_, &Ble::powerReady, [this](bool en)
     {
         ui_->poweron->setEnabled(en);
         ui_->poweroff->setEnabled(en);
     });
 
-    // connect wifi service ready
+    // wifi service ready
     connect(&ble_, &Ble::wifiReady, [this](bool en)
     {
         ui_->wifi->setEnabled(en);
         ui_->ap->setEnabled(en);
     });
 
-    // connect wifi info sent
+    // power status sent
+    connect(&ble_, &Ble::powered, [this](bool en)
+    {
+        qDebug() << "probe powered status:" << en;
+    });
+
+    // wifi info sent
     connect(&ble_, &Ble::wifiInfo, [this](const QString& info)
     {
         QStringList network = info.split(QStringLiteral(","));
@@ -180,74 +202,74 @@ bool Oem::event(QEvent *event)
     if (event->type() == CONNECT_EVENT)
     {
         auto evt = static_cast<event::Connection*>(event);
-        setConnected(evt->code(), evt->port(), evt->message());
+        setConnected(evt->code_, evt->port_, evt->message_);
         return true;
     }
     else if (event->type() == CERT_EVENT)
     {
         auto evt = static_cast<event::Cert*>(event);
-        certification(evt->daysValid());
+        certification(evt->daysValid_);
         return true;
     }
     else if (event->type() == POWER_EVENT)
     {
         auto evt = static_cast<event::PowerDown*>(event);
-        poweringDown(evt->code(), evt->timeOut());
+        poweringDown(evt->code_, evt->timeOut_);
         return true;
     }
     else if (event->type() == SWUPDATE_EVENT)
     {
         auto evt = static_cast<event::SwUpdate*>(event);
-        softwareUpdate(evt->code());
+        softwareUpdate(evt->code_);
         return true;
     }
     else if (event->type() == LIST_EVENT)
     {
         auto evt = static_cast<event::List*>(event);
-        if (evt->probes())
-            loadProbes(evt->list());
+        if (evt->probes_)
+            loadProbes(evt->list_);
         else
-            loadApplications(evt->list());
+            loadApplications(evt->list_);
         return true;
     }
     else if (event->type() == IMAGE_EVENT)
     {
         auto evt = static_cast<event::Image*>(event);
-        newProcessedImage(evt->data(), evt->width(), evt->height(), evt->bpp());
+        newProcessedImage(evt->data_, evt->width_, evt->height_, evt->bpp_, evt->imu_);
         return true;
     }
     else if (event->type() == PRESCAN_EVENT)
     {
         auto evt = static_cast<event::PreScanImage*>(event);
-        newPrescanImage(evt->data(), evt->width(), evt->height(), evt->bpp(), evt->jpeg());
+        newPrescanImage(evt->data_, evt->width_, evt->height_, evt->bpp_, evt->jpeg_);
         return true;
     }
     else if (event->type() == RF_EVENT)
     {
         auto evt = static_cast<event::RfImage*>(event);
-        newRfImage(evt->data(), evt->width(), evt->height(), evt->bpp() / 8);
+        newRfImage(evt->data_, evt->width_, evt->height_, evt->bpp_ / 8);
         return true;
     }
     else if (event->type() == IMAGING_EVENT)
     {
         auto evt = static_cast<event::Imaging*>(event);
-        imagingState(evt->ready(), evt->imaging());
+        imagingState(evt->ready_, evt->imaging_);
         return true;
     }
     else if (event->type() == BUTTON_EVENT)
     {
         auto evt = static_cast<event::Button*>(event);
-        onButton(evt->button(), evt->clicks());
+        onButton(evt->button_, evt->clicks_);
         return true;
     }
     else if (event->type() == PROGRESS_EVENT)
     {
-        setProgress((static_cast<event::Progress*>(event))->progress());
+        setProgress((static_cast<event::Progress*>(event))->progress_);
         return true;
     }
     else if (event->type() == ERROR_EVENT)
     {
-        setError((static_cast<event::Error*>(event))->error());
+        setError((static_cast<event::Error*>(event))->error_);
         return true;
     }
 
@@ -274,6 +296,7 @@ void Oem::setConnected(int code, int port, const QString& msg)
         ui_->status->showMessage(QStringLiteral("Connected on port: %1").arg(port));
         ui_->connect->setText("Disconnect");
         ui_->update->setEnabled(true);
+        ui_->updateCert->setEnabled(true);
         ui_->load->setEnabled(true);
     }
     else if (code == CONNECT_DISCONNECT)
@@ -285,6 +308,7 @@ void Oem::setConnected(int code, int port, const QString& msg)
         ui_->cert->clear();
         ui_->freeze->setEnabled(false);
         ui_->update->setEnabled(false);
+        ui_->updateCert->setEnabled(false);
         ui_->load->setEnabled(false);
         // disable controls upon disconnect
         imagingState(IMAGING_NOTREADY, false);
@@ -346,6 +370,8 @@ void Oem::imagingState(int code, bool imaging)
     ui_->gain->setEnabled(ready ? true : false);
     ui_->cfigain->setEnabled(ready ? true : false);
     ui_->rfzoom->setEnabled(ready ? true : false);
+    ui_->imu->setEnabled(ready ? true : false);
+    ui_->autogain->setEnabled(ready ? true : false);
     ui_->tgctop->setEnabled(ready ? true : false);
     ui_->tgcmid->setEnabled(ready ? true : false);
     ui_->tgcbottom->setEnabled(ready ? true : false);
@@ -383,9 +409,12 @@ void Oem::setProgress(int progress)
 /// @param[in] w width of the image
 /// @param[in] h height of the image
 /// @param[in] bpp the bits per pixel (should always be 8)
-void Oem::newProcessedImage(const void* img, int w, int h, int bpp)
+/// @param[in] imu the imu data if valid
+void Oem::newProcessedImage(const void* img, int w, int h, int bpp, const QQuaternion& imu)
 {
     image_->loadImage(img, w, h, bpp);
+    if (!imu.isNull())
+        render_->update(imu);
 }
 
 /// called when a new pre-scan image has been sent
@@ -460,6 +489,24 @@ void Oem::onUpdate()
         ui_->status->showMessage(QStringLiteral("Error requesting software update"));
 }
 
+/// called to load a certificate
+void Oem::onUpdateCert()
+{
+    auto cert = QFileDialog::getOpenFileName(this,
+        QStringLiteral("Load Certificate"), QString(), QStringLiteral("Certs (*.pem *.crt);;All Files (*)"));
+    if (cert.isEmpty())
+        return;
+
+    QFile f(cert);
+    if (f.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        QTextStream stream(&f);
+        stream.setCodec("UTF-8");
+        auto text = stream.readAll();
+        cusOemCertUpdate(text.toStdString().c_str());
+    }
+}
+
 /// initiates a workflow load
 void Oem::onLoad()
 {
@@ -513,6 +560,21 @@ void Oem::onColorGain(int gn)
     cusOemSetParam(PARAM_CGAIN, gn);
 }
 
+/// called when auto gain enable adjusted
+/// @param[in] state checkbox state
+void Oem::onAutoGain(int state)
+{
+    cusOemSetParam(PARAM_AUTOGAIN, (state == Qt::Checked) ? 1 : 0);
+}
+
+/// called when imu enable adjusted
+/// @param[in] state checkbox state
+void Oem::onImu(int state)
+{
+    ui_->_tabs->setTabEnabled(IMU_TAB, (state == Qt::Checked));
+    cusOemSetParam(PARAM_IMU, (state == Qt::Checked) ? 1 : 0);
+}
+
 /// sets the tgc top
 /// @param[in] v the tgc value
 void Oem::tgcTop(int v)
@@ -552,6 +614,11 @@ void Oem::getParams()
     auto v = cusOemGetParam(PARAM_DEPTH);
     if (v != -1 && image_)
         image_->setDepth(v);
+
+    v = cusOemGetParam(PARAM_AUTOGAIN);
+    ui_->autogain->setChecked(v > 0);
+    v = cusOemGetParam(PARAM_IMU);
+    ui_->imu->setChecked(v > 0);
 
     ClariusTgc t;
     if (cusOemGetTgc(&t) == 0)

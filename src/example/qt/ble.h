@@ -26,6 +26,7 @@ private slots:
 signals:
     void devices(const QStringList&);
     void powerReady(bool);
+    void powered(bool);
     void wifiReady(bool);
     void wifiInfo(const QString&);
 

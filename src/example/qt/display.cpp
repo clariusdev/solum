@@ -225,17 +225,21 @@ void RfSignal::drawBackground(QPainter* painter, const QRectF& r)
 /// @param[in] r the view rectangle
 void RfSignal::drawForeground(QPainter* painter, const QRectF& r)
 {
-    lock_.lock();
-    painter->setPen(QColor(96, 96, 0));
-    qreal x = 0, baseline = r.height() / 2;
-    QPointF p(x, baseline);
-    for (auto s : signal_)
+    if (!signal_.isEmpty())
     {
-        qreal y = s * zoom_;
-        QPointF pt(x + 1.0, baseline + y);
-        painter->drawLine(p, pt);
-        p = pt;
-        x = x + 1.0;
+        lock_.lock();
+        painter->setPen(QColor(96, 96, 0));
+        qreal x = 0, baseline = r.height() / 2;
+        double sampleSize = static_cast<double>(r.width()) / static_cast<double>(signal_.size());
+        QPointF p(x, baseline);
+        for (auto s : signal_)
+        {
+            qreal y = s * zoom_;
+            QPointF pt(x + sampleSize, baseline + y);
+            painter->drawLine(p, pt);
+            p = pt;
+            x = x + sampleSize;
+        }
+        lock_.unlock();
     }
-    lock_.unlock();
 }

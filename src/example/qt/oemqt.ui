@@ -363,6 +363,16 @@
           </property>
          </widget>
         </item>
+        <item row="3" column="2" colspan="2">
+         <widget class="QPushButton" name="updateCert">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="text">
+           <string>Update Cert...</string>
+          </property>
+         </widget>
+        </item>
        </layout>
       </widget>
       <widget class="QWidget" name="_prms">
@@ -570,6 +580,26 @@
            </widget>
           </item>
           <item>
+           <widget class="QCheckBox" name="autogain">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>Auto Gain</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="imu">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>IMU</string>
+            </property>
+           </widget>
+          </item>
+          <item>
            <spacer name="horizontalSpacer_3">
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
@@ -603,6 +633,19 @@
            </size>
           </property>
          </spacer>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="_3d">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
+       <attribute name="title">
+        <string>3D</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_6">
+        <item>
+         <layout class="QVBoxLayout" name="render"/>
         </item>
        </layout>
       </widget>
@@ -993,6 +1036,54 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>imu</sender>
+   <signal>stateChanged(int)</signal>
+   <receiver>Oem</receiver>
+   <slot>onImu(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>215</x>
+     <y>375</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>228</x>
+     <y>273</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>autogain</sender>
+   <signal>stateChanged(int)</signal>
+   <receiver>Oem</receiver>
+   <slot>onAutoGain(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>234</x>
+     <y>375</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>228</x>
+     <y>273</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>updateCert</sender>
+   <signal>clicked()</signal>
+   <receiver>Oem</receiver>
+   <slot>onUpdateCert()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>341</x>
+     <y>388</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>228</x>
+     <y>273</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>onConnect()</slot>
@@ -1016,5 +1107,8 @@
   <slot>onZoom(int)</slot>
   <slot>onGain(int)</slot>
   <slot>onColorGain(int)</slot>
+  <slot>onImu(int)</slot>
+  <slot>onAutoGain(int)</slot>
+  <slot>onUpdateCert()</slot>
  </slots>
 </ui>

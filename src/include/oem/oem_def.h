@@ -32,6 +32,7 @@
 #define PARAM_AUTOGAIN      3   ///< auto gain enable
 #define PARAM_CGAIN         4   ///< color/power gain in percent
 #define PARAM_CPRF          5   ///< color/power pulse repetition frequency in kHz
+#define PARAM_IMU           6   ///< imu stream enable
 
 #define MODE_B              0   ///< b/greyscale imaging mode
 #define MODE_RF             1   ///< rf capture mode (interleaved with b)
@@ -71,6 +72,8 @@ typedef struct _ClariusProcessedImageInfo
     int height;             ///< height of the image in pixels
     int bitsPerPixel;       ///< bits per pixel of the image
     double micronsPerPixel; ///< microns per pixel (always 1:1 aspect ratio axially/laterally)
+    double originX;         ///< image origin in microns in the horizontal axis
+    double originY;         ///< image origin in microns in the vertical axis
     long long int tm;       ///< timestamp of imagesed
 
 } ClariusProcessedImageInfo;
@@ -124,7 +127,7 @@ typedef void (*ClariusListFn)(const char* list, int sz);
 /// @param[in] status the status message
 typedef void (*ClariusConnectFn)(int ret, int port, const char* status);
 /// certification callback function
-/// @param[in] ret the return code, see CERT_ definitions above
+/// @param[in] daysValid # of days valid for certificate
 typedef void (*ClariusCertFn)(int daysValid);
 /// powering down callback function
 /// @param[in] ret the return code, see POWERDOWN_ definitions above
