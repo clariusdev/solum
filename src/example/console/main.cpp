@@ -174,8 +174,8 @@ void newRawImageFn(const void* newImage, const ClariusRawImageInfo* nfo, int npo
 void newProcessedImageFn(const void* newImage, const ClariusProcessedImageInfo* nfo, int npos, const ClariusPosInfo* pos)
 {
     (void)newImage;
-    PRINTSL << "new image (" << counter_++ << "): " << nfo->width << " x " << nfo->height << " @ " << nfo->bitsPerPixel
-          << "bits. @ " << nfo->micronsPerPixel << " microns per pixel. imu points: " << npos << std::flush;
+    PRINTSL << "new image (" << counter_++ << "): " << nfo->width << " x " << nfo->height << " @ " << nfo->bitsPerPixel << " bpp. @ "
+            << nfo->imageSize << "bytes. @ " << nfo->micronsPerPixel << " microns per pixel. imu points: " << npos << std::flush;
 
     if (npos)
         printImuData(npos, pos);
@@ -436,7 +436,7 @@ int init(int& argc, char** argv)
 
     // initialize with callbacks
     if (cusOemInit(argc, argv, keydir.c_str(), connectFn, certFn, powerDownFn, newProcessedImageFn,
-                   newRawImageFn, imagingFn, buttonFn, errorFn, width, height) < 0)
+                   newRawImageFn, nullptr, imagingFn, buttonFn, errorFn, width, height) < 0)
     {
         ERROR << "could not initialize oem module" << std::endl;
         return ERRCODE;

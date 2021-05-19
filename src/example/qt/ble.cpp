@@ -146,7 +146,7 @@ void Ble::onService(const QBluetoothUuid& u)
             {
                 auto uid = ch.uuid();
                 if (uid == powerPublishedUuid() && !v.isEmpty())
-                    emit powered(static_cast<bool>(v[0]));
+                    emit powered((v[0] == 1) ? true : false);
             };
             QObject::connect(power_.get(), &QLowEnergyService::characteristicChanged, this, [emitPowered](const QLowEnergyCharacteristic& ch, const QByteArray& v)
             {
@@ -239,7 +239,7 @@ bool Ble::power(bool en)
     if (!ch.isValid())
         return false;
 
-    power_->writeCharacteristic(ch, QByteArray::fromHex(en ? "01" : "00"), QLowEnergyService::WriteWithoutResponse);
+    power_->writeCharacteristic(ch, QByteArray::fromHex(en ? "01" : "00"));
     return true;
 }
 

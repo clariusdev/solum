@@ -271,7 +271,7 @@
            <bool>false</bool>
           </property>
           <property name="text">
-           <string>Update</string>
+           <string>S/W Update</string>
           </property>
          </widget>
         </item>
@@ -366,7 +366,7 @@
         <item row="3" column="2" colspan="2">
          <widget class="QPushButton" name="updateCert">
           <property name="enabled">
-           <bool>false</bool>
+           <bool>true</bool>
           </property>
           <property name="text">
            <string>Update Cert...</string>

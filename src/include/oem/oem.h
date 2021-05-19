@@ -13,6 +13,7 @@ extern "C"
     /// @param[in] power probe power down callback
     /// @param[in] newProcessedImage new processed image callback (scan-converted image)
     /// @param[in] newRawImage new raw image callback - (pre scan-converted image)
+    /// @param[in] newSpectralImage new processed spectral image callback
     /// @param[in] imaging imaging state callback
     /// @param[in] btn button press callback
     /// @param[in] err error message callback
@@ -23,7 +24,7 @@ extern "C"
     OEM_EXPORT int cusOemInit(int argc, char** argv, const char* dir,
         ClariusConnectFn connect, ClariusCertFn cert, ClariusPowerDownFn power,
         ClariusNewProcessedImageFn newProcessedImage, ClariusNewRawImageFn newRawImage,
-        ClariusImagingFn imaging, ClariusButtonFn btn, ClariusErrorFn err,
+        ClariusNewSpectralImageFn newSpectralImage, ClariusImagingFn imaging, ClariusButtonFn btn, ClariusErrorFn err,
         int width, int height);
 
     /// cleans up memory allocated by the oem module
@@ -53,12 +54,12 @@ extern "C"
     /// @retval -1 the module is not initialized
     OEM_EXPORT int cusOemIsConnected();
 
-    /// attempts to update a connected probe with a new certificate
+    /// sets the certificate for the probe to be connected with
     /// @param[in] cert the certificate provided by Clarius
     /// @return success of the call
     /// @retval 0 the certificate update attempt was successful
     /// @retval -1 the certificate update attempt was not successful
-    OEM_EXPORT int cusOemCertUpdate(const char* cert);
+    OEM_EXPORT int cusOemSetCert(const char* cert);
 
     /// performs a software update once connected
     /// @param[in] fn the callback function that reports the status
@@ -114,6 +115,14 @@ extern "C"
     /// @note the output will always result in a 1:1 pixel ratio, depending on geometry of scanning array, and parameters
     ///       the frame will have various sizes of black borders around the image
     OEM_EXPORT int cusOemSetOutputSize(int w, int h);
+
+    /// sets a flag to separate overlays into separate images, for example if color/power Doppler or strain
+    /// imaging is enabled, two callbacks will be generated, one with the greyscale frame, and the other with the overlay
+    /// @param[in] en the enable flag for separating overlays
+    /// @return success of the call
+    /// @retval 0 the flag was successfully programmed
+    /// @retval -1 the flag could not be set
+    OEM_EXPORT int cusOemSeparateOverlays(int en);
 
     /// runs or stops imaging
     /// @param[in] run the run state to set, 0 to stop imaging, 1 to start imaging
@@ -179,4 +188,11 @@ extern "C"
     /// @return the current imaging mode
     /// @retval -1 if the mode retrieval could not be made
     OEM_EXPORT int cusOemGetMode();
+
+    /// enables the 5v output on or off
+    /// @param[in] en the enable state, set to 1 to turn 5v on, or 0 to turn off
+    /// @return success of the call
+    /// @retval 0 enable request successfully made
+    /// @retval -1 enable request could not be made
+    OEM_EXPORT int cusOemEnable5v(int en);
 }

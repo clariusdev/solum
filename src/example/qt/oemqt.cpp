@@ -91,7 +91,7 @@ Oem::Oem(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_(fal
     });
 
     // power status sent
-    connect(&ble_, &Ble::powered, [this](bool en)
+    connect(&ble_, &Ble::powered, [](bool en)
     {
         qDebug() << "probe powered status:" << en;
     });
@@ -99,18 +99,24 @@ Oem::Oem(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_(fal
     // wifi info sent
     connect(&ble_, &Ble::wifiInfo, [this](const QString& info)
     {
-        QStringList network = info.split(QStringLiteral(","));
-        // field 1: ssid
-        // field 2: password (for probe ap)
-        // field 3: v4 ip address
-        // field 4: v6 ip address
-        // field 5: connection port
-        if (network.size() >= 5)
+        // yaml formatted network information
+        QString ip, port;
+        QStringList network = info.split(QStringLiteral("\n"));
+        auto ls = network.filter(QStringLiteral("ip4:"));
+        if (ls.size())
         {
-            ui_->ip->setText(network[2]);
-            ui_->port->setText(network[4]);
+            ip = ls[0];
+            ip.replace(QStringLiteral("ip4: "), QString{});
         }
-        ui_->status->showMessage(QStringLiteral("Wi-Fi: %1").arg(info));
+        ls = network.filter(QStringLiteral("ctl:"));
+        if (ls.size())
+        {
+            port = ls[0];
+            port.replace(QStringLiteral("ctl: "), QString{});
+        }
+        ui_->ip->setText(ip);
+        ui_->port->setText(port);
+        ui_->status->showMessage(QStringLiteral("Wi-Fi: %1 (%2)").arg(ip).arg(port));
     });
 }
 
@@ -185,13 +191,22 @@ void Oem::onPowerOff()
 /// tries to reprogram probe to a new wifi network (router)
 void Oem::onWiFi()
 {
-    ble_.requestWifi(QStringLiteral("%1,%2").arg(ui_->ssid->text()).arg(ui_->password->text()));
+    auto ssid = ui_->ssid->text();
+    auto pw = ui_->password->text();
+    if (ssid.isEmpty())
+        return;
+
+    QString req(QStringLiteral("ap: false\n"));
+    req += QStringLiteral("ssid: %1\n").arg(ssid);
+    if (!pw.isEmpty())
+        req += QStringLiteral("password: %1\n").arg(pw);
+    ble_.requestWifi(req);
 }
 
 /// tries to repgram probe to it's own access point wifi
 void Oem::onAp()
 {
-    ble_.requestWifi(QStringLiteral("p2pRequest,auto"));
+    ble_.requestWifi(QStringLiteral("ap: true\nchannel: auto\n"));
 }
 
 /// handles custom events posted by oem api callbacks
@@ -235,13 +250,13 @@ bool Oem::event(QEvent *event)
     else if (event->type() == IMAGE_EVENT)
     {
         auto evt = static_cast<event::Image*>(event);
-        newProcessedImage(evt->data_, evt->width_, evt->height_, evt->bpp_, evt->imu_);
+        newProcessedImage(evt->data_, evt->width_, evt->height_, evt->bpp_, evt->size_, evt->imu_);
         return true;
     }
     else if (event->type() == PRESCAN_EVENT)
     {
-        auto evt = static_cast<event::PreScanImage*>(event);
-        newPrescanImage(evt->data_, evt->width_, evt->height_, evt->bpp_, evt->jpeg_);
+        auto evt = static_cast<event::Image*>(event);
+        newPrescanImage(evt->data_, evt->width_, evt->height_, evt->bpp_, evt->size_);
         return true;
     }
     else if (event->type() == RF_EVENT)
@@ -296,7 +311,6 @@ void Oem::setConnected(int code, int port, const QString& msg)
         ui_->status->showMessage(QStringLiteral("Connected on port: %1").arg(port));
         ui_->connect->setText("Disconnect");
         ui_->update->setEnabled(true);
-        ui_->updateCert->setEnabled(true);
         ui_->load->setEnabled(true);
     }
     else if (code == CONNECT_DISCONNECT)
@@ -308,7 +322,6 @@ void Oem::setConnected(int code, int port, const QString& msg)
         ui_->cert->clear();
         ui_->freeze->setEnabled(false);
         ui_->update->setEnabled(false);
-        ui_->updateCert->setEnabled(false);
         ui_->load->setEnabled(false);
         // disable controls upon disconnect
         imagingState(IMAGING_NOTREADY, false);
@@ -408,11 +421,12 @@ void Oem::setProgress(int progress)
 /// @param[in] img the image data
 /// @param[in] w width of the image
 /// @param[in] h height of the image
-/// @param[in] bpp the bits per pixel (should always be 8)
+/// @param[in] bpp the bits per pixel
+/// @param[in] sz size of the image in bytes
 /// @param[in] imu the imu data if valid
-void Oem::newProcessedImage(const void* img, int w, int h, int bpp, const QQuaternion& imu)
+void Oem::newProcessedImage(const void* img, int w, int h, int bpp, int sz, const QQuaternion& imu)
 {
-    image_->loadImage(img, w, h, bpp);
+    image_->loadImage(img, w, h, bpp, sz);
     if (!imu.isNull())
         render_->update(imu);
 }
@@ -421,13 +435,14 @@ void Oem::newProcessedImage(const void* img, int w, int h, int bpp, const QQuate
 /// @param[in] img the image data
 /// @param[in] w width of the image
 /// @param[in] h height of the image
-/// @param[in] bpp the bits per pixel (should always be 8)
-/// @param[in] jpg flag if the data is jpeg compressed
-void Oem::newPrescanImage(const void* img, int w, int h, int bpp, bool jpg)
+/// @param[in] bpp the bits per pixel
+/// @param[in] sz size of the image in bytes
+void Oem::newPrescanImage(const void* img, int w, int h, int bpp, int sz)
 {
-    Q_UNUSED(bpp)
-    Q_UNUSED(jpg)
-    prescan_ = QImage(reinterpret_cast<const uchar*>(img), w, h, QImage::Format_ARGB32);
+    if (sz == (w * h * (bpp / 8)))
+        prescan_ = QImage(reinterpret_cast<const uchar*>(img), w, h, QImage::Format_ARGB32);
+    else
+        prescan_.loadFromData(static_cast<const uchar*>(img), sz, "JPG");
 }
 
 /// called when new rf data has been sent
@@ -503,7 +518,7 @@ void Oem::onUpdateCert()
         QTextStream stream(&f);
         stream.setCodec("UTF-8");
         auto text = stream.readAll();
-        cusOemCertUpdate(text.toStdString().c_str());
+        cusOemSetCert(text.toStdString().c_str());
     }
 }
 

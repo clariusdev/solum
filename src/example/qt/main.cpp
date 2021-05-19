@@ -33,37 +33,43 @@ int main(int argc, char *argv[])
         // new image callback
         [](const void* img, const ClariusProcessedImageInfo* nfo, int npos, const ClariusPosInfo* pos)
         {
+            int sz = nfo->imageSize;
             // we need to perform a deep copy of the image data since we have to post the event (yes this happens a lot with this api)
-            size_t sz = nfo->width * nfo->height * (nfo->bitsPerPixel / 8);
-            if (_image.size() <  sz)
+            if (_image.size() < static_cast<size_t>(sz))
                 _image.resize(sz);
             memcpy(_image.data(), img, sz);
             QQuaternion imu;
             if (npos && pos)
                 imu = QQuaternion(static_cast<float>(pos[0].qw), static_cast<float>(pos[0].qx), static_cast<float>(pos[0].qy), static_cast<float>(pos[0].qz));
 
-            QApplication::postEvent(Oem::instance(), new event::Image(IMAGE_EVENT, _image.data(), nfo->width, nfo->height, nfo->bitsPerPixel, imu));
+            QApplication::postEvent(Oem::instance(), new event::Image(IMAGE_EVENT, _image.data(), nfo->width, nfo->height, nfo->bitsPerPixel, sz, imu));
         },
         // new raw data callback
         [](const void* data, const ClariusRawImageInfo* nfo, int, const ClariusPosInfo*)
         {
             // we need to perform a deep copy of the image data since we have to post the event (yes this happens a lot with this api)
-            size_t sz = nfo->lines * nfo->samples * (nfo->bitsPerSample / 8);
+            int sz = nfo->lines * nfo->samples * (nfo->bitsPerSample / 8);
             if (nfo->rf)
             {
-                if (_rfData.size() <  sz)
+                if (_rfData.size() < static_cast<size_t>(sz))
                     _rfData.resize(sz);
                 memcpy(_rfData.data(), data, sz);
-                QApplication::postEvent(Oem::instance(), new event::RfImage(_rfData.data(), nfo->lines, nfo->samples, nfo->bitsPerSample, nfo->lateralSize, nfo->axialSize));
+                QApplication::postEvent(Oem::instance(), new event::RfImage(_rfData.data(), nfo->lines, nfo->samples, nfo->bitsPerSample, sz,
+                                                                            nfo->lateralSize, nfo->axialSize));
             }
             else
             {
-                if (_prescanImage.size() <  sz)
+                // image may be a jpeg, adjust the size
+                if (nfo->jpeg)
+                    sz = nfo->jpeg;
+                if (_prescanImage.size() < static_cast<size_t>(sz))
                     _prescanImage.resize(sz);
                 memcpy(_prescanImage.data(), data, sz);
-                QApplication::postEvent(Oem::instance(), new event::PreScanImage(_prescanImage.data(), nfo->lines, nfo->samples, nfo->bitsPerSample, nfo->jpeg));
+                QApplication::postEvent(Oem::instance(), new event::Image(PRESCAN_EVENT, _prescanImage.data(), nfo->lines, nfo->samples,
+                                                                          nfo->bitsPerSample, sz, QQuaternion()));
             }
         },
+        nullptr,
         // imaging state change callback
         [](int ready, int imaging)
         {

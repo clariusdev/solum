@@ -7,7 +7,7 @@ class UltrasoundImage : public QGraphicsView
 public:
     explicit UltrasoundImage(QWidget*);
 
-    void loadImage(const void* img, int w, int h, int bpp);
+    void loadImage(const void* img, int w, int h, int bpp, int sz);
     void setDepth(double d) { depth_ = d; }
     void checkRoi();
 

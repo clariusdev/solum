@@ -22,7 +22,9 @@ UltrasoundImage::UltrasoundImage(QWidget* parent) : QGraphicsView(parent), depth
 /// @param[in] img the new image data
 /// @param[in] w the image width
 /// @param[in] h the image height
-void UltrasoundImage::loadImage(const void* img, int w, int h, int bpp)
+/// @param[in] bpp bits per pixel
+/// @param[in] sz size of image in bytes
+void UltrasoundImage::loadImage(const void* img, int w, int h, int bpp, int sz)
 {
     // check for size match
     if (image_.width() != w || image_.height() != h)
@@ -30,7 +32,12 @@ void UltrasoundImage::loadImage(const void* img, int w, int h, int bpp)
 
     // set the image data
     lock_.lock();
-    memcpy(image_.bits(), img, w * h * (bpp / 8));
+    // check that the size matches the dimensions (uncompressed)
+    if (sz == (w * h * (bpp / 8)))
+        memcpy(image_.bits(), img, w * h * (bpp / 8));
+    // try to load jpeg
+    else
+        image_.loadFromData(static_cast<const uchar*>(img), sz, "JPG");
     lock_.unlock();
 
     // redraw

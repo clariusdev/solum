@@ -33,6 +33,7 @@
 #define PARAM_CGAIN         4   ///< color/power gain in percent
 #define PARAM_CPRF          5   ///< color/power pulse repetition frequency in kHz
 #define PARAM_IMU           6   ///< imu stream enable
+#define PARAM_SYNC          7   ///< sync pulse enable
 
 #define MODE_B              0   ///< b/greyscale imaging mode
 #define MODE_RF             1   ///< rf capture mode (interleaved with b)
@@ -41,6 +42,10 @@
 
 #define ROI_SIZE            0   ///< roi resizing function (adjusts bottom/right)
 #define ROI_MOVE            1   ///< roi move function (adjusts top/left)
+
+#define FORMAT_ARGB         0   ///< processed images are sent in a raw and uncompressed in 32 bit argb
+#define FORMAT_JPEG         1   ///< processed images are sent as a jpeg
+#define FORMAT_PNG          2   ///< processed images are sent as a png
 
 /// tgc structure
 typedef struct _ClariusTgc
@@ -70,13 +75,29 @@ typedef struct _ClariusProcessedImageInfo
 {
     int width;              ///< width of the image in pixels
     int height;             ///< height of the image in pixels
-    int bitsPerPixel;       ///< bits per pixel of the image
+    int bitsPerPixel;       ///< bits per pixel
+    int imageSize;          ///< total size of image
     double micronsPerPixel; ///< microns per pixel (always 1:1 aspect ratio axially/laterally)
     double originX;         ///< image origin in microns in the horizontal axis
     double originY;         ///< image origin in microns in the vertical axis
-    long long int tm;       ///< timestamp of imagesed
+    long long int tm;       ///< timestamp of images
+    int overlay;            ///< flag that the image is an overlay without greyscale (ie. color doppler or strain)
+    int format;             ///< flag specifying the format of the image (see format definitions above)
 
 } ClariusProcessedImageInfo;
+
+/// spectral image information supplied with each block
+typedef struct _ClariusSpectralImageInfo
+{
+    int lines;                  ///< number of lines in the block
+    int samples;                ///< number of samples per line
+    int bitsPerSample;          ///< bits per sample
+    double period;              ///< line acquisition period in seconds
+    double micronsPerSample;    ///< microns per pixel/sample in an m spectrum
+    double velocityPerSample;   ///< velocity in m/s per pixel/sample in a pw spectrum
+    int pw;                     ///< flag specifying the data is pw and not m
+
+} ClariusSpectralImageInfo;
 
 /// status information
 typedef struct _ClariusStatusInfo
@@ -148,6 +169,10 @@ typedef void (*ClariusNewRawImageFn)(const void* newImage, const ClariusRawImage
 /// @param[in] npos number of positional information data tagged with the image
 /// @param[in] pos the positional information data tagged with the image
 typedef void (*ClariusNewProcessedImageFn)(const void* newImage, const ClariusProcessedImageInfo* nfo, int npos, const ClariusPosInfo* pos);
+/// new spectral image callback function
+/// @param[in] newImage pointer to the new greyscale image information
+/// @param[in] nfo image information associated with the image data
+typedef void (*ClariusNewSpectralImageFn)(const void* newImage, const ClariusSpectralImageInfo* nfo);
 /// imaging callback function
 /// @param[in] ready the ready code, see IMAGING_ defintions above
 /// @param[in] imaging 1 = running , 0 = stopped
