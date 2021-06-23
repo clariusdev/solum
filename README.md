@@ -16,13 +16,13 @@ The OEM API allows third party applications to be developed for desktop systems 
 
 # Architecture
 
-The OEM API communicates with the _Clarius Scanner_ directly, and makes use of Bluetooth and TCP technologies to create and maintain the wireless connection to the scanner. The Bluetooth communications is not built directly into the API and thus must be written by the developer using the library/platform of their choice. For demonstration, the Qt 5 Bluetooth module is used in the example provided in the repository - while this is cross-platform, it may not be the primary choice for all API developers.
+The OEM API communicates with the _Clarius Scanner_ directly, and makes use of Bluetooth and TCP/UDP technologies to create and maintain the wireless connection to the scanner. The Bluetooth communications is not built directly into the API and thus must be written by the developer using the library/platform of their choice. For demonstration, the Qt 5 Bluetooth module is used in the example provided in the repository - while this is cross-platform, it may not be the primary choice for all API developers.
 
                                       +-----------------------+
                                       |  Desktop Application  |
                                       |                       |
     +---------+                       |    +-------------+    |
-    |         |   Images (via TCP)    |    |             |    |
+    |         |   Images (via UDP)    |    |             |    |
     |  Probe  +--------------------------->+   OEM API   |    |
     |         |   Control (via TCP)   |    |             |    |
     |         +<-------------------------->+             |    |
