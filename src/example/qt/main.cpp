@@ -3,6 +3,7 @@
 #include <oem/oem.h>
 #include <iostream>
 
+static std::unique_ptr<Oem> _oem;
 static std::vector<char> _image;
 static std::vector<char> _prescanImage;
 static std::vector<char> _rfData;
@@ -18,17 +19,17 @@ int main(int argc, char *argv[])
         // connection callback
         [](int code, int port, const char* msg)
         {
-            QApplication::postEvent(Oem::instance(), new event::Connection(code, port, QString::fromLatin1(msg)));
+            QApplication::postEvent(_oem.get(), new event::Connection(code, port, QString::fromLatin1(msg)));
         },
         // cert callback
         [](int daysValid)
         {
-            QApplication::postEvent(Oem::instance(), new event::Cert(daysValid));
+            QApplication::postEvent(_oem.get(), new event::Cert(daysValid));
         },
         // power down callback
         [](int code, int tm)
         {
-            QApplication::postEvent(Oem::instance(), new event::PowerDown(code, tm));
+            QApplication::postEvent(_oem.get(), new event::PowerDown(code, tm));
         },
         // new image callback
         [](const void* img, const ClariusProcessedImageInfo* nfo, int npos, const ClariusPosInfo* pos)
@@ -42,7 +43,7 @@ int main(int argc, char *argv[])
             if (npos && pos)
                 imu = QQuaternion(static_cast<float>(pos[0].qw), static_cast<float>(pos[0].qx), static_cast<float>(pos[0].qy), static_cast<float>(pos[0].qz));
 
-            QApplication::postEvent(Oem::instance(), new event::Image(IMAGE_EVENT, _image.data(), nfo->width, nfo->height, nfo->bitsPerPixel, sz, imu));
+            QApplication::postEvent(_oem.get(), new event::Image(IMAGE_EVENT, _image.data(), nfo->width, nfo->height, nfo->bitsPerPixel, sz, imu));
         },
         // new raw data callback
         [](const void* data, const ClariusRawImageInfo* nfo, int, const ClariusPosInfo*)
@@ -54,7 +55,7 @@ int main(int argc, char *argv[])
                 if (_rfData.size() < static_cast<size_t>(sz))
                     _rfData.resize(sz);
                 memcpy(_rfData.data(), data, sz);
-                QApplication::postEvent(Oem::instance(), new event::RfImage(_rfData.data(), nfo->lines, nfo->samples, nfo->bitsPerSample, sz,
+                QApplication::postEvent(_oem.get(), new event::RfImage(_rfData.data(), nfo->lines, nfo->samples, nfo->bitsPerSample, sz,
                                                                             nfo->lateralSize, nfo->axialSize));
             }
             else
@@ -65,7 +66,7 @@ int main(int argc, char *argv[])
                 if (_prescanImage.size() < static_cast<size_t>(sz))
                     _prescanImage.resize(sz);
                 memcpy(_prescanImage.data(), data, sz);
-                QApplication::postEvent(Oem::instance(), new event::Image(PRESCAN_EVENT, _prescanImage.data(), nfo->lines, nfo->samples,
+                QApplication::postEvent(_oem.get(), new event::Image(PRESCAN_EVENT, _prescanImage.data(), nfo->lines, nfo->samples,
                                                                           nfo->bitsPerSample, sz, QQuaternion()));
             }
         },
@@ -74,19 +75,19 @@ int main(int argc, char *argv[])
         [](int ready, int imaging)
         {
             // post event here, as the gui (statusbar) will be updated directly, and it needs to come from the application thread
-            QApplication::postEvent(Oem::instance(), new event::Imaging(ready, imaging ? true : false));
+            QApplication::postEvent(_oem.get(), new event::Imaging(ready, imaging ? true : false));
         },
         // button press callback
         [](int btn, int clicks)
         {
             // post event here, as the gui (statusbar) will be updated directly, and it needs to come from the application thread
-            QApplication::postEvent(Oem::instance(), new event::Button(btn, clicks));
+            QApplication::postEvent(_oem.get(), new event::Button(btn, clicks));
         },
         // error message callback
         [](const char* err)
         {
             // post event here, as the gui (statusbar) will be updated directly, and it needs to come from the application thread
-            QApplication::postEvent(Oem::instance(), new event::Error(err));
+            QApplication::postEvent(_oem.get(), new event::Error(err));
         },
         width, height) != 0)
     {
@@ -94,6 +95,7 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    Oem::instance()->show();
+    _oem = std::make_unique<Oem>();
+    _oem->show();
     return a.exec();
 }

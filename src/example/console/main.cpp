@@ -2,6 +2,8 @@
 #include <string.h>
 #include <string>
 #include <iostream>
+#include <fstream>
+#include <sstream>
 #include <atomic>
 #include <thread>
 
@@ -187,6 +189,7 @@ void processEventLoop(std::atomic_bool& quit)
 {
     std::string cmd, buf1, buf2;
     ClariusStatusInfo stats;
+    ClariusProbeInfo probe;
     double v;
     int m;
 
@@ -260,7 +263,33 @@ void processEventLoop(std::atomic_bool& quit)
         else if (cmd == "G" || cmd == "g")
         {
             if (cusOemStatusInfo(&stats) == 0)
-                PRINT << "battery: " << stats.battery << "%, temperature: " << stats.temperature << "%";
+                PRINT << "battery: " << stats.battery << "%, temperature: " << stats.temperature << "%, fr: " << stats.frameRate << "Hz";
+            else
+                ERROR << "error requesting status";
+        }
+        else if (cmd == "I" || cmd == "i")
+        {
+            if (cusOemProbeInfo(&probe) == 0)
+                PRINT << "version: " << probe.version << ", elements: " << probe.elements
+                      << ", pitch: " << probe.pitch << ", radius: " << probe.radius;
+            else
+                ERROR << "error requesting probe info";
+        }
+        else if (cmd == "X" || cmd == "x")
+        {
+            PRINT << "enter certificate path: ";
+            std::getline(std::cin, buf1);
+
+            std::ifstream fs(buf1);
+            if (!fs.is_open())
+                ERROR << "error loading certificate file";
+            else
+            {
+                std::stringstream ss;
+                ss << fs.rdbuf();
+                if (cusOemSetCert(ss.str().c_str()) < 0)
+                    ERROR << "error sending certificate";
+            }
         }
         else if (cmd == "P" || cmd == "p")
         {
@@ -347,11 +376,19 @@ void processEventLoop(std::atomic_bool& quit)
         else
         {
             PRINT << "valid commands: [q: quit, h: help]";
-            PRINT << "    connection: [c: connect, d: disconnect, u: software update, g: get status]";
+            PRINT << "    connection: [c: connect, d: disconnect]";
+            PRINT << "        manage: [x: load cert, u: software update, g: get status, i: get probe info]";
             PRINT << "      workflow: [p: list probes, a: list applications, l: load workflow]";
             PRINT << "       imaging: [r: run imaging, s: stop imaging ]";
             PRINT << "    parameters: [f: fetch parameter, v: set parameter value ]";
             PRINT << "  imaging mode: [n: fetch mode, m: set mode ]";
+            PRINT << " ";
+            PRINT << " typical usage: - power up and fetch tcp information via ble (not demonstrated here)";
+            PRINT << "                - connect over wifi/tcp";
+            PRINT << "                - load certificate";
+            PRINT << "                - check for software update";
+            PRINT << "                - load workflow";
+            PRINT << "                - image, get status, adjust parameters";
         }
         PRINT << "enter command: ";
     }

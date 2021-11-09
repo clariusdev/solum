@@ -11,6 +11,9 @@
 #define IMAGING_NOTREADY    0   ///< imaging is not ready, probe and application need to be loaded
 #define IMAGING_READY       1   ///< imaging is ready
 #define IMAGING_CERTEXPIRED 2   ///< cannot image due to expired certificate
+#define IMAGING_POORWIFI    3   ///< stopped imaging due to poor wifi
+#define IMAGING_NOCONTACT   4   ///< stopped imaging due to no patient contact detected
+#define IMAGING_CHARGING    5   ///< probe started running or stopped due to change in charging status
 
 #define POWERDOWN_IDLE      0   ///< probe was idle from imaging for extended period
 #define POWERDOWN_TOOHOT    1   ///< probe got too hot
@@ -35,7 +38,7 @@
 #define PARAM_IMU           6   ///< imu stream enable
 #define PARAM_SYNC          7   ///< sync pulse enable
 
-#define MODE_B              0   ///< b/greyscale imaging mode
+#define MODE_B              0   ///< b/grayscale imaging mode
 #define MODE_RF             1   ///< rf capture mode (interleaved with b)
 #define MODE_CFI            2   ///< color flow imaging mode
 #define MODE_PDI            3   ///< power doppler imaging mode
@@ -46,6 +49,10 @@
 #define FORMAT_ARGB         0   ///< processed images are sent in a raw and uncompressed in 32 bit argb
 #define FORMAT_JPEG         1   ///< processed images are sent as a jpeg
 #define FORMAT_PNG          2   ///< processed images are sent as a png
+
+#define BUTTON_FREEZE       0   ///< button setting to freeze imaging on probe
+#define BUTTON_USER         1   ///< button setting to send interrupt through api
+#define BUTTON_DISABLED     2   ///< button setting to disable handling
 
 /// tgc structure
 typedef struct _ClariusTgc
@@ -81,7 +88,7 @@ typedef struct _ClariusProcessedImageInfo
     double originX;         ///< image origin in microns in the horizontal axis
     double originY;         ///< image origin in microns in the vertical axis
     long long int tm;       ///< timestamp of images
-    int overlay;            ///< flag that the image is an overlay without greyscale (ie. color doppler or strain)
+    int overlay;            ///< flag that the image is an overlay without grayscale (ie. color doppler or strain)
     int format;             ///< flag specifying the format of the image (see format definitions above)
 
 } ClariusProcessedImageInfo;
@@ -117,6 +124,18 @@ typedef struct _ClariusProbeInfo
     int radius;     ///< radius in mm
 
 } ClariusProbeInfo;
+
+/// probe settings
+typedef struct _ClariusProbeSettings
+{
+    int contactDetection;   ///< the number of seconds to enage a lower frame rate when no contact is detected. valid range is 0 - 30, where 0 turns the function off
+    int autoFreeze;         ///< the number of seconds to enage freezing imaging after no contact mode has been engaged. valid range is 0 - 120, where 0 turns the function off
+    int keepAwake;          ///< the number of minutes to power down the device once imaging has been frozen. valid range is 0 - 120, where 0 turns the function off
+    int wifiOptimization;   ///< flag allowing the probe to automatically freeze when poor wifi connectivity is detected
+    int buttonUp;           ///< button up setting (see button settings above)
+    int buttonDown;         ///< button down setting (see button settings above)
+
+} ClariusProbeSettings;
 
 /// positional data information structure
 typedef struct _ClariusPosInfo
@@ -158,19 +177,19 @@ typedef void (*ClariusPowerDownFn)(int ret, int tm);
 /// @param[in] ret the return code, see SWUPDATE_ definitions above
 typedef void (*ClariusSwUpdateFn)(int ret);
 /// new data callback function
-/// @param[in] newImage pointer to the new greyscale image information
+/// @param[in] newImage pointer to the new grayscale image information
 /// @param[in] nfo image information associated with the image data
 /// @param[in] npos number of positional information data tagged with the image
 /// @param[in] pos the positional information data tagged with the image
 typedef void (*ClariusNewRawImageFn)(const void* newImage, const ClariusRawImageInfo* nfo, int npos, const ClariusPosInfo* pos);
 /// new image callback function
-/// @param[in] newImage pointer to the new greyscale image information
+/// @param[in] newImage pointer to the new grayscale image information
 /// @param[in] nfo image information associated with the image data
 /// @param[in] npos number of positional information data tagged with the image
 /// @param[in] pos the positional information data tagged with the image
 typedef void (*ClariusNewProcessedImageFn)(const void* newImage, const ClariusProcessedImageInfo* nfo, int npos, const ClariusPosInfo* pos);
 /// new spectral image callback function
-/// @param[in] newImage pointer to the new greyscale image information
+/// @param[in] newImage pointer to the new grayscale image information
 /// @param[in] nfo image information associated with the image data
 typedef void (*ClariusNewSpectralImageFn)(const void* newImage, const ClariusSpectralImageInfo* nfo);
 /// imaging callback function

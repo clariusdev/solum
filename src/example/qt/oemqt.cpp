@@ -6,21 +6,13 @@
 
 #define IMU_TAB     3
 
-std::unique_ptr<Oem> Oem::oem_;
-
-/// retrieves the oem window instance
-/// @return the oem window instance
-Oem* Oem::instance()
-{
-    if (!oem_)
-        oem_ = std::make_unique<Oem>();
-    return oem_.get();
-}
+static Oem* _me;
 
 /// default constructor
 /// @param[in] parent the parent object
 Oem::Oem(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_(false), ui_(new Ui::Oem)
 {
+    _me = this;
     ui_->setupUi(this);
     setWindowIcon(QIcon(":/res/logo.png"));
     image_ = new UltrasoundImage(this);
@@ -45,7 +37,7 @@ Oem::Oem(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_(fal
     // load probes list
     cusOemProbes([](const char* list, int)
     {
-        QApplication::postEvent(Oem::instance(), new event::List(list, true));
+        QApplication::postEvent(_me, new event::List(list, true));
     });
 
     ui_->modes->blockSignals(true);
@@ -494,12 +486,12 @@ void Oem::onUpdate()
         // software update result
         [](int code)
         {
-            QApplication::postEvent(Oem::instance(), new event::SwUpdate(code));
+            QApplication::postEvent(_me, new event::SwUpdate(code));
         },
         // download progress
         [](int progress)
         {
-            QApplication::postEvent(Oem::instance(), new event::Progress(progress));
+            QApplication::postEvent(_me, new event::Progress(progress));
         }) < 0)
         ui_->status->showMessage(QStringLiteral("Error requesting software update"));
 }
@@ -540,7 +532,7 @@ void Oem::onProbeSelected(const QString &probe)
     {
         cusOemApplications(probe.toStdString().c_str(), [](const char* list, int)
         {
-            QApplication::postEvent(Oem::instance(), new event::List(list, false));
+            QApplication::postEvent(_me, new event::List(list, false));
         });
     }
 }

@@ -117,7 +117,7 @@ extern "C"
     OEM_EXPORT int cusOemSetOutputSize(int w, int h);
 
     /// sets a flag to separate overlays into separate images, for example if color/power Doppler or strain
-    /// imaging is enabled, two callbacks will be generated, one with the greyscale frame, and the other with the overlay
+    /// imaging is enabled, two callbacks will be generated, one with the grayscale frame, and the other with the overlay
     /// @param[in] en the enable flag for separating overlays
     /// @return success of the call
     /// @retval 0 the flag was successfully programmed
@@ -130,6 +130,13 @@ extern "C"
     /// @retval 0 run request was successfully made
     /// @retval -1 the run request could not be made
     OEM_EXPORT int cusOemRun(int run);
+
+    /// sets the internal probe settings to be applied upon a connection or when an existing connection exists
+    /// @param[in] settings the structure containing the probe settings
+    /// @return success of the call
+    /// @retval 0 the settings were successfully programmed
+    /// @retval -1 the settings could not be programmed
+    OEM_EXPORT int cusOemSetProbeSettings(const ClariusProbeSettings* settings);
 
     /// sets an imaging parameter
     /// @param[in] param the parameter to set

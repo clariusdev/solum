@@ -189,8 +189,6 @@ public:
     explicit Oem(QWidget *parent = nullptr);
     ~Oem() override;
 
-    static Oem* instance();
-
 protected:
     virtual bool event(QEvent *event) override;
     virtual void closeEvent(QCloseEvent *event) override;
@@ -247,5 +245,4 @@ private:
     QImage prescan_;            ///< pre-scan converted image
     QTimer timer_;              ///< timer for updating probe status
     Ble ble_;                   ///< bluetooth module
-    static std::unique_ptr<Oem> oem_;
 };

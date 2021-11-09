@@ -10,7 +10,7 @@ LIBPATH = $$PWD/../../lib
 INCLUDEPATH += $$PWD/../../include
 LIBS += -L$$LIBPATH/ -loem
 
-SOURCES += main.cpp oemqt.cpp ble.cpp display.cpp 3d.cpp pch.cpp
+SOURCES += main.cpp oemqt.cpp ble.cpp display.cpp 3d.cpp
 HEADERS += oemqt.h ble.h display.h 3d.h
 FORMS += oemqt.ui
 
