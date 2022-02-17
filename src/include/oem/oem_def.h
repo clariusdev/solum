@@ -37,11 +37,14 @@
 #define PARAM_CPRF          5   ///< color/power pulse repetition frequency in kHz
 #define PARAM_IMU           6   ///< imu stream enable
 #define PARAM_SYNC          7   ///< sync pulse enable
+#define PARAM_NESIDE        8   ///< needle enhance side
 
 #define MODE_B              0   ///< b/grayscale imaging mode
 #define MODE_RF             1   ///< rf capture mode (interleaved with b)
 #define MODE_CFI            2   ///< color flow imaging mode
 #define MODE_PDI            3   ///< power doppler imaging mode
+#define MODE_SC             4   ///< spatial compounding mode (available in some workflows)
+#define MODE_NEEDLE         5   ///< needle enhance mode (available on linear probes)
 
 #define ROI_SIZE            0   ///< roi resizing function (adjusts bottom/right)
 #define ROI_MOVE            1   ///< roi move function (adjusts top/left)

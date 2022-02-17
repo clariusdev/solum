@@ -45,6 +45,8 @@ Oem::Oem(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_(fal
     ui_->modes->addItem(QStringLiteral("RF"));
     ui_->modes->addItem(QStringLiteral("CFI"));
     ui_->modes->addItem(QStringLiteral("PDI"));
+    ui_->modes->addItem(QStringLiteral("SC"));
+    ui_->modes->addItem(QStringLiteral("NE"));
     ui_->modes->blockSignals(false);
 
     // connect status timer
