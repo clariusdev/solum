@@ -50,13 +50,13 @@ Once ready, the device powered status will be published through the __Power Publ
 
 To subscribe to the Power Published characteristic, one can write 0100 to the characteristic's Client Characteristic Configuration Descriptor (CCCD), allowing the scanner to send out notifications to the connected program.
 
-### Power Request Characteristic:
+### Power Request Characteristic
 To power on or off the device, the __Power Request__ characteristic (UUID 0x8C853B6A-2297-44C1-8277-73627C8D2ABE) can be written to. Writing 0x00 to the characteristic will power the device off, and writing 0x01 will power the device on.
 
 ## Wi-Fi Information Service
 The __WIS__ (UUID 0xF9EB3FAE-947A-4E5B-AB7C-C799E91ED780) is a custom service built by Clarius to read and manage the Wi-Fi network once the scanner is powered up and ready. A scanner is typically in a ready state when the LED has stopped flashing and is solid blue.
 
-### Wi-Fi Published Characteristic:
+### Wi-Fi Published Characteristic
 Once ready, the current Wi-Fi network information will be published through the __Wi-Fi Published__ characteristic (UUID 0xF9EB3FAE-947A-4E5B-AB7C-C799E91ED781), and can be read at any point after a BLE connection, as well as subscribed to, and thus a notification will take place when the information has changed. If the service reads back "N/A" it typically means the scanners has not finished booting to a ready state.
 
 To subscribe to the Wi-Fi Published characteristic, one can write 0100 to the characteristic's Client Characteristic Configuration Descriptor (CCCD), allowing the scanner to send out notifications to the connected program.
@@ -75,15 +75,15 @@ ap: true
 ssid: DIRECT-<probe serial number>
 pw: <probe network password>
 ip4: 192.168.1.1
-ctl: 12345
-cast: 67890
-avail: available
-channel: 123
+ctl: <control port>
+cast: <casting port>
+avail: <'available' if available for control, 'listen' if available for casting, 'not available' if not available for any connection>
+channel: <wifi channel>
 mac: <mac address>
 ```
 Note that the password will only be sent if the network used is the scanner's own Access Point (AP). If connected to a router, the password will not be sent as it is assumed that the credentials are managed elsewhere.
 
-### Wi-Fi Request Characteristic:
+### Wi-Fi Request Characteristic
 To change network configurations, the __Wi-Fi Request__ characteristic (UUID 0xF9EB3FAE-947A-4E5B-AB7C-C799E91ED782) can be written to. Note that the probe must be in a ready state before the request will have any effect.
 
 To put the scanner on it's internal access point, simply send:
