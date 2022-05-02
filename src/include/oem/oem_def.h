@@ -53,9 +53,9 @@
 #define FORMAT_JPEG         1   ///< processed images are sent as a jpeg
 #define FORMAT_PNG          2   ///< processed images are sent as a png
 
-#define BUTTON_FREEZE       0   ///< button setting to freeze imaging on probe
-#define BUTTON_USER         1   ///< button setting to send interrupt through api
-#define BUTTON_DISABLED     2   ///< button setting to disable handling
+#define BUTTON_DISABLED     0   ///< button setting to disable handling
+#define BUTTON_FREEZE       1   ///< button setting to freeze imaging on probe
+#define BUTTON_USER         2   ///< button setting to send interrupt through api
 
 /// tgc structure
 typedef struct _ClariusTgc
