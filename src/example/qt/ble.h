@@ -16,6 +16,10 @@ public:
     bool disconnectFromProbe();
     bool power(bool en);
     bool requestWifi(const QString& info);
+    bool ring();
+
+private:
+    bool ping();
 
 private slots:
     void searchComplete();
@@ -36,4 +40,6 @@ private:
     std::unique_ptr<QLowEnergyController> probe_;
     std::unique_ptr<QLowEnergyService> power_;
     std::unique_ptr<QLowEnergyService> wifi_;
+    std::unique_ptr<QLowEnergyService> ias_;
+    QTimer ping_;
 };

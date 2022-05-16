@@ -1,73 +1,149 @@
 #pragma once
 
-#define CONNECT_SUCCESS     0   ///< connected to probe
-#define CONNECT_DISCONNECT  1   ///< disconnected from probe
-#define CONNECT_FAILED      2   ///< failed to connect to probe
-#define CONNECT_SWUPDATE    3   ///< software update required
-#define CONNECT_ERROR       -1  ///< connection call error
-
 #define CERT_INVALID        -1  ///< certificate is not valid
 
-#define IMAGING_NOTREADY    0   ///< imaging is not ready, probe and application need to be loaded
-#define IMAGING_READY       1   ///< imaging is ready
-#define IMAGING_CERTEXPIRED 2   ///< cannot image due to expired certificate
-#define IMAGING_POORWIFI    3   ///< stopped imaging due to poor wifi
-#define IMAGING_NOCONTACT   4   ///< stopped imaging due to no patient contact detected
-#define IMAGING_CHARGING    5   ///< probe started running or stopped due to change in charging status
+/// image formats
+typedef enum _CusImageFormat
+{
+    Uncompressed,   ///< processed images are sent in a raw and uncompressed in 32 bit argb
+    Jpeg,           ///< processed images are sent as a jpeg
+    Png             ///< processed images are sent as a png
 
-#define POWERDOWN_IDLE      0   ///< probe was idle from imaging for extended period
-#define POWERDOWN_TOOHOT    1   ///< probe got too hot
-#define POWERDOWN_BATTERY   2   ///< low battery
-#define POWERDOWN_BUTTON    3   ///< user held button to shut down probe
+} CusImageFormat;
 
-#define SWUPDATE_SUCCESS    0   ///< successful update
-#define SWUPDATE_CURRENT    1   ///< software is current
-#define SWUPDATE_BATTERY    2   ///< battery is too low to perform update
-#define SWUPDATE_CORRUPT    3   ///< probe file system may be corrupt
-#define SWUPDATE_ERROR      -1  ///< software update error
+/// tcp connection results
+typedef enum _CusConnection
+{
+    ConnectionError = -1,   ///< connection call error
+    ProbeConnected = 0,     ///< connected to probe
+    ProbeDisconnected,      ///< disconnected from probe
+    ConnectionFailed,       ///< failed to connect to probe
+    SwUpdateRequired,       ///< software update required
 
-#define BUTTON_UP           0   ///< button up identifier
-#define BUTTON_DOWN         1   ///< button down identifier
+} CusConnection;
 
-#define PARAM_DEPTH         0   ///< imaging depth in cm
-#define PARAM_GAIN          1   ///< gain in percent
-#define PARAM_DYNRNG        2   ///< dynamic range in percent
-#define PARAM_AUTOGAIN      3   ///< auto gain enable
-#define PARAM_CGAIN         4   ///< color/power gain in percent
-#define PARAM_CPRF          5   ///< color/power pulse repetition frequency in kHz
-#define PARAM_IMU           6   ///< imu stream enable
-#define PARAM_SYNC          7   ///< sync pulse enable
-#define PARAM_NESIDE        8   ///< needle enhance side
+/// imaging state
+typedef enum _CusImagingState
+{
+    ImagingNotReady,    ///< imaging is not ready, probe and application need to be loaded
+    ImagingReady,       ///< imaging is ready
+    CertExpired,        ///< cannot image due to expired certificate
+    PoorWifi,           ///< stopped imaging due to poor wifi
+    NoContact,          ///< stopped imaging due to no patient contact detected
+    ChargingChanged     ///< probe started running or stopped due to change in charging status
 
-#define MODE_B              0   ///< b/grayscale imaging mode
-#define MODE_RF             1   ///< rf capture mode (interleaved with b)
-#define MODE_CFI            2   ///< color flow imaging mode
-#define MODE_PDI            3   ///< power doppler imaging mode
-#define MODE_SC             4   ///< spatial compounding mode (available in some workflows)
-#define MODE_NEEDLE         5   ///< needle enhance mode (available on linear probes)
+} CusImagingState;
 
-#define ROI_SIZE            0   ///< roi resizing function (adjusts bottom/right)
-#define ROI_MOVE            1   ///< roi move function (adjusts top/left)
+/// power down reason
+typedef enum _CusPowerDown
+{
+    Idle,       ///< probe was idle from imaging for extended period
+    TooHot,     ///< probe got too hot
+    LowBattery, ///< low battery
+    ButtonOff   ///< user held button to shut down probe
 
-#define FORMAT_ARGB         0   ///< processed images are sent in a raw and uncompressed in 32 bit argb
-#define FORMAT_JPEG         1   ///< processed images are sent as a jpeg
-#define FORMAT_PNG          2   ///< processed images are sent as a png
+} CusPowerDown;
 
-#define BUTTON_DISABLED     0   ///< button setting to disable handling
-#define BUTTON_FREEZE       1   ///< button setting to freeze imaging on probe
-#define BUTTON_USER         2   ///< button setting to send interrupt through api
+/// software update results
+typedef enum _CusSwUpdate
+{
+    SwUpdateError = -1,     ///< software update error
+    SwUpdateSuccess = 0,    ///< successful update
+    SwUpdateCurrent,        ///< software is current
+    SwUpdateBattery,        ///< battery is too low to perform update
+    SwUpdateCorrupt,        ///< probe file system may be corrupt
+
+} CusSwUpdate;
+
+/// imaging parameters
+typedef enum _CusParam
+{
+    ImageDepth,     ///< imaging depth in cm
+    Gain,           ///< gain in percent
+    AutoGain,       ///< auto gain enable
+    DynamicRange,   ///< dynamic range in percent
+    Chroma,         ///< chroma map enable
+    Trapezoidal,    ///< trapezoidal imaging enable (available on linear probes)
+    ColorGain,      ///< color/power gain in percent
+    ColorPrf,       ///< color/power pulse repetition frequency in kHz
+    ColorSteer,     ///< color/power steering angle in degrees
+    ColorInvert,    ///< color map invert
+    NeedleSide,     ///< needle enhance side
+    RawBuffer,      ///< raw data buffering enable
+    RfStreaming,    ///< rf streaming enable
+    ImuStreaming,   ///< imu streaming enable
+    SyncPulse,      ///< sync pulse enable
+    EcoMode         ///< eco mode enable
+
+} CusParam;
+
+/// imaging modes
+typedef enum _CusMode
+{
+    BMode,          ///< b/grayscale imaging mode
+    Compounding,    ///< spatial compounding mode (available in most workflows)
+    ColorMode,      ///< color flow imaging mode (available in most workflows)
+    PowerMode,      ///< power doppler imaging mode (available in most workflows)
+    NeedleEnhance,  ///< needle enhance mode (available on linear probes)
+    RfMode,         ///< rf capture mode (interleaved with b)
+
+} CusMode;
+
+/// fan status
+typedef enum _CusFanStatus
+{
+    NoFan,          ///< no fan detected
+    FanDetected,    ///< fan detected
+    FanRunning,     ///< fan running
+    FanReversed     ///< fan placed in reversed orientation
+
+} CusFanStatus;
+
+/// charging status
+typedef enum _CusChargingStatus
+{
+    NotCharging,    ///< probe is not charging
+    Charging        ///< probe is charging
+
+} CusChargingStatus;
+
+/// physical buttons
+typedef enum _CusButton
+{
+    ButtonUp,       ///< up button
+    ButtonDown,     ///< down button
+    ButtonHandle    ///< handle button (custom probes only)
+
+} CusButton;
+
+/// button settings
+typedef enum _CusButtonSetting
+{
+    ButtonDisabled, ///< disable handling
+    ButtonFreeze,   ///< freeze/unfreeze image
+    ButtonUser      ///< send interrupt through api
+
+} CusButtonSetting;
+
+/// roi functions
+typedef enum _CusRoi
+{
+    SizeRoi,    ///< roi resizing function (adjusts bottom/right)
+    MoveRoi     ///< roi move function (adjusts top/left)
+
+} CusRoi;
 
 /// tgc structure
-typedef struct _ClariusTgc
+typedef struct _CusTgc
 {
     double top;     ///< top tgc in dB
     double mid;     ///< mid tgc in dB
     double bottom;  ///< bottom tgc in dB
 
-} ClariusTgc;
+} CusTgc;
 
 /// raw image information supplied with each frame
-typedef struct _ClariusRawImageInfo
+typedef struct _CusRawImageInfo
 {
     int lines;              ///< number of ultrasound lines in the image
     int samples;            ///< number of samples per line in the image
@@ -78,26 +154,26 @@ typedef struct _ClariusRawImageInfo
     int jpeg;               ///< size of the jpeg image, 0 if not a jpeg compressed image
     int rf;                 ///< flag specifying data is rf and not envelope
 
-} ClariusRawImageInfo;
+} CusRawImageInfo;
 
 /// processed image information supplied with each frame
-typedef struct _ClariusProcessedImageInfo
+typedef struct _CusProcessedImageInfo
 {
-    int width;              ///< width of the image in pixels
-    int height;             ///< height of the image in pixels
-    int bitsPerPixel;       ///< bits per pixel
-    int imageSize;          ///< total size of image
-    double micronsPerPixel; ///< microns per pixel (always 1:1 aspect ratio axially/laterally)
-    double originX;         ///< image origin in microns in the horizontal axis
-    double originY;         ///< image origin in microns in the vertical axis
-    long long int tm;       ///< timestamp of images
-    int overlay;            ///< flag that the image is an overlay without grayscale (ie. color doppler or strain)
-    int format;             ///< flag specifying the format of the image (see format definitions above)
+    int width;                  ///< width of the image in pixels
+    int height;                 ///< height of the image in pixels
+    int bitsPerPixel;           ///< bits per pixel
+    int imageSize;              ///< total size of image
+    double micronsPerPixel;     ///< microns per pixel (always 1:1 aspect ratio axially/laterally)
+    double originX;             ///< image origin in microns in the horizontal axis
+    double originY;             ///< image origin in microns in the vertical axis
+    long long int tm;           ///< timestamp of images
+    int overlay;                ///< flag that the image is an overlay without grayscale (ie. color doppler or strain)
+    CusImageFormat format;      ///< flag specifying the format of the image
 
-} ClariusProcessedImageInfo;
+} CusProcessedImageInfo;
 
 /// spectral image information supplied with each block
-typedef struct _ClariusSpectralImageInfo
+typedef struct _CusSpectralImageInfo
 {
     int lines;                  ///< number of lines in the block
     int samples;                ///< number of samples per line
@@ -107,41 +183,43 @@ typedef struct _ClariusSpectralImageInfo
     double velocityPerSample;   ///< velocity in m/s per pixel/sample in a pw spectrum
     int pw;                     ///< flag specifying the data is pw and not m
 
-} ClariusSpectralImageInfo;
+} CusSpectralImageInfo;
 
 /// status information
-typedef struct _ClariusStatusInfo
+typedef struct _CusStatusInfo
 {
-    int battery;        ///< battery level in percent
-    int temperature;    ///< temperature level in percent
-    double frameRate;   ///< current imaging frame rate
+    int battery;                ///< battery level in percent
+    int temperature;            ///< temperature level in percent
+    double frameRate;           ///< current imaging frame rate
+    CusFanStatus fan;           ///< fan status
+    CusChargingStatus charger;  ///< charger status
 
-} ClariusStatusInfo;
+} CusStatusInfo;
 
 /// probe information
-typedef struct _ClariusProbeInfo
+typedef struct _CusProbeInfo
 {
-    int version;    ///< version (1 = Clarius 1st Generation, 2 = Clarius HD)
+    int version;    ///< version (1 = clarius 1st Generation, 2 = clarius HD, 3 = clarius HD3)
     int elements;   ///< # of probe elements
     int pitch;      ///< element pitch
     int radius;     ///< radius in mm
 
-} ClariusProbeInfo;
+} CusProbeInfo;
 
 /// probe settings
-typedef struct _ClariusProbeSettings
+typedef struct _CusProbeSettings
 {
     int contactDetection;   ///< the number of seconds to enage a lower frame rate when no contact is detected. valid range is 0 - 30, where 0 turns the function off
     int autoFreeze;         ///< the number of seconds to enage freezing imaging after no contact mode has been engaged. valid range is 0 - 120, where 0 turns the function off
     int keepAwake;          ///< the number of minutes to power down the device once imaging has been frozen. valid range is 0 - 120, where 0 turns the function off
     int wifiOptimization;   ///< flag allowing the probe to automatically freeze when poor wifi connectivity is detected
-    int buttonUp;           ///< button up setting (see button settings above)
-    int buttonDown;         ///< button down setting (see button settings above)
+    CusButtonSetting up;    ///< button up setting
+    CusButtonSetting down;  ///< button down setting
 
-} ClariusProbeSettings;
+} CusProbeSettings;
 
 /// positional data information structure
-typedef struct _ClariusPosInfo
+typedef struct _CusPosInfo
 {
     long long int tm;   ///< timestamp in nanoseconds
     double gx;          ///< gyroscope x; angular velocity is given in radians per second (rps)
@@ -158,54 +236,57 @@ typedef struct _ClariusPosInfo
     double qy;          ///< y component (imaginary) of the orientation quaternion
     double qz;          ///< z component (imaginary) of the orientation quaternion
 
-} ClariusPosInfo;
+} CusPosInfo;
 
 /// string list callback function
 /// @param[in] list the string list
 /// @param[in] sz the size of the string buffer
-typedef void (*ClariusListFn)(const char* list, int sz);
+typedef void (*CusListFn)(const char* list, int sz);
 /// connection callback function
-/// @param[in] ret the return code, see CONNECT_ definitions above
+/// @param[in] res the connection result
 /// @param[in] port udp port used for streaming
 /// @param[in] status the status message
-typedef void (*ClariusConnectFn)(int ret, int port, const char* status);
+typedef void (*CusConnectFn)(CusConnection res, int port, const char* status);
 /// certification callback function
 /// @param[in] daysValid # of days valid for certificate
-typedef void (*ClariusCertFn)(int daysValid);
+typedef void (*CusCertFn)(int daysValid);
 /// powering down callback function
-/// @param[in] ret the return code, see POWERDOWN_ definitions above
+/// @param[in] res the power down reason
 /// @param[in] tm time for when probe is powering down, 0 for immediately
-typedef void (*ClariusPowerDownFn)(int ret, int tm);
+typedef void (*CusPowerDownFn)(CusPowerDown res, int tm);
 /// software update callback function
-/// @param[in] ret the return code, see SWUPDATE_ definitions above
-typedef void (*ClariusSwUpdateFn)(int ret);
+/// @param[in] res the software update result
+typedef void (*CusSwUpdateFn)(CusSwUpdate res);
 /// new data callback function
-/// @param[in] newImage pointer to the new grayscale image information
+/// @param[in] img pointer to the new grayscale image information
 /// @param[in] nfo image information associated with the image data
 /// @param[in] npos number of positional information data tagged with the image
 /// @param[in] pos the positional information data tagged with the image
-typedef void (*ClariusNewRawImageFn)(const void* newImage, const ClariusRawImageInfo* nfo, int npos, const ClariusPosInfo* pos);
+typedef void (*CusNewRawImageFn)(const void* img, const CusRawImageInfo* nfo, int npos, const CusPosInfo* pos);
 /// new image callback function
-/// @param[in] newImage pointer to the new grayscale image information
+/// @param[in] img pointer to the new grayscale image information
 /// @param[in] nfo image information associated with the image data
 /// @param[in] npos number of positional information data tagged with the image
 /// @param[in] pos the positional information data tagged with the image
-typedef void (*ClariusNewProcessedImageFn)(const void* newImage, const ClariusProcessedImageInfo* nfo, int npos, const ClariusPosInfo* pos);
+typedef void (*CusNewProcessedImageFn)(const void* img, const CusProcessedImageInfo* nfo, int npos, const CusPosInfo* pos);
 /// new spectral image callback function
-/// @param[in] newImage pointer to the new grayscale image information
+/// @param[in] img pointer to the new grayscale image information
 /// @param[in] nfo image information associated with the image data
-typedef void (*ClariusNewSpectralImageFn)(const void* newImage, const ClariusSpectralImageInfo* nfo);
+typedef void (*CusNewSpectralImageFn)(const void* img, const CusSpectralImageInfo* nfo);
 /// imaging callback function
-/// @param[in] ready the ready code, see IMAGING_ defintions above
+/// @param[in] state the imaging ready state
 /// @param[in] imaging 1 = running , 0 = stopped
-typedef void (*ClariusImagingFn)(int ready, int imaging);
+typedef void (*CusImagingFn)(CusImagingState state, int imaging);
 /// button callback function
-/// @param[in] btn see BUTTON_ definitions above
+/// @param[in] btn the button that was pressed
 /// @param[in] clicks # of clicks performed
-typedef void (*ClariusButtonFn)(int btn, int clicks);
+typedef void (*CusButtonFn)(CusButton btn, int clicks);
 /// progress callback function
 /// @param[in] progress the current progress in percent
-typedef void (*ClariusProgressFn)(int progress);
+typedef void (*CusProgressFn)(int progress);
+/// raw data callback function
+/// @param[in] res the raw data result, typically the size of the data package requested or actually downloaded
+typedef void (*CusRawFn)(int res);
 /// error callback function
 /// @param[in] msg the error message with associated error that occurred
-typedef void (*ClariusErrorFn)(const char* msg);
+typedef void (*CusErrorFn)(const char* msg);

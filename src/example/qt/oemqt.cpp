@@ -26,6 +26,7 @@ Oem::Oem(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_(fal
     render_->init(QStringLiteral("scanner.obj"));
     render_->show();
     ui_->rfzoom->setVisible(false);
+    ui_->rfStream->setVisible(false);
     ui_->cfigain->setVisible(false);
     ui_->_tabs->setTabEnabled(IMU_TAB, false);
 
@@ -41,18 +42,18 @@ Oem::Oem(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_(fal
     });
 
     ui_->modes->blockSignals(true);
-    ui_->modes->addItem(QStringLiteral("B Mode"));
-    ui_->modes->addItem(QStringLiteral("RF"));
+    ui_->modes->addItem(QStringLiteral("B"));
+    ui_->modes->addItem(QStringLiteral("SC"));
     ui_->modes->addItem(QStringLiteral("CFI"));
     ui_->modes->addItem(QStringLiteral("PDI"));
-    ui_->modes->addItem(QStringLiteral("SC"));
     ui_->modes->addItem(QStringLiteral("NE"));
+    ui_->modes->addItem(QStringLiteral("RF"));
     ui_->modes->blockSignals(false);
 
     // connect status timer
     connect(&timer_, &QTimer::timeout, [this]()
     {
-        ClariusStatusInfo st;
+        CusStatusInfo st;
         if (cusOemStatusInfo(&st) == 0)
         {
             ui_->probeStatus->setText(QStringLiteral("Battery: %1%, Temp: %2%, FR: %3 Hz")
@@ -75,6 +76,7 @@ Oem::Oem(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_(fal
     {
         ui_->poweron->setEnabled(en);
         ui_->poweroff->setEnabled(en);
+        ui_->ring->setEnabled(en);
     });
 
     // wifi service ready
@@ -85,32 +87,34 @@ Oem::Oem(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_(fal
     });
 
     // power status sent
-    connect(&ble_, &Ble::powered, [](bool en)
+    connect(&ble_, &Ble::powered, [this](bool en)
     {
-        qDebug() << "probe powered status:" << en;
+        ui_->status->showMessage(QStringLiteral("Powered: %1").arg(en ? QStringLiteral("On") : QStringLiteral("Off")));
     });
 
     // wifi info sent
     connect(&ble_, &Ble::wifiInfo, [this](const QString& info)
     {
         // yaml formatted network information
-        QString ip, port;
         QStringList network = info.split(QStringLiteral("\n"));
-        auto ls = network.filter(QStringLiteral("ip4:"));
-        if (ls.size())
+        auto getField = [&network](const QString& field) -> QString
         {
-            ip = ls[0];
-            ip.replace(QStringLiteral("ip4: "), QString{});
-        }
-        ls = network.filter(QStringLiteral("ctl:"));
-        if (ls.size())
-        {
-            port = ls[0];
-            port.replace(QStringLiteral("ctl: "), QString{});
-        }
+            QString ret;
+            auto f = network.filter(field);
+            if (f.size())
+            {
+                ret = f[0];
+                ret.replace(field + QStringLiteral(" "), QString{});
+            }
+            return ret;
+        };
+        auto ip = getField(QStringLiteral("ip4:"));
+        auto port = getField(QStringLiteral("ctl:"));
+        auto ssid = getField(QStringLiteral("ssid:"));
         ui_->ip->setText(ip);
         ui_->port->setText(port);
-        ui_->status->showMessage(QStringLiteral("Wi-Fi: %1 (%2)").arg(ip).arg(port));
+        if (!ip.isEmpty() && !port.isEmpty())
+            ui_->status->showMessage(QStringLiteral("Wi-Fi: %1 (%2) [SSID: %3]").arg(ip).arg(port).arg(ssid));
     });
 }
 
@@ -143,7 +147,7 @@ void Oem::loadApplications(const QStringList& apps)
         ui_->workflows->setCurrentIndex(0);
 }
 
-/// called when the window is closing to clean up the clarius library
+/// called when the window is closing to clean up the library
 void Oem::closeEvent(QCloseEvent*)
 {
     if (connected_)
@@ -182,6 +186,12 @@ void Oem::onPowerOff()
     ble_.power(false);
 }
 
+/// rings the probe
+void Oem::onRing()
+{
+    ble_.ring();
+}
+
 /// tries to reprogram probe to a new wifi network (router)
 void Oem::onWiFi()
 {
@@ -211,7 +221,7 @@ bool Oem::event(QEvent *event)
     if (event->type() == CONNECT_EVENT)
     {
         auto evt = static_cast<event::Connection*>(event);
-        setConnected(evt->code_, evt->port_, evt->message_);
+        setConnected(evt->result_, evt->port_, evt->message_);
         return true;
     }
     else if (event->type() == CERT_EVENT)
@@ -223,13 +233,13 @@ bool Oem::event(QEvent *event)
     else if (event->type() == POWER_EVENT)
     {
         auto evt = static_cast<event::PowerDown*>(event);
-        poweringDown(evt->code_, evt->timeOut_);
+        poweringDown(evt->res_, evt->timeOut_);
         return true;
     }
     else if (event->type() == SWUPDATE_EVENT)
     {
         auto evt = static_cast<event::SwUpdate*>(event);
-        softwareUpdate(evt->code_);
+        softwareUpdate(evt->res_);
         return true;
     }
     else if (event->type() == LIST_EVENT)
@@ -262,7 +272,7 @@ bool Oem::event(QEvent *event)
     else if (event->type() == IMAGING_EVENT)
     {
         auto evt = static_cast<event::Imaging*>(event);
-        imagingState(evt->ready_, evt->imaging_);
+        imagingState(evt->state_, evt->imaging_);
         return true;
     }
     else if (event->type() == BUTTON_EVENT)
@@ -293,12 +303,12 @@ void Oem::setError(const QString& err)
 }
 
 /// called when there's a new connection event
-/// @param[in] code the connection code
+/// @param[in] res the connection result
 /// @param[in] port the connection port
 /// @param[in] msg the associated message
-void Oem::setConnected(int code, int port, const QString& msg)
+void Oem::setConnected(CusConnection res, int port, const QString& msg)
 {
-    if (code == CONNECT_SUCCESS)
+    if (res == ProbeConnected)
     {
         timer_.start(1000);
         connected_ = true;
@@ -307,7 +317,7 @@ void Oem::setConnected(int code, int port, const QString& msg)
         ui_->update->setEnabled(true);
         ui_->load->setEnabled(true);
     }
-    else if (code == CONNECT_DISCONNECT)
+    else if (res == ProbeDisconnected)
     {
         timer_.stop();
         connected_ = false;
@@ -318,11 +328,11 @@ void Oem::setConnected(int code, int port, const QString& msg)
         ui_->update->setEnabled(false);
         ui_->load->setEnabled(false);
         // disable controls upon disconnect
-        imagingState(IMAGING_NOTREADY, false);
+        imagingState(ImagingNotReady, false);
     }
-    else if (code == CONNECT_FAILED || code == CONNECT_ERROR)
+    else if (res == ConnectionFailed || res == ConnectionError)
         ui_->status->showMessage(QStringLiteral("Error connecting: %1").arg(msg));
-    else if (code == CONNECT_SWUPDATE)
+    else if (res == SwUpdateRequired)
         ui_->status->showMessage(QStringLiteral("Software update required prior to imaging"));
 }
 
@@ -339,44 +349,45 @@ void Oem::certification(int daysValid)
 }
 
 /// called when there's a power down event
-/// @param[in] code the power down code
+/// @param[in] res the power down reason
 /// @param[in] tm the associated timeout
-void Oem::poweringDown(int code, int tm)
+void Oem::poweringDown(CusPowerDown res, int tm)
 {
-    if (code == POWERDOWN_IDLE)
+    if (res == Idle)
         ui_->status->showMessage(QStringLiteral("Idle power down in: %1s").arg(tm));
-    else if (code == POWERDOWN_TOOHOT)
+    else if (res == TooHot)
         ui_->status->showMessage(QStringLiteral("Heating power down in: %1s").arg(tm));
-    else if (code == POWERDOWN_BATTERY)
+    else if (res == LowBattery)
         ui_->status->showMessage(QStringLiteral("Battery low power down in: %1s").arg(tm));
-    else if (code == POWERDOWN_BUTTON)
+    else if (res == ButtonOff)
         ui_->status->showMessage(QStringLiteral("Button press power down in: %1s").arg(tm));
 }
 
 /// called when there's a software upate notification
-/// @param[in] code the software update code
-void Oem::softwareUpdate(int code)
+/// @param[in] res the software update result
+void Oem::softwareUpdate(CusSwUpdate res)
 {
-    if (code == SWUPDATE_SUCCESS)
+    if (res == SwUpdateSuccess)
         ui_->status->showMessage(QStringLiteral("Successfully updated software"));
-    else if (code == SWUPDATE_CURRENT)
+    else if (res == SwUpdateCurrent)
         ui_->status->showMessage(QStringLiteral("Software already up to date"));
     else
-        ui_->status->showMessage(QStringLiteral("Software not updated: %1").arg(code));
+        ui_->status->showMessage(QStringLiteral("Software not updated: %1").arg(res));
 }
 
 /// called when the imaging state changes
-/// @param[in] code the imaging ready code
+/// @param[in] state the imaging ready code
 /// @param[in] imaging the imaging state
-void Oem::imagingState(int code, bool imaging)
+void Oem::imagingState(CusImagingState state, bool imaging)
 {
-    bool ready = (code == IMAGING_READY);
+    bool ready = (state == ImagingReady);
     ui_->freeze->setEnabled(ready ? true : false);
     ui_->decdepth->setEnabled(ready ? true : false);
     ui_->incdepth->setEnabled(ready ? true : false);
     ui_->gain->setEnabled(ready ? true : false);
     ui_->cfigain->setEnabled(ready ? true : false);
     ui_->rfzoom->setEnabled(ready ? true : false);
+    ui_->rfStream->setEnabled(ready ? true : false);
     ui_->imu->setEnabled(ready ? true : false);
     ui_->autogain->setEnabled(ready ? true : false);
     ui_->tgctop->setEnabled(ready ? true : false);
@@ -392,16 +403,16 @@ void Oem::imagingState(int code, bool imaging)
         getParams();
         image_->checkRoi();
     }
-    else if (code == IMAGING_CERTEXPIRED)
+    else if (state == CertExpired)
         ui_->status->showMessage(QStringLiteral("Certificate needs updating prior to imaging"));
 }
 
 /// called when there is a button press on the ultrasound
 /// @param[in] btn the button pressed
 /// @param[in] clicks # of clicks used
-void Oem::onButton(int btn, int clicks)
+void Oem::onButton(CusButton btn, int clicks)
 {
-    ui_->status->showMessage(QStringLiteral("Button %1 Pressed, %2 Clicks").arg((btn == BUTTON_DOWN) ? QStringLiteral("Down") : QStringLiteral("Up")).arg(clicks));
+    ui_->status->showMessage(QStringLiteral("Button %1 Pressed, %2 Clicks").arg((btn == ButtonDown) ? QStringLiteral("Down") : QStringLiteral("Up")).arg(clicks));
 }
 
 /// called when the download progress changes
@@ -475,7 +486,7 @@ void Oem::onFreeze()
     if (cusOemRun(imaging_ ? 0 : 1) < 0)
         ui_->status->showMessage(QStringLiteral("Error requesting imaging run/stop"));
     else
-        imagingState(IMAGING_READY, !imaging_);
+        imagingState(ImagingReady, !imaging_);
 }
 
 /// initiates a software update
@@ -486,9 +497,9 @@ void Oem::onUpdate()
 
     if (cusOemSoftwareUpdate(
         // software update result
-        [](int code)
+        [](CusSwUpdate res)
         {
-            QApplication::postEvent(_me, new event::SwUpdate(code));
+            QApplication::postEvent(_me, new event::SwUpdate(res));
         },
         // download progress
         [](int progress)
@@ -542,38 +553,38 @@ void Oem::onProbeSelected(const QString &probe)
 /// increases the depth
 void Oem::incDepth()
 {
-    auto v = cusOemGetParam(PARAM_DEPTH);
+    auto v = cusOemGetParam(ImageDepth);
     if (v != -1)
-        cusOemSetParam(PARAM_DEPTH, v + 1.0);
+        cusOemSetParam(ImageDepth, v + 1.0);
 }
 
 /// decreases the depth
 void Oem::decDepth()
 {
-    auto v = cusOemGetParam(PARAM_DEPTH);
+    auto v = cusOemGetParam(ImageDepth);
     if (v > 1.0)
-        cusOemSetParam(PARAM_DEPTH, v - 1.0);
+        cusOemSetParam(ImageDepth, v - 1.0);
 }
 
 /// called when gain adjusted
 /// @param[in] gn the gain level
 void Oem::onGain(int gn)
 {
-    cusOemSetParam(PARAM_GAIN, gn);
+    cusOemSetParam(Gain, gn);
 }
 
 /// called when color gain adjusted
 /// @param[in] gn the gain level
 void Oem::onColorGain(int gn)
 {
-    cusOemSetParam(PARAM_CGAIN, gn);
+    cusOemSetParam(ColorGain, gn);
 }
 
 /// called when auto gain enable adjusted
 /// @param[in] state checkbox state
 void Oem::onAutoGain(int state)
 {
-    cusOemSetParam(PARAM_AUTOGAIN, (state == Qt::Checked) ? 1 : 0);
+    cusOemSetParam(AutoGain, (state == Qt::Checked) ? 1 : 0);
 }
 
 /// called when imu enable adjusted
@@ -581,14 +592,21 @@ void Oem::onAutoGain(int state)
 void Oem::onImu(int state)
 {
     ui_->_tabs->setTabEnabled(IMU_TAB, (state == Qt::Checked));
-    cusOemSetParam(PARAM_IMU, (state == Qt::Checked) ? 1 : 0);
+    cusOemSetParam(ImuStreaming, (state == Qt::Checked) ? 1 : 0);
+}
+
+/// called when rf stream enable adjusted
+/// @param[in] state checkbox state
+void Oem::onRfStream(int state)
+{
+    cusOemSetParam(RfStreaming, (state == Qt::Checked) ? 1 : 0);
 }
 
 /// sets the tgc top
 /// @param[in] v the tgc value
 void Oem::tgcTop(int v)
 {
-    ClariusTgc t;
+    CusTgc t;
     t.top = v;
     t.mid = ui_->tgcmid->value();
     t.bottom = ui_->tgcbottom->value();
@@ -599,7 +617,7 @@ void Oem::tgcTop(int v)
 /// @param[in] v the tgc value
 void Oem::tgcMid(int v)
 {
-    ClariusTgc t;
+    CusTgc t;
     t.top = ui_->tgctop->value();
     t.mid = v;
     t.bottom = ui_->tgcbottom->value();
@@ -610,7 +628,7 @@ void Oem::tgcMid(int v)
 /// @param[in] v the tgc value
 void Oem::tgcBottom(int v)
 {
-    ClariusTgc t;
+    CusTgc t;
     t.top = ui_->tgctop->value();
     t.mid = ui_->tgcmid->value();
     t.bottom = v;
@@ -620,16 +638,18 @@ void Oem::tgcBottom(int v)
 /// get the initial parameter values
 void Oem::getParams()
 {
-    auto v = cusOemGetParam(PARAM_DEPTH);
+    auto v = cusOemGetParam(ImageDepth);
     if (v != -1 && image_)
         image_->setDepth(v);
 
-    v = cusOemGetParam(PARAM_AUTOGAIN);
+    v = cusOemGetParam(AutoGain);
     ui_->autogain->setChecked(v > 0);
-    v = cusOemGetParam(PARAM_IMU);
+    v = cusOemGetParam(ImuStreaming);
     ui_->imu->setChecked(v > 0);
+    v = cusOemGetParam(RfStreaming);
+    ui_->rfStream->setChecked(v > 0);
 
-    ClariusTgc t;
+    CusTgc t;
     if (cusOemGetTgc(&t) == 0)
     {
         ui_->tgctop->setValue(static_cast<int>(t.top));
@@ -641,13 +661,15 @@ void Oem::getParams()
 /// called on a mode change
 void Oem::onMode(int mode)
 {
-    if (cusOemSetMode(mode) < 0)
+    auto m = static_cast<CusMode>(mode);
+    if (cusOemSetMode(m) < 0)
         ui_->status->showMessage(QStringLiteral("Error setting imaging mode"));
     else
     {
-        signal_->setVisible(mode == MODE_RF);
-        ui_->rfzoom->setVisible(mode == MODE_RF);
-        ui_->cfigain->setVisible(mode == MODE_CFI || mode == MODE_PDI);
+        signal_->setVisible(m == RfMode);
+        ui_->rfzoom->setVisible(m == RfMode);
+        ui_->rfStream->setVisible(m == RfMode);
+        ui_->cfigain->setVisible(m == ColorMode || m == PowerMode);
     }
 }
 

@@ -141,7 +141,7 @@ void UltrasoundImage::mouseReleaseEvent(QMouseEvent* e)
 {
     // if the call to move succeeds, it means an imaging mode supporting an roi is running
     auto pos = e->localPos();
-    if (cusOemAdjustRoi(static_cast<int>(pos.x()), static_cast<int>(pos.y()), (e->button() == Qt::LeftButton) ? ROI_MOVE : ROI_SIZE) == 0)
+    if (cusOemAdjustRoi(static_cast<int>(pos.x()), static_cast<int>(pos.y()), (e->button() == Qt::LeftButton) ? MoveRoi : SizeRoi) == 0)
         checkRoi();
 
     QWidget::mouseReleaseEvent(e);

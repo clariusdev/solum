@@ -35,17 +35,17 @@ void errorFn(const char* err)
 }
 
 /// callback for connection status
-/// @param[in] ret connection status code
+/// @param[in] res connection result
 /// @param[in] port udp port used for streaming
 /// @param[in] status the connection status message sent from the oem module
-void connectFn(int ret, int port, const char* status)
+void connectFn(CusConnection res, int port, const char* status)
 {
-    if (ret == CONNECT_ERROR)
-        ERROR << "connection: " << ret << ", error: " << status;
+    if (res == ConnectionError)
+        ERROR << "connection: " << res << ", error: " << status;
     else
-        PRINT << "connection: " << ret << ", status: " << status;
+        PRINT << "connection: " << res << ", status: " << status;
 
-    if (ret == CONNECT_SUCCESS)
+    if (res == ProbeConnected)
         PRINT << "streaming port: " << port;
 }
 
@@ -62,44 +62,44 @@ void certFn(int daysValid)
 }
 
 /// callback for probe powering down
-/// @param[in] ret power down status code
+/// @param[in] res power down reason
 /// @param[in] tm time when the probe is powering down
-void powerDownFn(int ret, int tm)
+void powerDownFn(CusPowerDown res, int tm)
 {
-    PRINT << "probe powering down: " << ret << ", in " << tm << "s";
+    PRINT << "probe powering down: " << static_cast<int>(res) << ", in " << tm << "s";
 }
 
 /// callback for software updates
-/// @param[in] ret software update status code
-void swUpdateFn(int ret)
+/// @param[in] res software update result
+void swUpdateFn(CusSwUpdate res)
 {
-    if (ret == SWUPDATE_SUCCESS)
+    if (res == SwUpdateSuccess)
         PRINT << "software update was successful";
-    else if (ret == SWUPDATE_CURRENT)
+    else if (res == SwUpdateCurrent)
         PRINT << "software is already up to date";
     else
-        ERROR << "error updating software: " << ret;
+        ERROR << "error updating software: " << static_cast<int>(res);
 }
 
 /// callback for imaging state change
-/// @param[in] ready flag that probe is ready to image
+/// @param[in] state imaging ready state
 /// @param[in] imaging 1 = running, 0 = stopped
-void imagingFn(int ready, int imaging)
+void imagingFn(CusImagingState state, int imaging)
 {
-    if (ready == IMAGING_READY)
+    if (state == ImagingReady)
         PRINT << "ready to image: " << ((imaging) ? "imaging running" : "imaging stopped");
-    else if (ready == IMAGING_CERTEXPIRED)
+    else if (state == CertExpired)
         ERROR << "certificate needs updating prior to imaging";
     else
         ERROR << "not ready to image";
 }
 
 /// callback for button press
-/// @param[in] btn the button that was pressed, 0 = up, 1 = down
+/// @param[in] btn the button that was pressed
 /// @param[in] clicks # of clicks used
-void buttonFn(int btn, int clicks)
+void buttonFn(CusButton btn, int clicks)
 {
-    PRINT << ((btn == BUTTON_DOWN) ? "down" : "up") << " button pressed, clicks: " << clicks;
+    PRINT << ((btn == ButtonDown) ? "down" : "up") << " button pressed, clicks: " << clicks;
 }
 
 /// callback for software update progress
@@ -112,7 +112,7 @@ void progressFn(int progress)
 /// prints imu data
 /// @param[in] npos the # of positional data points embedded with the frame
 /// @param[in] pos the buffer of positional data
-void printImuData(int npos, const ClariusPosInfo* pos)
+void printImuData(int npos, const CusPosInfo* pos)
 {
     for (auto i = 0; i < npos; i++)
     {
@@ -148,7 +148,7 @@ bool printCsv(const char* buf, int sz)
 /// @param[in] nfo the image properties
 /// @param[in] npos the # of positional data points embedded with the frame
 /// @param[in] pos the buffer of positional data
-void newRawImageFn(const void* newImage, const ClariusRawImageInfo* nfo, int npos, const ClariusPosInfo* pos)
+void newRawImageFn(const void* newImage, const CusRawImageInfo* nfo, int npos, const CusPosInfo* pos)
 {
 #ifdef PRINTRAW
     if (nfo->rf)
@@ -173,7 +173,7 @@ void newRawImageFn(const void* newImage, const ClariusRawImageInfo* nfo, int npo
 /// @param[in] nfo the image properties
 /// @param[in] npos the # of positional data points embedded with the frame
 /// @param[in] pos the buffer of positional data
-void newProcessedImageFn(const void* newImage, const ClariusProcessedImageInfo* nfo, int npos, const ClariusPosInfo* pos)
+void newProcessedImageFn(const void* newImage, const CusProcessedImageInfo* nfo, int npos, const CusPosInfo* pos)
 {
     (void)newImage;
     PRINTSL << "new image (" << counter_++ << "): " << nfo->width << " x " << nfo->height << " @ " << nfo->bitsPerPixel << " bpp. @ "
@@ -188,35 +188,35 @@ void newProcessedImageFn(const void* newImage, const ClariusProcessedImageInfo* 
 void processEventLoop(std::atomic_bool& quit)
 {
     std::string cmd, buf1, buf2;
-    ClariusStatusInfo stats;
-    ClariusProbeInfo probe;
+    CusStatusInfo stats;
+    CusProbeInfo probe;
     double v;
     int m;
 
-    auto param = [](const std::string& p) -> int
+    auto param = [](const std::string& p) -> CusParam
     {
         if (p == "D" || p == "d")
-            return PARAM_DEPTH;
+            return ImageDepth;
         else if (p == "G" || p == "g")
-            return PARAM_GAIN;
+            return Gain;
         else if (p == "I" || p == "i")
-            return PARAM_IMU;
+            return ImuStreaming;
 
-        return -1;
+        return Gain;
     };
 
-    auto mode = [](const std::string& m) -> int
+    auto mode = [](const std::string& m) -> CusMode
     {
         if (m == "B" || m == "b")
-            return MODE_B;
+            return BMode;
         else if (m == "R" || m == "r")
-            return MODE_RF;
+            return RfMode;
         else if (m == "C" || m == "c")
-            return MODE_CFI;
+            return ColorMode;
         else if (m == "P" || m == "p")
-            return MODE_PDI;
+            return PowerMode;
 
-        return -1;
+        return BMode;
     };
 
     PRINT << "enter command: ";
@@ -355,15 +355,14 @@ void processEventLoop(std::atomic_bool& quit)
         }
         else if (cmd == "N" || cmd == "n")
         {
-            if ((m = cusOemGetMode()) < 0)
-                ERROR << "mode retrieval failed";
-            else if (m == MODE_B)
+            m = cusOemGetMode();
+            if (m == BMode)
                 PRINT << "b mode";
-            else if (m == MODE_RF)
+            else if (m == RfMode)
                 PRINT << "rf mode";
-            else if (m == MODE_CFI)
+            else if (m == ColorMode)
                 PRINT << "cfi mode";
-            else if (m == MODE_PDI)
+            else if (m == PowerMode)
                 PRINT << "pdi mode";
         }
         else if (cmd == "M" || cmd == "m")

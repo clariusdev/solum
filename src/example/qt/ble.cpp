@@ -34,6 +34,11 @@ Ble::Ble()
     // five second discovery timeout
     search_.setLowEnergyDiscoveryTimeout(3000);
     QObject::connect(&search_, &QBluetoothDeviceDiscoveryAgent::finished, this, &Ble::searchComplete);
+
+    QObject::connect(&ping_, &QTimer::timeout, [this]()
+    {
+        ping();
+    });
 }
 
 /// destructor
@@ -103,6 +108,13 @@ bool Ble::connectToProbe(const QString& name)
 
     probe_.reset(QLowEnergyController::createCentral(dev, this));
     QObject::connect(probe_.get(), &QLowEnergyController::connected, this, &Ble::onConnected);
+    QObject::connect(probe_.get(), &QLowEnergyController::disconnected, [this]()
+    {
+        // ensure we stop pinging on a disconnect
+        ping_.stop();
+        emit powerReady(false);
+        emit wifiReady(false);
+    });
     QObject::connect(probe_.get(), &QLowEnergyController::serviceDiscovered, this, &Ble::onService);
     QObject::connect(probe_.get(), &QLowEnergyController::discoveryFinished, this, &Ble::onDiscoveryFinished);
     probe_->connectToDevice();
@@ -209,12 +221,31 @@ void Ble::onService(const QBluetoothUuid& u)
             }
         });
     }
+    else if (u == QBluetoothUuid::ImmediateAlert)
+    {
+        ias_.reset(probe_->createServiceObject(u));
+        QObject::connect(ias_.get(), &QLowEnergyService::stateChanged, [this](QLowEnergyService::ServiceState s)
+        {
+            if (s == QLowEnergyService::ServiceDiscovered)
+            {
+                ping();
+                ping_.start(5000);
+            }
+        });
+    }
 }
 
 /// called when all services have been discovered
 void Ble::onDiscoveryFinished()
 {
-    // silly workaround for windows, see: https://bugreports.qt.io/browse/QTBUG-78488
+    // - these single shot timers are a silly workaround for windows, see: https://bugreports.qt.io/browse/QTBUG-78488
+    // - note the ias should also be discovered before other services as it is seen on some platforms that it may
+    //   not be discovered properly if coming after other services
+    QTimer::singleShot(0, [=] ()
+    {
+        if (ias_)
+            ias_->discoverDetails();
+    });
     QTimer::singleShot(0, [=] ()
     {
         if (power_)
@@ -256,5 +287,35 @@ bool Ble::requestWifi(const QString& info)
         return false;
 
     wifi_->writeCharacteristic(ch, QByteArray(info.toUtf8()));
+    return true;
+}
+
+/// pings the ble connection to keep it alive
+/// @return success of the request
+bool Ble::ping()
+{
+    if (!ias_ || ias_->state() != QLowEnergyService::ServiceDiscovered)
+        return false;
+
+    auto ch = ias_->characteristic(QBluetoothUuid::AlertLevel);
+    if (!ch.isValid())
+        return false;
+
+    ias_->writeCharacteristic(ch, QByteArray::fromHex("00"), QLowEnergyService::WriteWithoutResponse);
+    return true;
+}
+
+/// rings the connected probe
+/// @return success of the request
+bool Ble::ring()
+{
+    if (!ias_ || ias_->state() != QLowEnergyService::ServiceDiscovered)
+        return false;
+
+    auto ch = ias_->characteristic(QBluetoothUuid::AlertLevel);
+    if (!ch.isValid())
+        return false;
+
+    ias_->writeCharacteristic(ch, QByteArray::fromHex("02"), QLowEnergyService::WriteWithoutResponse);
     return true;
 }

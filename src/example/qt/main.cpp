@@ -17,9 +17,9 @@ int main(int argc, char *argv[])
 
     if (cusOemInit(argc, argv, QStandardPaths::writableLocation(QStandardPaths::AppDataLocation).toStdString().c_str(),
         // connection callback
-        [](int code, int port, const char* msg)
+        [](CusConnection res, int port, const char* msg)
         {
-            QApplication::postEvent(_oem.get(), new event::Connection(code, port, QString::fromLatin1(msg)));
+            QApplication::postEvent(_oem.get(), new event::Connection(res, port, QString::fromLatin1(msg)));
         },
         // cert callback
         [](int daysValid)
@@ -27,12 +27,12 @@ int main(int argc, char *argv[])
             QApplication::postEvent(_oem.get(), new event::Cert(daysValid));
         },
         // power down callback
-        [](int code, int tm)
+        [](CusPowerDown res, int tm)
         {
-            QApplication::postEvent(_oem.get(), new event::PowerDown(code, tm));
+            QApplication::postEvent(_oem.get(), new event::PowerDown(res, tm));
         },
         // new image callback
-        [](const void* img, const ClariusProcessedImageInfo* nfo, int npos, const ClariusPosInfo* pos)
+        [](const void* img, const CusProcessedImageInfo* nfo, int npos, const CusPosInfo* pos)
         {
             int sz = nfo->imageSize;
             // we need to perform a deep copy of the image data since we have to post the event (yes this happens a lot with this api)
@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
             QApplication::postEvent(_oem.get(), new event::Image(IMAGE_EVENT, _image.data(), nfo->width, nfo->height, nfo->bitsPerPixel, sz, imu));
         },
         // new raw data callback
-        [](const void* data, const ClariusRawImageInfo* nfo, int, const ClariusPosInfo*)
+        [](const void* data, const CusRawImageInfo* nfo, int, const CusPosInfo*)
         {
             // we need to perform a deep copy of the image data since we have to post the event (yes this happens a lot with this api)
             int sz = nfo->lines * nfo->samples * (nfo->bitsPerSample / 8);
@@ -72,13 +72,13 @@ int main(int argc, char *argv[])
         },
         nullptr,
         // imaging state change callback
-        [](int ready, int imaging)
+        [](CusImagingState state, int imaging)
         {
             // post event here, as the gui (statusbar) will be updated directly, and it needs to come from the application thread
-            QApplication::postEvent(_oem.get(), new event::Imaging(ready, imaging ? true : false));
+            QApplication::postEvent(_oem.get(), new event::Imaging(state, imaging ? true : false));
         },
         // button press callback
-        [](int btn, int clicks)
+        [](CusButton btn, int clicks)
         {
             // post event here, as the gui (statusbar) will be updated directly, and it needs to come from the application thread
             QApplication::postEvent(_oem.get(), new event::Button(btn, clicks));

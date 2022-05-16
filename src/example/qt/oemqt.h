@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ble.h"
+#include <oem/oem_def.h>
 
 namespace Ui
 {
@@ -31,14 +32,14 @@ namespace event
     {
     public:
         /// default constructor
-        /// @param[in] code the connection code
+        /// @param[in] res the connection result
         /// @param[in] port the connection port
         /// @param[in] msg connection message
-        Connection(int code, int port, const QString& msg) : QEvent(CONNECT_EVENT), code_(code), port_(port), message_(msg) { }
+        Connection(CusConnection res, int port, const QString& msg) : QEvent(CONNECT_EVENT), result_(res), port_(port), message_(msg) { }
 
-        int code_;          ///< connection code
-        int port_;          ///< connection port
-        QString message_;   ///< message
+        CusConnection result_;  ///< connection result
+        int port_;              ///< connection port
+        QString message_;       ///< message
     };
 
     /// wrapper for certificate validation events that can be posted from the api callbacks
@@ -57,12 +58,12 @@ namespace event
     {
     public:
         /// default constructor
-        /// @param[in] code the power down code
+        /// @param[in] res the power down reason
         /// @param[in] tm any timeout associated
-        PowerDown(int code, int tm) : QEvent(POWER_EVENT), code_(code), timeOut_(tm) { }
+        PowerDown(CusPowerDown res, int tm) : QEvent(POWER_EVENT), res_(res), timeOut_(tm) { }
 
-        int code_;      ///< power down code
-        int timeOut_;   ///< associated timeout
+        CusPowerDown res_;  ///< power down reason
+        int timeOut_;       ///< associated timeout
     };
 
     /// wrapper for software update that can be posted from the api callbacks
@@ -70,10 +71,10 @@ namespace event
     {
     public:
         /// default constructor
-        /// @param[in] code the sw update code
-        SwUpdate(int code) : QEvent(SWUPDATE_EVENT), code_(code)  { }
+        /// @param[in] res the sw update code
+        SwUpdate(CusSwUpdate res) : QEvent(SWUPDATE_EVENT), res_(res)  { }
 
-        int code_;  ///< the software update code
+        CusSwUpdate res_;  ///< the software update code
     };
 
     /// wrapper for list events
@@ -136,12 +137,12 @@ namespace event
     {
     public:
         /// default constructor
-        /// @param[in] rdy the ready state
+        /// @param[in] state the ready state
         /// @param[in] imaging the imaging state
-        Imaging(int rdy, bool imaging) : QEvent(IMAGING_EVENT), ready_(rdy), imaging_(imaging) { }
+        Imaging(CusImagingState state, bool imaging) : QEvent(IMAGING_EVENT), state_(state), imaging_(imaging) { }
 
-        int ready_;     ///< the ready state
-        bool imaging_;  ///< the imaging state
+        CusImagingState state_; ///< the imaging ready state
+        bool imaging_;          ///< the imaging state
     };
 
     /// wrapper for button press events that can be posted from the api callbacks
@@ -151,10 +152,10 @@ namespace event
         /// default constructor
         /// @param[in] btn the button pressed
         /// @param[in] clicks # of clicks
-        Button(int btn, int clicks) : QEvent(BUTTON_EVENT), button_(btn), clicks_(clicks) { }
+        Button(CusButton btn, int clicks) : QEvent(BUTTON_EVENT), button_(btn), clicks_(clicks) { }
 
-        int button_;    ///< button pressed, 0 = up, 1 = down
-        int clicks_;    ///< # of clicks
+        CusButton button_;  ///< button pressed
+        int clicks_;        ///< # of clicks
     };
 
     /// wrapper for error events that can be posted from the api callbacks
@@ -199,12 +200,12 @@ private:
     void newProcessedImage(const void* img, int w, int h, int bpp, int sz, const QQuaternion& imu);
     void newPrescanImage(const void* img, int w, int h, int bpp, int sz);
     void newRfImage(const void* rf, int l, int s, int ss);
-    void setConnected(int code, int port, const QString& msg);
+    void setConnected(CusConnection res, int port, const QString& msg);
     void certification(int daysValid);
-    void poweringDown(int code, int tm);
-    void softwareUpdate(int code);
-    void imagingState(int code, bool imaging);
-    void onButton(int btn, int clicks);
+    void poweringDown(CusPowerDown res, int tm);
+    void softwareUpdate(CusSwUpdate res);
+    void imagingState(CusImagingState state, bool imaging);
+    void onButton(CusButton btn, int clicks);
     void setProgress(int progress);
     void setError(const QString& err);
     void getParams();
@@ -215,6 +216,7 @@ public slots:
     void onBleSearch();
     void onPowerOn();
     void onPowerOff();
+    void onRing();
     void onWiFi();
     void onAp();
     void onConnect();
@@ -231,6 +233,7 @@ public slots:
     void onColorGain(int);
     void onAutoGain(int);
     void onImu(int);
+    void onRfStream(int);
     void tgcTop(int);
     void tgcMid(int);
     void tgcBottom(int);
