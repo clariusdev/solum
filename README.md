@@ -89,7 +89,7 @@ To change network configurations, the __Wi-Fi Request__ characteristic (UUID 0xF
 To put the scanner on it's internal access point, simply send:
 ```
 ap: true
-channel: <'auto' or channel number>
+ch: <'auto' or channel number>
 ```
 
 To request to put the scanner on a router (or any other external network), write to the characteristic in the following format:
