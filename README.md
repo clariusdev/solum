@@ -37,27 +37,31 @@ The OEM API communicates with the _Clarius Scanner_ directly, and makes use of B
 
 # Bluetooth
 
-Bluetooth Low Energy (BLE) is used to make the initial connection with the Clarius scanner. There are two custom services provided:
-- Power Service (PWS)
-- Wi-Fi Information Service (WIS)
+Bluetooth Low Energy (BLE) is used to make the initial connection with the Clarius scanner. There are two custom services provided, which are further broken down into specific characteristics:
+* Power Service __(PWS)__ _(UUID 0x8C853B6A-2297-44C1-8277-73627C8D2ABC)_
+  * Power Published Characteristic _(UUID 0x8C853B6A-2297-44C1-8277-73627C8D2ABD)_
+  * Power Request Characteristic _(UUID 0x8C853B6A-2297-44C1-8277-73627C8D2ABE)_
+* Wi-Fi Information Service __(WIS)__ _(UUID 0xF9EB3FAE-947A-4E5B-AB7C-C799E91ED780)_
+  * Wi-Fi Published Characteristic _(UUID 0xF9EB3FAE-947A-4E5B-AB7C-C799E91ED781)_
+  * Wi-Fi Request Characteristic _(UUID 0xF9EB3FAE-947A-4E5B-AB7C-C799E91ED782)_  
 
 ## Power Service
 
-The __PWS__ (UUID 0x8C853B6A-2297-44C1-8277-73627C8D2ABC) is a custom service built by clarius to read and manage the power status of the scanner.
+The __PWS__ is a custom service built by clarius to read and manage the power status of the scanner.
 
-### Power Published Characteristic:
-Once ready, the device powered status will be published through the __Power Published__ characteristic (UUID 0x8C853B6A-2297-44C1-8277-73627C8D2ABD), and can be read at any point after a BLE connection, as well as subscribed to, and thus a notification will take place when the information has changed. The read and notifications should always be 1 byte, with 0 denoting an off state, and 1 denoting an on state.
+### Power Published Characteristic
+Once ready, the device powered status will be published through the _Power Published_ characteristic, and can be read at any point after a BLE connection, as well as subscribed to, and thus a notification will take place when the information has changed. The read and notifications should always be 1 byte, with 0 denoting an off state, and 1 denoting an on state.
 
 To subscribe to the Power Published characteristic, one can write 0100 to the characteristic's Client Characteristic Configuration Descriptor (CCCD), allowing the scanner to send out notifications to the connected program.
 
 ### Power Request Characteristic
-To power on or off the device, the __Power Request__ characteristic (UUID 0x8C853B6A-2297-44C1-8277-73627C8D2ABE) can be written to. Writing 0x00 to the characteristic will power the device off, and writing 0x01 will power the device on.
+To power on or off the device, the _Power Request_ characteristic can be written to. Writing 0x00 to the characteristic will power the device off, and writing 0x01 will power the device on.
 
 ## Wi-Fi Information Service
-The __WIS__ (UUID 0xF9EB3FAE-947A-4E5B-AB7C-C799E91ED780) is a custom service built by Clarius to read and manage the Wi-Fi network once the scanner is powered up and ready. A scanner is typically in a ready state when the LED has stopped flashing and is solid blue.
+The __WIS__ is a custom service built by Clarius to read and manage the Wi-Fi network once the scanner is powered up and ready. A scanner is typically in a ready state when the LED has stopped flashing and is solid blue.
 
 ### Wi-Fi Published Characteristic
-Once ready, the current Wi-Fi network information will be published through the __Wi-Fi Published__ characteristic (UUID 0xF9EB3FAE-947A-4E5B-AB7C-C799E91ED781), and can be read at any point after a BLE connection, as well as subscribed to, and thus a notification will take place when the information has changed. If the service reads back "N/A" it typically means the scanners has not finished booting to a ready state.
+Once ready, the current Wi-Fi network information will be published through the _Wi-Fi Published_ characteristic, and can be read at any point after a BLE connection, as well as subscribed to, and thus a notification will take place when the information has changed. If the service reads back "N/A" it typically means the scanners has not finished booting to a ready state.
 
 To subscribe to the Wi-Fi Published characteristic, one can write 0100 to the characteristic's Client Characteristic Configuration Descriptor (CCCD), allowing the scanner to send out notifications to the connected program.
 
@@ -84,7 +88,7 @@ mac: <mac address>
 Note that the password will only be sent if the network used is the scanner's own Access Point (AP). If connected to a router, the password will not be sent as it is assumed that the credentials are managed elsewhere.
 
 ### Wi-Fi Request Characteristic
-To change network configurations, the __Wi-Fi Request__ characteristic (UUID 0xF9EB3FAE-947A-4E5B-AB7C-C799E91ED782) can be written to. Note that the probe must be in a ready state before the request will have any effect.
+To change network configurations, the _Wi-Fi Request_ characteristic can be written to. Note that the probe must be in a ready state before the request will have any effect.
 
 To put the scanner on it's internal access point, simply send:
 ```
@@ -100,6 +104,22 @@ password: <network password>
 ```
 
 Once the scanner has joined or launched the Wi-Fi network, the published characteristic will be subsequently written.
+
+# Authentication
+
+The API requires the scanner be authenticated once a connection has been made, otherwise loading applications, firmware updates, and imaging cannot be performed. Clarius Cloud offers a new mechansim for retrieving authentication certificates for each scanner.
+
+The first step is to generate a token which will allow software to access a dedicated endpoint. These tokens should be treated securely, as they essentially provide similar credentials to a user login. To generate a new token:
+* Login to Clarius Cloud with an Administrator account
+* Go to **Institution Settings**
+* Choose **Policies** from the menu
+* Choose **OEM API Keys**
+* Choose **Add New Key**
+* Store that key somewhere safe
+
+Keys can also be revoked through the same interface. If you feel your token was compromised, revoking, creating a new key, and then issuing a security update for your software is the proper pathway to address the situation.
+
+Valid tokens should be used to access a the [REST API endpoint](https://cloud.clarius.com/api/public/v0/devices/oem/) built for certificate (and other meta data) retrieval for each probe within your institution. Only **OEM** licensed probes will have a certificate attached. Once parsed, supply the certificate corresponding to the connected probe through the __cusOemSetCert__ function.
 
 # Examples
 
