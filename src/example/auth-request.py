@@ -1,3 +1,6 @@
+# sample script for retrieving the scanner certificates through the clarius rest api
+# should be relatively simple to convert to curl, java, or other frameworks
+
 import requests
 import json
 
