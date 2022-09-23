@@ -1,14 +1,15 @@
 #pragma once
 
 #include "ble.h"
-#include <oem/oem_def.h>
+#include <solum/solum_def.h>
 
 namespace Ui
 {
-    class Oem;
+    class Solum;
 }
 
 class UltrasoundImage;
+class Spectrum;
 class RfSignal;
 class ProbeRender;
 
@@ -19,11 +20,12 @@ class ProbeRender;
 #define LIST_EVENT      static_cast<QEvent::Type>(QEvent::User + 5)
 #define IMAGE_EVENT     static_cast<QEvent::Type>(QEvent::User + 6)
 #define PRESCAN_EVENT   static_cast<QEvent::Type>(QEvent::User + 7)
-#define RF_EVENT        static_cast<QEvent::Type>(QEvent::User + 8)
-#define IMAGING_EVENT   static_cast<QEvent::Type>(QEvent::User + 9)
-#define BUTTON_EVENT    static_cast<QEvent::Type>(QEvent::User + 10)
-#define ERROR_EVENT     static_cast<QEvent::Type>(QEvent::User + 11)
-#define PROGRESS_EVENT  static_cast<QEvent::Type>(QEvent::User + 12)
+#define SPECTRUM_EVENT  static_cast<QEvent::Type>(QEvent::User + 8)
+#define RF_EVENT        static_cast<QEvent::Type>(QEvent::User + 9)
+#define IMAGING_EVENT   static_cast<QEvent::Type>(QEvent::User + 10)
+#define BUTTON_EVENT    static_cast<QEvent::Type>(QEvent::User + 11)
+#define ERROR_EVENT     static_cast<QEvent::Type>(QEvent::User + 12)
+#define PROGRESS_EVENT  static_cast<QEvent::Type>(QEvent::User + 13)
 
 namespace event
 {
@@ -97,6 +99,7 @@ namespace event
     {
     public:
         /// default constructor
+        /// @param[in] evt the event type
         /// @param[in] data the image data
         /// @param[in] w the image width
         /// @param[in] h the image height
@@ -112,6 +115,24 @@ namespace event
         int bpp_ ;          ///< bits per pixel
         int size_;          ///< total size of image
         QQuaternion imu_;   ///< latest imu position
+    };
+
+    /// wrapper for new spectrum events that can be posted from the api callbacks
+    class SpectrumImage : public QEvent
+    {
+    public:
+        /// default constructor
+        /// @param[in] data the spectrum data
+        /// @param[in] l the # of lines in the spectrum
+        /// @param[in] s the # of samples in the spectrum
+        /// @param[in] bps the image bits per sample
+        SpectrumImage(const void* data, int l, int s, int bps) : QEvent(SPECTRUM_EVENT),
+            data_(data), lines_(l), samples_(s), bps_(bps) { }
+
+        const void* data_;  ///< pointer to the image data
+        int lines_;         ///< # of lines in the spectrum
+        int samples_;       ///< # of samples in the spectrum
+        int bps_ ;          ///< bits per sample
     };
 
     /// wrapper for new rf events that can be posted from the api callbacks
@@ -181,14 +202,16 @@ namespace event
     };
 }
 
-/// oem gui application
-class Oem : public QMainWindow
+using Probes = std::map<QString,QString>;
+
+/// solum gui application
+class Solum : public QMainWindow
 {
     Q_OBJECT
 
 public:
-    explicit Oem(QWidget *parent = nullptr);
-    ~Oem() override;
+    explicit Solum(QWidget *parent = nullptr);
+    ~Solum() override;
 
 protected:
     virtual bool event(QEvent *event) override;
@@ -199,6 +222,7 @@ private:
     void loadApplications(const QStringList& probes);
     void newProcessedImage(const void* img, int w, int h, int bpp, int sz, const QQuaternion& imu);
     void newPrescanImage(const void* img, int w, int h, int bpp, int sz);
+    void newSpectrumImage(const void* img, int l, int s, int bps);
     void newRfImage(const void* rf, int l, int s, int ss);
     void setConnected(CusConnection res, int port, const QString& msg);
     void certification(int daysValid);
@@ -209,8 +233,10 @@ private:
     void setProgress(int progress);
     void setError(const QString& err);
     void getParams();
+    void updateVelocity(CusMode mode);
 
 public slots:
+    void onRetrieve();
     void onBleProbe(int);
     void onBleConnect();
     void onBleSearch();
@@ -231,6 +257,7 @@ public slots:
     void decDepth();
     void onGain(int);
     void onColorGain(int);
+    void onOpacity(int);
     void onAutoGain(int);
     void onImu(int);
     void onRfStream(int);
@@ -239,13 +266,17 @@ public slots:
     void tgcBottom(int);
 
 private:
-    bool connected_;            ///< connection state
-    bool imaging_;              ///< imaging state
-    Ui::Oem *ui_;               ///< ui controls, etc.
-    UltrasoundImage* image_;    ///< image display
-    ProbeRender* render_;       ///< probe renderer
-    RfSignal* signal_;          ///< rf signal display
-    QImage prescan_;            ///< pre-scan converted image
-    QTimer timer_;              ///< timer for updating probe status
-    Ble ble_;                   ///< bluetooth module
+    bool connected_;                ///< connection state
+    bool imaging_;                  ///< imaging state
+    Ui::Solum *ui_;                 ///< ui controls, etc.
+    UltrasoundImage* image_;        ///< image display
+    Spectrum* spectrum_;            ///< spectrum display
+    ProbeRender* render_;           ///< probe renderer
+    RfSignal* signal_;              ///< rf signal display
+    QImage prescan_;                ///< pre-scan converted image
+    QTimer timer_;                  ///< timer for updating probe status
+    QNetworkAccessManager cloud_;   ///< for accessing clarius cloud
+    Ble ble_;                       ///< bluetooth module
+    Probes certified_;              ///< list of certified probes
+    std::unique_ptr<QSettings> settings_;   ///< persistent settings
 };

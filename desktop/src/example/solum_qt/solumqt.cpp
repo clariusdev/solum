@@ -1,34 +1,86 @@
-#include "oemqt.h"
+#include "solumqt.h"
 #include "display.h"
 #include "3d.h"
-#include "ui_oemqt.h"
-#include <oem/oem.h>
+#include "ui_solumqt.h"
+#include <solum/solum.h>
 
-#define IMU_TAB     3
+#define IMU_TAB     4
 
-static Oem* _me;
+static Solum* _me;
 
 /// default constructor
 /// @param[in] parent the parent object
-Oem::Oem(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_(false), ui_(new Ui::Oem)
+Solum::Solum(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_(false), ui_(new Ui::Solum)
 {
     _me = this;
     ui_->setupUi(this);
     setWindowIcon(QIcon(":/res/logo.png"));
     image_ = new UltrasoundImage(this);
+    spectrum_ = new Spectrum(this);
     signal_ = new RfSignal(this);
     ui_->image->addWidget(image_);
+    ui_->image->addWidget(spectrum_);
     ui_->image->addWidget(signal_);
     render_ = new ProbeRender(QGuiApplication::primaryScreen());
     ui_->render->addWidget(QWidget::createWindowContainer(render_));
     auto reset = new QPushButton(QStringLiteral("Reset"), this);
     ui_->render->addWidget(reset);
-    render_->init(QStringLiteral("scanner.obj"));
+    render_->init(QStringLiteral("/home/kris/scanner.obj"));
     render_->show();
+    ui_->cfigain->setVisible(false);
+    ui_->velocity->setVisible(false);
+    ui_->opacity->setVisible(false);
     ui_->rfzoom->setVisible(false);
     ui_->rfStream->setVisible(false);
-    ui_->cfigain->setVisible(false);
     ui_->_tabs->setTabEnabled(IMU_TAB, false);
+
+    settings_ = std::make_unique<QSettings>(QStringLiteral("settings.ini"), QSettings::IniFormat);
+    ui_->token->setText(settings_->value("token").toString());
+    auto ip = settings_->value("ip").toString();
+    if (!ip.isEmpty())
+        ui_->ip->setText(ip);
+    auto port = settings_->value("port").toString();
+    if (!port.isEmpty())
+        ui_->port->setText(port);
+    auto probe = settings_->value("probe").toString();
+    if (!probe.isEmpty())
+        ui_->probes->setCurrentText(probe);
+
+    // handle the reply from the call to clarius cloud to obtain json probe information
+    connect(&cloud_, &QNetworkAccessManager::finished, [this](QNetworkReply* reply)
+    {
+        auto result = reply->readAll();
+        auto doc = QJsonDocument::fromJson(result);
+        // check for errors
+        if (doc.isNull())
+        {
+            ui_->status->showMessage(QStringLiteral("Error retrieving certificates"));
+            return;
+        }
+
+        certified_.clear();
+        auto json = doc.object();
+        if (json.contains("results") && json["results"].isArray())
+        {
+            auto probes = json["results"].toArray();
+            for (auto i = 0u; i < probes.size(); i++)
+            {
+                auto probe = probes[i].toObject();
+                if (probe.contains("crt") && probe.contains("device") && probe["device"].isObject())
+                {
+                    auto device = probe["device"].toObject();
+                    if (device.contains("serial"))
+                    {
+                        auto serial = device["serial"].toString();
+                        if (!serial.isEmpty())
+                            certified_[serial] = probe["crt"].toString();
+                    }
+                }
+            }
+
+            ui_->status->showMessage(QStringLiteral("Found %1 valid OEM probes").arg(certified_.size()));
+        }
+    });
 
     QObject::connect(reset, &QPushButton::clicked, [this]()
     {
@@ -36,7 +88,7 @@ Oem::Oem(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_(fal
     });
 
     // load probes list
-    cusOemProbes([](const char* list, int)
+    solumProbes([](const char* list, int)
     {
         QApplication::postEvent(_me, new event::List(list, true));
     });
@@ -44,9 +96,12 @@ Oem::Oem(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_(fal
     ui_->modes->blockSignals(true);
     ui_->modes->addItem(QStringLiteral("B"));
     ui_->modes->addItem(QStringLiteral("SC"));
+    ui_->modes->addItem(QStringLiteral("M"));
     ui_->modes->addItem(QStringLiteral("CFI"));
     ui_->modes->addItem(QStringLiteral("PDI"));
+    ui_->modes->addItem(QStringLiteral("PW"));
     ui_->modes->addItem(QStringLiteral("NE"));
+    ui_->modes->addItem(QStringLiteral("SI"));
     ui_->modes->addItem(QStringLiteral("RF"));
     ui_->modes->blockSignals(false);
 
@@ -54,7 +109,7 @@ Oem::Oem(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_(fal
     connect(&timer_, &QTimer::timeout, [this]()
     {
         CusStatusInfo st;
-        if (cusOemStatusInfo(&st) == 0)
+        if (solumStatusInfo(&st) == 0)
         {
             ui_->probeStatus->setText(QStringLiteral("Battery: %1%, Temp: %2%, FR: %3 Hz")
                 .arg(st.battery).arg(st.temperature).arg(QString::number(st.frameRate, 'f', 0)));
@@ -119,7 +174,7 @@ Oem::Oem(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_(fal
 }
 
 /// destructor
-Oem::~Oem()
+Solum::~Solum()
 {
     timer_.stop();
     delete ui_;
@@ -127,7 +182,7 @@ Oem::~Oem()
 
 /// loads a list of probes into the selection box
 /// @param[in] probes the probes list
-void Oem::loadProbes(const QStringList& probes)
+void Solum::loadProbes(const QStringList& probes)
 {
     ui_->probes->clear();
     for (auto p : probes)
@@ -138,7 +193,7 @@ void Oem::loadProbes(const QStringList& probes)
 
 /// loads a list of applications into selection box
 /// @param[in] apps the applications list
-void Oem::loadApplications(const QStringList& apps)
+void Solum::loadApplications(const QStringList& apps)
 {
     ui_->workflows->clear();
     for (auto a : apps)
@@ -148,52 +203,67 @@ void Oem::loadApplications(const QStringList& apps)
 }
 
 /// called when the window is closing to clean up the library
-void Oem::closeEvent(QCloseEvent*)
+void Solum::closeEvent(QCloseEvent*)
 {
     if (connected_)
-        cusOemDisconnect();
+        solumDisconnect();
 
-    cusOemDestroy();
+    solumDestroy();
+}
+
+/// called for starting a cloud request to retrieve the probe credentials
+void Solum::onRetrieve()
+{
+    auto token = ui_->token->text();
+    if (!token.isEmpty())
+    {
+        settings_->setValue("token", token);
+        QNetworkRequest request(QUrl("https://cloud.clarius.com/api/public/v0/devices/oem/?format=json"));
+        request.setTransferTimeout(5000);
+        QByteArray auth(QString("OEM-API-Key %1").arg(token).toUtf8());
+        request.setRawHeader("Authorization", auth);
+        cloud_.get(request);
+    }
 }
 
 /// initiates ble search
-void Oem::onBleSearch()
+void Solum::onBleSearch()
 {
     ble_.search();
 }
 
 /// called when a ble probe is selected
-void Oem::onBleProbe(int index)
+void Solum::onBleProbe(int index)
 {
     ui_->bleconnect->setEnabled(index >= 0);
 }
 
 /// called when a ble connect is initiated
-void Oem::onBleConnect()
+void Solum::onBleConnect()
 {
     ble_.connectToProbe(ui_->bleprobes->currentText());
 }
 
 /// tries to power on probe
-void Oem::onPowerOn()
+void Solum::onPowerOn()
 {
     ble_.power(true);
 }
 
 /// tries to power off probe
-void Oem::onPowerOff()
+void Solum::onPowerOff()
 {
     ble_.power(false);
 }
 
 /// rings the probe
-void Oem::onRing()
+void Solum::onRing()
 {
     ble_.ring();
 }
 
 /// tries to reprogram probe to a new wifi network (router)
-void Oem::onWiFi()
+void Solum::onWiFi()
 {
     auto ssid = ui_->ssid->text();
     auto pw = ui_->password->text();
@@ -208,15 +278,15 @@ void Oem::onWiFi()
 }
 
 /// tries to repgram probe to it's own access point wifi
-void Oem::onAp()
+void Solum::onAp()
 {
-    ble_.requestWifi(QStringLiteral("ap: true\nchannel: auto\n"));
+    ble_.requestWifi(QStringLiteral("ap: true\nch: auto\n"));
 }
 
-/// handles custom events posted by oem api callbacks
+/// handles custom events posted by solum api callbacks
 /// @param[in] event the event to parse
 /// @return handling status
-bool Oem::event(QEvent *event)
+bool Solum::event(QEvent *event)
 {
     if (event->type() == CONNECT_EVENT)
     {
@@ -263,6 +333,12 @@ bool Oem::event(QEvent *event)
         newPrescanImage(evt->data_, evt->width_, evt->height_, evt->bpp_, evt->size_);
         return true;
     }
+    else if (event->type() == SPECTRUM_EVENT)
+    {
+        auto evt = static_cast<event::SpectrumImage*>(event);
+        newSpectrumImage(evt->data_, evt->lines_, evt->samples_, evt->bps_);
+        return true;
+    }
     else if (event->type() == RF_EVENT)
     {
         auto evt = static_cast<event::RfImage*>(event);
@@ -297,7 +373,7 @@ bool Oem::event(QEvent *event)
 
 /// called when the api returns an error
 /// @param[in] err the error message
-void Oem::setError(const QString& err)
+void Solum::setError(const QString& err)
 {
     ui_->status->showMessage(QStringLiteral("Error: %1").arg(err));
 }
@@ -306,7 +382,7 @@ void Oem::setError(const QString& err)
 /// @param[in] res the connection result
 /// @param[in] port the connection port
 /// @param[in] msg the associated message
-void Oem::setConnected(CusConnection res, int port, const QString& msg)
+void Solum::setConnected(CusConnection res, int port, const QString& msg)
 {
     if (res == ProbeConnected)
     {
@@ -316,6 +392,11 @@ void Oem::setConnected(CusConnection res, int port, const QString& msg)
         ui_->connect->setText("Disconnect");
         ui_->update->setEnabled(true);
         ui_->load->setEnabled(true);
+
+        // load the certificate if it was already retrieved from the cloud
+        QString serial = ui_->bleprobes->currentText();
+        if (certified_.count(serial))
+            solumSetCert(certified_[serial].toLatin1());
     }
     else if (res == ProbeDisconnected)
     {
@@ -338,7 +419,7 @@ void Oem::setConnected(CusConnection res, int port, const QString& msg)
 
 /// called when a new certification message has been sent
 /// @param[in] daysValid # of days valid for certificate
-void Oem::certification(int daysValid)
+void Solum::certification(int daysValid)
 {
     if (daysValid == CERT_INVALID)
         ui_->cert->setText(QStringLiteral("Invalid"));
@@ -351,7 +432,7 @@ void Oem::certification(int daysValid)
 /// called when there's a power down event
 /// @param[in] res the power down reason
 /// @param[in] tm the associated timeout
-void Oem::poweringDown(CusPowerDown res, int tm)
+void Solum::poweringDown(CusPowerDown res, int tm)
 {
     if (res == Idle)
         ui_->status->showMessage(QStringLiteral("Idle power down in: %1s").arg(tm));
@@ -363,9 +444,9 @@ void Oem::poweringDown(CusPowerDown res, int tm)
         ui_->status->showMessage(QStringLiteral("Button press power down in: %1s").arg(tm));
 }
 
-/// called when there's a software upate notification
+/// called when there's a software update notification
 /// @param[in] res the software update result
-void Oem::softwareUpdate(CusSwUpdate res)
+void Solum::softwareUpdate(CusSwUpdate res)
 {
     if (res == SwUpdateSuccess)
         ui_->status->showMessage(QStringLiteral("Successfully updated software"));
@@ -378,14 +459,15 @@ void Oem::softwareUpdate(CusSwUpdate res)
 /// called when the imaging state changes
 /// @param[in] state the imaging ready code
 /// @param[in] imaging the imaging state
-void Oem::imagingState(CusImagingState state, bool imaging)
+void Solum::imagingState(CusImagingState state, bool imaging)
 {
-    bool ready = (state == ImagingReady);
+    bool ready = (state != ImagingNotReady);
     ui_->freeze->setEnabled(ready ? true : false);
     ui_->decdepth->setEnabled(ready ? true : false);
     ui_->incdepth->setEnabled(ready ? true : false);
     ui_->gain->setEnabled(ready ? true : false);
     ui_->cfigain->setEnabled(ready ? true : false);
+    ui_->opacity->setEnabled(ready ? true : false);
     ui_->rfzoom->setEnabled(ready ? true : false);
     ui_->rfStream->setEnabled(ready ? true : false);
     ui_->imu->setEnabled(ready ? true : false);
@@ -402,6 +484,7 @@ void Oem::imagingState(CusImagingState state, bool imaging)
         imaging_ = imaging;
         getParams();
         image_->checkRoi();
+        image_->checkGate();
     }
     else if (state == CertExpired)
         ui_->status->showMessage(QStringLiteral("Certificate needs updating prior to imaging"));
@@ -410,14 +493,14 @@ void Oem::imagingState(CusImagingState state, bool imaging)
 /// called when there is a button press on the ultrasound
 /// @param[in] btn the button pressed
 /// @param[in] clicks # of clicks used
-void Oem::onButton(CusButton btn, int clicks)
+void Solum::onButton(CusButton btn, int clicks)
 {
     ui_->status->showMessage(QStringLiteral("Button %1 Pressed, %2 Clicks").arg((btn == ButtonDown) ? QStringLiteral("Down") : QStringLiteral("Up")).arg(clicks));
 }
 
 /// called when the download progress changes
 /// @param[in] progress the current progress
-void Oem::setProgress(int progress)
+void Solum::setProgress(int progress)
 {
     ui_->progress->setValue(progress);
 }
@@ -429,7 +512,7 @@ void Oem::setProgress(int progress)
 /// @param[in] bpp the bits per pixel
 /// @param[in] sz size of the image in bytes
 /// @param[in] imu the imu data if valid
-void Oem::newProcessedImage(const void* img, int w, int h, int bpp, int sz, const QQuaternion& imu)
+void Solum::newProcessedImage(const void* img, int w, int h, int bpp, int sz, const QQuaternion& imu)
 {
     image_->loadImage(img, w, h, bpp, sz);
     if (!imu.isNull())
@@ -442,7 +525,7 @@ void Oem::newProcessedImage(const void* img, int w, int h, int bpp, int sz, cons
 /// @param[in] h height of the image
 /// @param[in] bpp the bits per pixel
 /// @param[in] sz size of the image in bytes
-void Oem::newPrescanImage(const void* img, int w, int h, int bpp, int sz)
+void Solum::newPrescanImage(const void* img, int w, int h, int bpp, int sz)
 {
     if (sz == (w * h * (bpp / 8)))
         prescan_ = QImage(reinterpret_cast<const uchar*>(img), w, h, QImage::Format_ARGB32);
@@ -450,52 +533,69 @@ void Oem::newPrescanImage(const void* img, int w, int h, int bpp, int sz)
         prescan_.loadFromData(static_cast<const uchar*>(img), sz, "JPG");
 }
 
+/// called when a new spectrum image has been sent
+/// @param[in] img the image data
+/// @param[in] l # of lines
+/// @param[in] s # of samples
+/// @param[in] bps the bits per sample
+void Solum::newSpectrumImage(const void* img, int l, int s, int bps)
+{
+    spectrum_->loadImage(img, l, s, bps);
+}
+
 /// called when new rf data has been sent
 /// @param[in] rf the rf data
 /// @param[in] l # of rf lines
 /// @param[in] s # of rf samples per line
 /// @param[in] ss sample size (should always be 2)
-void Oem::newRfImage(const void* rf, int l, int s, int ss)
+void Solum::newRfImage(const void* rf, int l, int s, int ss)
 {
     signal_->loadSignal(rf, l, s, ss);
 }
 
 /// called when the connect/disconnect button is clicked
-void Oem::onConnect()
+void Solum::onConnect()
 {
     if (!connected_)
     {
-        if (cusOemConnect(ui_->ip->text().toStdString().c_str(), ui_->port->text().toInt()) < 0)
+        if (solumConnect(ui_->ip->text().toStdString().c_str(), ui_->port->text().toInt()) < 0)
             ui_->status->showMessage(QStringLiteral("Connection failed"));
         else
             ui_->status->showMessage(QStringLiteral("Trying connection"));
+
+        settings_->setValue("ip", ui_->ip->text());
+        settings_->setValue("port", ui_->port->text());
     }
     else
     {
-        if (cusOemDisconnect() < 0)
+        if (solumDisconnect() < 0)
             ui_->status->showMessage(QStringLiteral("Disconnect failed"));
     }
 }
 
 /// called when the freeze button is clicked
-void Oem::onFreeze()
+void Solum::onFreeze()
 {
     if (!connected_)
         return;
 
-    if (cusOemRun(imaging_ ? 0 : 1) < 0)
+    if (solumRun(imaging_ ? 0 : 1) < 0)
         ui_->status->showMessage(QStringLiteral("Error requesting imaging run/stop"));
     else
+    {
         imagingState(ImagingReady, !imaging_);
+        if (imaging_)
+            spectrum_->reset();
+    }
 }
 
 /// initiates a software update
-void Oem::onUpdate()
+void Solum::onUpdate()
 {
     if (!connected_)
         return;
 
-    if (cusOemSoftwareUpdate(
+    if (solumSoftwareUpdate(
         // software update result
         [](CusSwUpdate res)
         {
@@ -510,7 +610,7 @@ void Oem::onUpdate()
 }
 
 /// called to load a certificate
-void Oem::onUpdateCert()
+void Solum::onUpdateCert()
 {
     auto cert = QFileDialog::getOpenFileName(this,
         QStringLiteral("Load Certificate"), QString(), QStringLiteral("Certs (*.pem *.crt);;All Files (*)"));
@@ -521,136 +621,157 @@ void Oem::onUpdateCert()
     if (f.open(QIODevice::ReadOnly | QIODevice::Text))
     {
         QTextStream stream(&f);
-        stream.setCodec("UTF-8");
         auto text = stream.readAll();
-        cusOemSetCert(text.toStdString().c_str());
+        solumSetCert(text.toStdString().c_str());
     }
 }
 
 /// initiates a workflow load
-void Oem::onLoad()
+void Solum::onLoad()
 {
     if (!connected_)
         return;
 
-    if (cusOemLoadApplication(ui_->probes->currentText().toStdString().c_str(), ui_->workflows->currentText().toStdString().c_str()) < 0)
+    if (solumLoadApplication(ui_->probes->currentText().toStdString().c_str(), ui_->workflows->currentText().toStdString().c_str()) < 0)
         ui_->status->showMessage(QStringLiteral("Error requesting application load"));
-}
-
-/// called when user selects a new probe definition
-/// @param[in] probe the probe selected
-void Oem::onProbeSelected(const QString &probe)
-{
-    if (!probe.isEmpty())
+    // update depth range on a successful load
+    else
     {
-        cusOemApplications(probe.toStdString().c_str(), [](const char* list, int)
+        // wait a second for the application load to propagate internally before fetching the range
+        // ideally the api would provide a callback for when the application is fully loaded (ofi)
+        QTimer::singleShot(1000, [=] ()
         {
-            QApplication::postEvent(_me, new event::List(list, false));
+            CusRange range;
+            if (solumGetRange(ImageDepth, &range) == 0)
+            {
+                ui_->maxdepth->setText(QStringLiteral("Max: %1cm").arg(range.max));
+            }
         });
     }
 }
 
-/// increases the depth
-void Oem::incDepth()
+/// called when user selects a new probe definition
+/// @param[in] probe the probe selected
+void Solum::onProbeSelected(const QString &probe)
 {
-    auto v = cusOemGetParam(ImageDepth);
+    if (!probe.isEmpty())
+    {
+        solumApplications(probe.toStdString().c_str(), [](const char* list, int)
+        {
+            QApplication::postEvent(_me, new event::List(list, false));
+        });
+        settings_->setValue("probe", probe);
+    }
+}
+
+/// increases the depth
+void Solum::incDepth()
+{
+    auto v = solumGetParam(ImageDepth);
     if (v != -1)
-        cusOemSetParam(ImageDepth, v + 1.0);
+        solumSetParam(ImageDepth, v + 1.0);
 }
 
 /// decreases the depth
-void Oem::decDepth()
+void Solum::decDepth()
 {
-    auto v = cusOemGetParam(ImageDepth);
+    auto v = solumGetParam(ImageDepth);
     if (v > 1.0)
-        cusOemSetParam(ImageDepth, v - 1.0);
+        solumSetParam(ImageDepth, v - 1.0);
 }
 
 /// called when gain adjusted
 /// @param[in] gn the gain level
-void Oem::onGain(int gn)
+void Solum::onGain(int gn)
 {
-    cusOemSetParam(Gain, gn);
+    solumSetParam(Gain, gn);
 }
 
 /// called when color gain adjusted
 /// @param[in] gn the gain level
-void Oem::onColorGain(int gn)
+void Solum::onColorGain(int gn)
 {
-    cusOemSetParam(ColorGain, gn);
+    solumSetParam(ColorGain, gn);
+}
+
+/// called when strain opacity adjusted
+/// @param[in] gn the opacity level
+void Solum::onOpacity(int gn)
+{
+    solumSetParam(StrainOpacity, gn);
 }
 
 /// called when auto gain enable adjusted
 /// @param[in] state checkbox state
-void Oem::onAutoGain(int state)
+void Solum::onAutoGain(int state)
 {
-    cusOemSetParam(AutoGain, (state == Qt::Checked) ? 1 : 0);
+    solumSetParam(AutoGain, (state == Qt::Checked) ? 1 : 0);
 }
 
 /// called when imu enable adjusted
 /// @param[in] state checkbox state
-void Oem::onImu(int state)
+void Solum::onImu(int state)
 {
     ui_->_tabs->setTabEnabled(IMU_TAB, (state == Qt::Checked));
-    cusOemSetParam(ImuStreaming, (state == Qt::Checked) ? 1 : 0);
+    solumSetParam(ImuStreaming, (state == Qt::Checked) ? 1 : 0);
 }
 
 /// called when rf stream enable adjusted
 /// @param[in] state checkbox state
-void Oem::onRfStream(int state)
+void Solum::onRfStream(int state)
 {
-    cusOemSetParam(RfStreaming, (state == Qt::Checked) ? 1 : 0);
+    solumSetParam(RfStreaming, (state == Qt::Checked) ? 1 : 0);
 }
 
 /// sets the tgc top
 /// @param[in] v the tgc value
-void Oem::tgcTop(int v)
+void Solum::tgcTop(int v)
 {
     CusTgc t;
     t.top = v;
     t.mid = ui_->tgcmid->value();
     t.bottom = ui_->tgcbottom->value();
-    cusOemSetTgc(&t);
+    solumSetTgc(&t);
 }
 
 /// sets the tgc mid
 /// @param[in] v the tgc value
-void Oem::tgcMid(int v)
+void Solum::tgcMid(int v)
 {
     CusTgc t;
     t.top = ui_->tgctop->value();
     t.mid = v;
     t.bottom = ui_->tgcbottom->value();
-    cusOemSetTgc(&t);
+    solumSetTgc(&t);
 }
 
 /// sets the tgc bottom
 /// @param[in] v the tgc value
-void Oem::tgcBottom(int v)
+void Solum::tgcBottom(int v)
 {
     CusTgc t;
     t.top = ui_->tgctop->value();
     t.mid = ui_->tgcmid->value();
     t.bottom = v;
-    cusOemSetTgc(&t);
+    solumSetTgc(&t);
 }
 
 /// get the initial parameter values
-void Oem::getParams()
+void Solum::getParams()
 {
-    auto v = cusOemGetParam(ImageDepth);
+    auto v = solumGetParam(ImageDepth);
     if (v != -1 && image_)
         image_->setDepth(v);
 
-    v = cusOemGetParam(AutoGain);
+    v = solumGetParam(AutoGain);
     ui_->autogain->setChecked(v > 0);
-    v = cusOemGetParam(ImuStreaming);
+    v = solumGetParam(ImuStreaming);
     ui_->imu->setChecked(v > 0);
-    v = cusOemGetParam(RfStreaming);
+    v = solumGetParam(RfStreaming);
     ui_->rfStream->setChecked(v > 0);
 
     CusTgc t;
-    if (cusOemGetTgc(&t) == 0)
+    if (solumGetTgc(&t) == 0)
     {
         ui_->tgctop->setValue(static_cast<int>(t.top));
         ui_->tgcmid->setValue(static_cast<int>(t.mid));
@@ -659,22 +780,46 @@ void Oem::getParams()
 }
 
 /// called on a mode change
-void Oem::onMode(int mode)
+void Solum::onMode(int mode)
 {
     auto m = static_cast<CusMode>(mode);
-    if (cusOemSetMode(m) < 0)
+    if (solumSetMode(m) < 0)
         ui_->status->showMessage(QStringLiteral("Error setting imaging mode"));
     else
     {
+        spectrum_->setVisible(m == MMode || m == PwMode);
         signal_->setVisible(m == RfMode);
+        ui_->cfigain->setVisible(m == ColorMode || m == PowerMode);
+        ui_->velocity->setVisible(m == ColorMode || m == PwMode);
+        ui_->opacity->setVisible(m == Strain);
         ui_->rfzoom->setVisible(m == RfMode);
         ui_->rfStream->setVisible(m == RfMode);
-        ui_->cfigain->setVisible(m == ColorMode || m == PowerMode);
+
+        updateVelocity(m);
+    }
+}
+
+/// updates the velocity range on the interface
+/// @param[in] mode the current imaging mode
+/// @note called on a mode change, but should also be called if a prf adjustment occurs
+void Solum::updateVelocity(CusMode mode)
+{
+    // wait a second for the mode load to propagate internally before fetching the velociy
+    if (mode == ColorMode || mode == PwMode)
+    {
+        QTimer::singleShot(1000, [=] ()
+        {
+            auto v = solumGetParam(DopplerVelocity);
+            if (v)
+            {
+                ui_->velocity->setText(QStringLiteral("+/- %1cm/s").arg(v));
+            }
+        });
     }
 }
 
 /// called when rf zoom adjusted
-void Oem::onZoom(int zoom)
+void Solum::onZoom(int zoom)
 {
     signal_->setZoom(zoom);
 }

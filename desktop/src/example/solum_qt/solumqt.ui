@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>Oem</class>
- <widget class="QMainWindow" name="Oem">
+ <class>Solum</class>
+ <widget class="QMainWindow" name="Solum">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Oem Tester</string>
+   <string>Solum Tester</string>
   </property>
   <widget class="QWidget" name="_central">
    <layout class="QVBoxLayout" name="verticalLayout">
@@ -36,6 +36,55 @@
       <property name="currentIndex">
        <number>0</number>
       </property>
+      <widget class="QWidget" name="_cloud">
+       <attribute name="title">
+        <string>Cloud</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_7">
+        <item>
+         <layout class="QVBoxLayout" name="verticalLayout_8">
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_6">
+            <item>
+             <widget class="QLabel" name="_token">
+              <property name="text">
+               <string>Token:</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="token">
+              <property name="text">
+               <string/>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <widget class="QPushButton" name="retrieve">
+            <property name="text">
+             <string>Retrieve</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <spacer name="verticalSpacer_3">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </widget>
       <widget class="QWidget" name="_ble">
        <attribute name="title">
         <string>BLE</string>
@@ -428,6 +477,32 @@
               </property>
              </widget>
             </item>
+            <item>
+             <widget class="QLabel" name="maxdepth">
+              <property name="frameShape">
+               <enum>QFrame::StyledPanel</enum>
+              </property>
+              <property name="text">
+               <string>Max: 0 cm</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="velocity">
+              <property name="enabled">
+               <bool>true</bool>
+              </property>
+              <property name="frameShape">
+               <enum>QFrame::StyledPanel</enum>
+              </property>
+              <property name="text">
+               <string>+/- 0 cm/s</string>
+              </property>
+             </widget>
+            </item>
            </layout>
           </item>
           <item>
@@ -554,6 +629,40 @@
             </property>
             <property name="toolTip">
              <string>Color Gain</string>
+            </property>
+            <property name="minimum">
+             <number>1</number>
+            </property>
+            <property name="maximum">
+             <number>100</number>
+            </property>
+            <property name="value">
+             <number>50</number>
+            </property>
+            <property name="notchTarget">
+             <double>10.000000000000000</double>
+            </property>
+            <property name="notchesVisible">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QDial" name="opacity">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>50</width>
+              <height>50</height>
+             </size>
+            </property>
+            <property name="toolTip">
+             <string>Strain Opacity</string>
             </property>
             <property name="minimum">
              <number>1</number>
@@ -728,7 +837,7 @@
   <connection>
    <sender>update</sender>
    <signal>clicked()</signal>
-   <receiver>Oem</receiver>
+   <receiver>Solum</receiver>
    <slot>onUpdate()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -744,7 +853,7 @@
   <connection>
    <sender>freeze</sender>
    <signal>clicked()</signal>
-   <receiver>Oem</receiver>
+   <receiver>Solum</receiver>
    <slot>onFreeze()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -760,7 +869,7 @@
   <connection>
    <sender>connect</sender>
    <signal>clicked()</signal>
-   <receiver>Oem</receiver>
+   <receiver>Solum</receiver>
    <slot>onConnect()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -776,7 +885,7 @@
   <connection>
    <sender>load</sender>
    <signal>clicked()</signal>
-   <receiver>Oem</receiver>
+   <receiver>Solum</receiver>
    <slot>onLoad()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -791,8 +900,8 @@
   </connection>
   <connection>
    <sender>probes</sender>
-   <signal>currentIndexChanged(QString)</signal>
-   <receiver>Oem</receiver>
+   <signal>currentTextChanged(QString)</signal>
+   <receiver>Solum</receiver>
    <slot>onProbeSelected(QString)</slot>
    <hints>
     <hint type="sourcelabel">
@@ -808,7 +917,7 @@
   <connection>
    <sender>incdepth</sender>
    <signal>clicked()</signal>
-   <receiver>Oem</receiver>
+   <receiver>Solum</receiver>
    <slot>incDepth()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -824,7 +933,7 @@
   <connection>
    <sender>decdepth</sender>
    <signal>clicked()</signal>
-   <receiver>Oem</receiver>
+   <receiver>Solum</receiver>
    <slot>decDepth()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -840,7 +949,7 @@
   <connection>
    <sender>tgctop</sender>
    <signal>valueChanged(int)</signal>
-   <receiver>Oem</receiver>
+   <receiver>Solum</receiver>
    <slot>tgcTop(int)</slot>
    <hints>
     <hint type="sourcelabel">
@@ -856,7 +965,7 @@
   <connection>
    <sender>tgcmid</sender>
    <signal>valueChanged(int)</signal>
-   <receiver>Oem</receiver>
+   <receiver>Solum</receiver>
    <slot>tgcMid(int)</slot>
    <hints>
     <hint type="sourcelabel">
@@ -872,7 +981,7 @@
   <connection>
    <sender>tgcbottom</sender>
    <signal>valueChanged(int)</signal>
-   <receiver>Oem</receiver>
+   <receiver>Solum</receiver>
    <slot>tgcBottom(int)</slot>
    <hints>
     <hint type="sourcelabel">
@@ -888,7 +997,7 @@
   <connection>
    <sender>blesearch</sender>
    <signal>clicked()</signal>
-   <receiver>Oem</receiver>
+   <receiver>Solum</receiver>
    <slot>onBleSearch()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -904,7 +1013,7 @@
   <connection>
    <sender>bleprobes</sender>
    <signal>currentIndexChanged(int)</signal>
-   <receiver>Oem</receiver>
+   <receiver>Solum</receiver>
    <slot>onBleProbe(int)</slot>
    <hints>
     <hint type="sourcelabel">
@@ -920,7 +1029,7 @@
   <connection>
    <sender>bleconnect</sender>
    <signal>clicked()</signal>
-   <receiver>Oem</receiver>
+   <receiver>Solum</receiver>
    <slot>onBleConnect()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -936,7 +1045,7 @@
   <connection>
    <sender>poweron</sender>
    <signal>clicked()</signal>
-   <receiver>Oem</receiver>
+   <receiver>Solum</receiver>
    <slot>onPowerOn()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -952,7 +1061,7 @@
   <connection>
    <sender>poweroff</sender>
    <signal>clicked()</signal>
-   <receiver>Oem</receiver>
+   <receiver>Solum</receiver>
    <slot>onPowerOff()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -968,7 +1077,7 @@
   <connection>
    <sender>wifi</sender>
    <signal>clicked()</signal>
-   <receiver>Oem</receiver>
+   <receiver>Solum</receiver>
    <slot>onWiFi()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -984,7 +1093,7 @@
   <connection>
    <sender>ap</sender>
    <signal>clicked()</signal>
-   <receiver>Oem</receiver>
+   <receiver>Solum</receiver>
    <slot>onAp()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -1000,7 +1109,7 @@
   <connection>
    <sender>modes</sender>
    <signal>currentIndexChanged(int)</signal>
-   <receiver>Oem</receiver>
+   <receiver>Solum</receiver>
    <slot>onMode(int)</slot>
    <hints>
     <hint type="sourcelabel">
@@ -1016,7 +1125,7 @@
   <connection>
    <sender>rfzoom</sender>
    <signal>valueChanged(int)</signal>
-   <receiver>Oem</receiver>
+   <receiver>Solum</receiver>
    <slot>onZoom(int)</slot>
    <hints>
     <hint type="sourcelabel">
@@ -1032,7 +1141,7 @@
   <connection>
    <sender>gain</sender>
    <signal>valueChanged(int)</signal>
-   <receiver>Oem</receiver>
+   <receiver>Solum</receiver>
    <slot>onGain(int)</slot>
    <hints>
     <hint type="sourcelabel">
@@ -1048,7 +1157,7 @@
   <connection>
    <sender>cfigain</sender>
    <signal>valueChanged(int)</signal>
-   <receiver>Oem</receiver>
+   <receiver>Solum</receiver>
    <slot>onColorGain(int)</slot>
    <hints>
     <hint type="sourcelabel">
@@ -1064,7 +1173,7 @@
   <connection>
    <sender>imu</sender>
    <signal>stateChanged(int)</signal>
-   <receiver>Oem</receiver>
+   <receiver>Solum</receiver>
    <slot>onImu(int)</slot>
    <hints>
     <hint type="sourcelabel">
@@ -1080,7 +1189,7 @@
   <connection>
    <sender>autogain</sender>
    <signal>stateChanged(int)</signal>
-   <receiver>Oem</receiver>
+   <receiver>Solum</receiver>
    <slot>onAutoGain(int)</slot>
    <hints>
     <hint type="sourcelabel">
@@ -1096,7 +1205,7 @@
   <connection>
    <sender>updateCert</sender>
    <signal>clicked()</signal>
-   <receiver>Oem</receiver>
+   <receiver>Solum</receiver>
    <slot>onUpdateCert()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -1112,7 +1221,7 @@
   <connection>
    <sender>rfStream</sender>
    <signal>stateChanged(int)</signal>
-   <receiver>Oem</receiver>
+   <receiver>Solum</receiver>
    <slot>onRfStream(int)</slot>
    <hints>
     <hint type="sourcelabel">
@@ -1128,12 +1237,44 @@
   <connection>
    <sender>ring</sender>
    <signal>clicked()</signal>
-   <receiver>Oem</receiver>
+   <receiver>Solum</receiver>
    <slot>onRing()</slot>
    <hints>
     <hint type="sourcelabel">
      <x>232</x>
      <y>341</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>259</x>
+     <y>279</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>retrieve</sender>
+   <signal>clicked()</signal>
+   <receiver>Solum</receiver>
+   <slot>onRetrieve()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>259</x>
+     <y>317</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>259</x>
+     <y>279</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>opacity</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>Solum</receiver>
+   <slot>onOpacity(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>157</x>
+     <y>390</y>
     </hint>
     <hint type="destinationlabel">
      <x>259</x>
@@ -1169,5 +1310,7 @@
   <slot>onUpdateCert()</slot>
   <slot>onRfStream(int)</slot>
   <slot>onRing()</slot>
+  <slot>onRetrieve()</slot>
+  <slot>onOpacity(int)</slot>
  </slots>
 </ui>

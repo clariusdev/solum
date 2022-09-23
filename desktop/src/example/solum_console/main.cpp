@@ -13,7 +13,7 @@
 #include <unistd.h>
 #endif
 
-#include <oem/oem.h>
+#include <solum/solum.h>
 
 #define PRINT           std::cout << std::endl
 #define PRINTSL         std::cout << "\r"
@@ -28,7 +28,7 @@ static char buffer_[2048];
 static int counter_ = 0;
 
 /// callback for error messages
-/// @param[in] err the error message sent from the oem module
+/// @param[in] err the error message sent from the solum module
 void errorFn(const char* err)
 {
     ERROR << "error: " << err;
@@ -37,7 +37,7 @@ void errorFn(const char* err)
 /// callback for connection status
 /// @param[in] res connection result
 /// @param[in] port udp port used for streaming
-/// @param[in] status the connection status message sent from the oem module
+/// @param[in] status the connection status message sent from the solum module
 void connectFn(CusConnection res, int port, const char* status)
 {
     if (res == ConnectionError)
@@ -243,7 +243,7 @@ void processEventLoop(std::atomic_bool& quit)
                 try { port_ = std::stoi(buf1); }
                 catch (std::exception&) { ERROR << "invalid port specified"; }
             }
-            if (cusOemConnect(ip_.c_str(), port_) < 0)
+            if (solumConnect(ip_.c_str(), port_) < 0)
                 ERROR << "error calling connect";
             else
                 PRINT << "trying to connect";
@@ -251,25 +251,25 @@ void processEventLoop(std::atomic_bool& quit)
         else if (cmd == "D" || cmd == "d")
         {
             // disconnect and reset ip/port
-            cusOemDisconnect();
+            solumDisconnect();
             ip_ = "";
             port_ = 0;
         }
         else if (cmd == "U" || cmd == "u")
         {
-            if (cusOemSoftwareUpdate(swUpdateFn, progressFn) < 0)
+            if (solumSoftwareUpdate(swUpdateFn, progressFn) < 0)
                 ERROR << "error requesting software update";
         }
         else if (cmd == "G" || cmd == "g")
         {
-            if (cusOemStatusInfo(&stats) == 0)
+            if (solumStatusInfo(&stats) == 0)
                 PRINT << "battery: " << stats.battery << "%, temperature: " << stats.temperature << "%, fr: " << stats.frameRate << "Hz";
             else
                 ERROR << "error requesting status";
         }
         else if (cmd == "I" || cmd == "i")
         {
-            if (cusOemProbeInfo(&probe) == 0)
+            if (solumProbeInfo(&probe) == 0)
                 PRINT << "version: " << probe.version << ", elements: " << probe.elements
                       << ", pitch: " << probe.pitch << ", radius: " << probe.radius;
             else
@@ -287,13 +287,13 @@ void processEventLoop(std::atomic_bool& quit)
             {
                 std::stringstream ss;
                 ss << fs.rdbuf();
-                if (cusOemSetCert(ss.str().c_str()) < 0)
+                if (solumSetCert(ss.str().c_str()) < 0)
                     ERROR << "error sending certificate";
             }
         }
         else if (cmd == "P" || cmd == "p")
         {
-            if (cusOemProbes([](const char* list, int sz)
+            if (solumProbes([](const char* list, int sz)
             {
                 PRINT << "probes:";
                 printCsv(list, sz);
@@ -305,7 +305,7 @@ void processEventLoop(std::atomic_bool& quit)
             PRINT << "enter probe model: ";
             std::getline(std::cin, buf1);
             PRINT << "applications for " << buf1 << ":";
-            if (cusOemApplications(buf1.c_str(), [](const char* list, int sz)
+            if (solumApplications(buf1.c_str(), [](const char* list, int sz)
             {
                 printCsv(list, sz);
             }) < 0)
@@ -317,7 +317,7 @@ void processEventLoop(std::atomic_bool& quit)
             std::getline(std::cin, buf1);
             PRINT << "enter application: ";
             std::getline(std::cin, buf2);
-            if (cusOemLoadApplication(buf1.c_str(), buf2.c_str()) == 0)
+            if (solumLoadApplication(buf1.c_str(), buf2.c_str()) == 0)
                 PRINT << "trying to load application: " << buf2;
             else
                 ERROR << "error calling load application";
@@ -325,19 +325,19 @@ void processEventLoop(std::atomic_bool& quit)
         else if (cmd == "R" || cmd == "r")
         {
             counter_ = 0;
-            if (cusOemRun(1) < 0)
+            if (solumRun(1) < 0)
                 ERROR << "run request failed";
         }
         else if (cmd == "S" || cmd == "s")
         {
-            if (cusOemRun(0) < 0)
+            if (solumRun(0) < 0)
                 ERROR << "stop request failed";
         }
         else if (cmd == "F" || cmd == "f")
         {
             PRINT << "select parameter [d=depth, g=gain, i=imu]: ";
             std::getline(std::cin, buf1);
-            v = cusOemGetParam(param(buf1));
+            v = solumGetParam(param(buf1));
             if (v == -1)
                 ERROR << "parameter request failed";
             else
@@ -350,12 +350,12 @@ void processEventLoop(std::atomic_bool& quit)
             PRINT << "set value: ";
             std::getline(std::cin, buf2);
             v = std::atoi(buf2.c_str());
-            if (cusOemSetParam(param(buf1), v) < 0)
+            if (solumSetParam(param(buf1), v) < 0)
                 ERROR << "error setting parameter";
         }
         else if (cmd == "N" || cmd == "n")
         {
-            m = cusOemGetMode();
+            m = solumGetMode();
             if (m == BMode)
                 PRINT << "b mode";
             else if (m == RfMode)
@@ -369,7 +369,7 @@ void processEventLoop(std::atomic_bool& quit)
         {
             PRINT << "select mode [b=b mode, r=rf, c=cfi, p=pdi]: ";
             std::getline(std::cin, buf1);
-            if (cusOemSetMode(mode(buf1)) < 0)
+            if (solumSetMode(mode(buf1)) < 0)
                 ERROR << "mode request failed";
         }
         else
@@ -458,7 +458,7 @@ int init(int& argc, char** argv)
         case '?': PRINT << "invalid argument, valid options: -a [addr], -p [port], -k [keydir]"; break;
         default: break;
         }
-    }    
+    }
 #endif
 
     // ensure an ip address is specified with the port
@@ -468,20 +468,20 @@ int init(int& argc, char** argv)
         return ERRCODE;
     }
 
-    PRINT << "starting clarius oem program...";
+    PRINT << "starting solum program...";
 
     // initialize with callbacks
-    if (cusOemInit(argc, argv, keydir.c_str(), connectFn, certFn, powerDownFn, newProcessedImageFn,
+    if (solumInit(argc, argv, keydir.c_str(), connectFn, certFn, powerDownFn, newProcessedImageFn,
                    newRawImageFn, nullptr, imagingFn, buttonFn, errorFn, width, height) < 0)
     {
-        ERROR << "could not initialize oem module" << std::endl;
+        ERROR << "could not initialize solum module" << std::endl;
         return ERRCODE;
     }
 
     // try and connect right away if parameters provided
     if (ip_.size() && port_)
     {
-        if (cusOemConnect(ip_.c_str(), port_) < 0)
+        if (solumConnect(ip_.c_str(), port_) < 0)
             ERROR << "error calling connect";
         else
             PRINT << "trying to connect";
@@ -503,6 +503,6 @@ int main(int argc, char* argv[])
     std::atomic_bool quitFlag(false);
     std::thread eventLoop(processEventLoop, std::ref(quitFlag));
     eventLoop.join();
-    cusOemDestroy();
+    solumDestroy();
     return rcode;
 }

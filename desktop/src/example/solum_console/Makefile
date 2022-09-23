@@ -2,19 +2,19 @@ TARGET_EXEC ?= $(notdir $(CURDIR))
 
 BUILD_DIR ?= ./build
 SRC_DIRS ?= ./
-OEM_SDK ?= ../..
+SOLUM_SDK ?= ../..
 
 SRCS := $(shell find $(SRC_DIRS) -name *.cpp -or -name *.c -or -name *.s)
 OBJS := $(SRCS:%=$(BUILD_DIR)/%.o)
 DEPS := $(OBJS:.o=.d)
 
 INC_DIRS := $(shell find $(SRC_DIRS) -type d)
-INC_DIRS += $(OEM_SDK)/include
+INC_DIRS += $(SOLUM_SDK)/include
 INC_FLAGS := $(addprefix -I,$(INC_DIRS))
 
 CPPFLAGS += $(INC_FLAGS)
 CXXFLAGS += -std=gnu++14
-LDFLAGS += -L$(OEM_SDK)/lib -loem -lpthread
+LDFLAGS += -L$(SOLUM_SDK)/lib -lsolum -lpthread
 
 $(BUILD_DIR)/$(TARGET_EXEC): $(OBJS)
 	$(CXX) $(OBJS) -o $@ $(LDFLAGS)

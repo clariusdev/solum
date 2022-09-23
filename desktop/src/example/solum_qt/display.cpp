@@ -1,5 +1,5 @@
 #include "display.h"
-#include <oem/oem.h>
+#include <solum/solum.h>
 
 /// default constructor
 /// @param[in] parent the parent object
@@ -50,7 +50,7 @@ void UltrasoundImage::checkRoi()
     lock_.lock();
     // make room for 32 x/y points
     double buf[64];
-    if (cusOemGetRoi(buf, 32) == 0)
+    if (solumGetRoi(buf, 32) == 0)
     {
         QPolygonF roi;
         for (auto i = 0u; i < 32; i++)
@@ -62,6 +62,29 @@ void UltrasoundImage::checkRoi()
     lock_.unlock();
 }
 
+/// checks if there's a valid gate that should be drawn
+void UltrasoundImage::checkGate()
+{
+    lock_.lock();
+    CusGateLines lines;
+    if (solumGetGate(&lines) == 0)
+    {
+        auto convertLine = [](const CusLine& line) -> QLineF
+        {
+            return QLineF(QPointF(line.p1.x, line.p1.y), QPointF(line.p2.x, line.p2.y));
+        };
+        gate_.clear();
+        gate_.push_back(convertLine(lines.active));
+        gate_.push_back(convertLine(lines.top));
+        gate_.push_back(convertLine(lines.normalTop));
+        gate_.push_back(convertLine(lines.normalBottom));
+        gate_.push_back(convertLine(lines.bottom));
+    }
+    else
+        gate_.clear();
+    lock_.unlock();
+}
+
 /// handles resizing of the image view
 /// @param[in] e the event to parse
 void UltrasoundImage::resizeEvent(QResizeEvent* e)
@@ -69,7 +92,7 @@ void UltrasoundImage::resizeEvent(QResizeEvent* e)
     auto w = e->size().width(), h = e->size().height();
 
     setSceneRect(0, 0, w, h);
-    cusOemSetOutputSize(w, h);
+    solumSetOutputSize(w, h);
 
     lock_.lock();
     image_ = QImage(w, h, QImage::Format_ARGB32);
@@ -80,6 +103,7 @@ void UltrasoundImage::resizeEvent(QResizeEvent* e)
     QTimer::singleShot(250, [this]()
     {
         checkRoi();
+        checkGate();
     });
 
     QGraphicsView::resizeEvent(e);
@@ -131,6 +155,21 @@ void UltrasoundImage::drawForeground(QPainter* painter, const QRectF& r)
             painter->setPen(Qt::yellow);
             painter->drawPolygon(roi_);
         }
+        if (gate_.size())
+        {
+            bool active = true;
+            for (const auto& l : gate_)
+            {
+                if (active)
+                {
+                    painter->setPen(QPen(Qt::yellow, 1, Qt::DotLine));
+                    active = false;
+                }
+                else
+                    painter->setPen(QPen(Qt::yellow, 1, Qt::DashLine));
+                painter->drawLine(l);
+            }
+        }
     }
     lock_.unlock();
 }
@@ -140,11 +179,130 @@ void UltrasoundImage::drawForeground(QPainter* painter, const QRectF& r)
 void UltrasoundImage::mouseReleaseEvent(QMouseEvent* e)
 {
     // if the call to move succeeds, it means an imaging mode supporting an roi is running
-    auto pos = e->localPos();
-    if (cusOemAdjustRoi(static_cast<int>(pos.x()), static_cast<int>(pos.y()), (e->button() == Qt::LeftButton) ? MoveRoi : SizeRoi) == 0)
-        checkRoi();
+    auto pos = e->position();
+    auto m = solumGetMode();
+    if (m == ColorMode || m == PowerMode || m == Strain || m == RfMode)
+    {
+        if (solumAdjustRoi(static_cast<int>(pos.x()), static_cast<int>(pos.y()), (e->button() == Qt::LeftButton) ? MoveRoi : SizeRoi) == 0)
+            checkRoi();
+    }
+    else if (m == MMode || m == PwMode)
+    {
+        if (solumAdjustGate(static_cast<int>(pos.x()), static_cast<int>(pos.y())) == 0)
+            checkGate();
+    }
 
     QWidget::mouseReleaseEvent(e);
+}
+
+/// default constructor
+/// @param[in] parent the parent object
+Spectrum::Spectrum(QWidget* parent) : QGraphicsView(parent)
+{
+    QGraphicsScene* sc = new QGraphicsScene(this);
+    setScene(sc);
+    setVisible(false);
+
+    // initialize to some arbitrary size
+    setSceneRect(0, 0, 400, 100);
+
+    QSizePolicy p(QSizePolicy::Preferred, QSizePolicy::Preferred);
+    p.setHeightForWidth(true);
+    setSizePolicy(p);
+}
+
+/// resets the spectrum
+void Spectrum::reset()
+{
+    lock_.lock();
+    spectrum_.fill(Qt::black);
+    offset_ = 0;
+    lock_.unlock();
+    scene()->invalidate();
+}
+
+/// loads a new image from raw data
+/// @param[in] img the new spectrum data
+/// @param[in] l # of spectrum lines
+/// @param[in] s # of spectrum samples
+/// @param[in] bps bits per sample
+void Spectrum::loadImage(const void* img, int l, int s, int bps)
+{
+    lock_.lock();
+
+    auto w = width();
+    // recreate the image if the dimensions change
+    if (s != spectrum_.width() || w != spectrum_.height())
+    {
+        spectrum_ = QImage(s, w, QImage::Format_Grayscale8);
+        offset_ = 0;
+    }
+
+    int sz = (l * s * (bps / 8));
+    // ensure we don't go beyond the buffer space
+    if (offset_ + sz > w * s)
+        offset_ = 0;
+
+    memcpy(spectrum_.bits() + offset_, img, sz);
+    offset_ += sz;
+
+    lock_.unlock();
+
+    // redraw
+    scene()->invalidate();
+}
+
+/// handles resizing of the image view
+/// @param[in] e the event to parse
+void Spectrum::resizeEvent(QResizeEvent* e)
+{
+    auto w = e->size().width(), h = e->size().height();
+
+    setSceneRect(0, 0, w, h);
+    reset();
+
+    QGraphicsView::resizeEvent(e);
+}
+
+/// calculates the ratio of the test image to determine the proper height ratio for width
+/// @param[in] w the width of the widget
+/// @return the appropriate height
+int Spectrum::heightForWidth(int w) const
+{
+    // keep 2:1 aspect ratio
+    double ratio = 1.0 / 2.0;
+    return static_cast<int>(w * ratio);
+}
+
+/// size hint to keep the test image ratio
+/// @return the size hint
+QSize Spectrum::sizeHint() const
+{
+    auto w = width();
+    return QSize(w, heightForWidth(w));
+}
+
+/// creates a black background
+/// @param[in] painter the drawing context
+/// @param[in] r the rectangle to fill (the entire view)
+void Spectrum::drawBackground(QPainter* painter, const QRectF& r)
+{
+    painter->fillRect(r, QBrush(Qt::black));
+    QGraphicsView::drawBackground(painter, r);
+}
+
+/// draws the target image
+/// @param[in] painter the drawing context
+void Spectrum::drawForeground(QPainter* painter, const QRectF& r)
+{
+    lock_.lock();
+    if (!spectrum_.isNull())
+    {
+        auto mirrored = spectrum_.mirrored(true, false);
+        auto rotated = mirrored.transformed(QTransform().rotate(-90));
+        painter->drawImage(r, rotated);
+    }
+    lock_.unlock();
 }
 
 /// default constructor

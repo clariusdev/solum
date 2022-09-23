@@ -168,7 +168,7 @@ void Ble::onService(const QBluetoothUuid& u)
             {
                 emitPowered(ch, v);
             });
-            if (s == QLowEnergyService::ServiceDiscovered)
+            if (s == QLowEnergyService::RemoteServiceDiscovered)
             {
                 emit powerReady(true);
 
@@ -176,7 +176,7 @@ void Ble::onService(const QBluetoothUuid& u)
                 if (ch.isValid())
                 {
                     // subscribe to notifications
-                    auto de = ch.descriptor(QBluetoothUuid::ClientCharacteristicConfiguration);
+                    auto de = ch.descriptor(QBluetoothUuid::DescriptorType::ClientCharacteristicConfiguration);
                     if (de.isValid())
                         power_->writeDescriptor(de, QByteArray::fromHex("0100"));
                     // engage a first read of the wifi info
@@ -204,7 +204,7 @@ void Ble::onService(const QBluetoothUuid& u)
             {
                 emitWifi(ch, v);
             });
-            if (s == QLowEnergyService::ServiceDiscovered)
+            if (s == QLowEnergyService::RemoteServiceDiscovered)
             {
                 emit wifiReady(true);
 
@@ -212,7 +212,7 @@ void Ble::onService(const QBluetoothUuid& u)
                 if (ch.isValid())
                 {
                     // subscribe to notifications
-                    auto de = ch.descriptor(QBluetoothUuid::ClientCharacteristicConfiguration);
+                    auto de = ch.descriptor(QBluetoothUuid::DescriptorType::ClientCharacteristicConfiguration);
                     if (de.isValid())
                         wifi_->writeDescriptor(de, QByteArray::fromHex("0100"));
                     // engage a first read of the wifi info
@@ -221,12 +221,12 @@ void Ble::onService(const QBluetoothUuid& u)
             }
         });
     }
-    else if (u == QBluetoothUuid::ImmediateAlert)
+    else if (u == QBluetoothUuid::ServiceClassUuid::ImmediateAlert)
     {
         ias_.reset(probe_->createServiceObject(u));
         QObject::connect(ias_.get(), &QLowEnergyService::stateChanged, [this](QLowEnergyService::ServiceState s)
         {
-            if (s == QLowEnergyService::ServiceDiscovered)
+            if (s == QLowEnergyService::RemoteServiceDiscovered)
             {
                 ping();
                 ping_.start(5000);
@@ -263,7 +263,7 @@ void Ble::onDiscoveryFinished()
 /// @return success of the request
 bool Ble::power(bool en)
 {
-    if (!power_ || power_->state() != QLowEnergyService::ServiceDiscovered)
+    if (!power_ || power_->state() != QLowEnergyService::RemoteServiceDiscovered)
         return false;
 
     auto ch = power_->characteristic(powerRequestUuid());
@@ -279,7 +279,7 @@ bool Ble::power(bool en)
 /// @return success of the request
 bool Ble::requestWifi(const QString& info)
 {
-    if (!wifi_ || wifi_->state() != QLowEnergyService::ServiceDiscovered || info.isEmpty())
+    if (!wifi_ || wifi_->state() != QLowEnergyService::RemoteServiceDiscovered || info.isEmpty())
         return false;
 
     auto ch = wifi_->characteristic(wifiRequestUuid());
@@ -294,10 +294,10 @@ bool Ble::requestWifi(const QString& info)
 /// @return success of the request
 bool Ble::ping()
 {
-    if (!ias_ || ias_->state() != QLowEnergyService::ServiceDiscovered)
+    if (!ias_ || ias_->state() != QLowEnergyService::RemoteServiceDiscovered)
         return false;
 
-    auto ch = ias_->characteristic(QBluetoothUuid::AlertLevel);
+    auto ch = ias_->characteristic(QBluetoothUuid::CharacteristicType::AlertLevel);
     if (!ch.isValid())
         return false;
 
@@ -309,10 +309,10 @@ bool Ble::ping()
 /// @return success of the request
 bool Ble::ring()
 {
-    if (!ias_ || ias_->state() != QLowEnergyService::ServiceDiscovered)
+    if (!ias_ || ias_->state() != QLowEnergyService::RemoteServiceDiscovered)
         return false;
 
-    auto ch = ias_->characteristic(QBluetoothUuid::AlertLevel);
+    auto ch = ias_->characteristic(QBluetoothUuid::CharacteristicType::AlertLevel);
     if (!ch.isValid())
         return false;
 

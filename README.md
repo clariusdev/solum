@@ -1,5 +1,5 @@
 Clarius Solum API
-===============
+=================
 
 The Solum API allows third party applications to be developed for desktop systems that wish to connect to Clarius scanners for imaging functionality. Applications can be executed without the Clarius App running, unlike the Cast API and Mobile API tools. The API only provides connectivity and imaging control; there is no functionality for Clarius Cloud, DICOM, measurements, and other user interface technologies that are integrated into the Clarius App.
 
@@ -10,9 +10,17 @@ The Solum API allows third party applications to be developed for desktop system
 
 # Supported Platforms
 
-- Windows 10 (64 bit)
-- Ubuntu Linux (20.04 / 22.04)
-- macOS 10.15 / 11.0
+- **Windows**: Tested on Windows 10
+- **Linux**: Tested on Ubuntu 20.04 and higher
+- **macOS**: Tested on macOS 10.15 and higher
+- **iOS**: Tested on iOS 13 or higher
+- **Android**: Tested on Android 10 or higher
+
+# Repository
+
+Structure:
+- **desktop/src/include**         desktop API headers
+- **desktop/src/example**         desktop example programs
 
 # Architecture
 
