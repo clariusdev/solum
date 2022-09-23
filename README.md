@@ -127,7 +127,7 @@ The first step is to generate a token which will allow software to access a dedi
 
 Keys can also be revoked through the same interface. If you feel your token was compromised, revoking, creating a new key, and then issuing a security update for your software is the proper pathway to address the situation.
 
-Valid tokens should be used to access a the [REST API endpoint](https://cloud.clarius.com/api/public/v0/devices/oem/) built for certificate (and other meta data) retrieval for each probe within your institution. Only "oem" licensed probes will have a certificate attached. Once parsed, supply the certificate corresponding to the connected probe through the __cusOemSetCert__ function.
+Valid tokens should be used to access a the [REST API endpoint](https://cloud.clarius.com/api/public/v0/devices/oem/) built for certificate (and other meta data) retrieval for each probe within your institution. Only "oem" licensed probes will have a certificate attached. Once parsed, supply the certificate corresponding to the connected probe through the [__solumSetCert__](https://github.com/clariusdev/solum/blob/main/desktop/src/include/solum/solum.h#L73) function.
 
 # Core Functionality
 
