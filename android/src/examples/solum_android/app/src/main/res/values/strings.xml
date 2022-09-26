@@ -1,0 +1,26 @@
+<resources>
+    <string name="app_name">Solum Example</string>
+    <string name="action_settings">Settings</string>
+    <!-- Strings used for fragments for navigation -->
+    <string name="first_fragment_label">Image</string>
+    <string name="bluetooth_fragment_label">Bluetooth</string>
+    <string name="bluetooth">Bluetooth</string>
+    <string name="previous">Previous</string>
+
+    <string name="disconnect">Disconnect</string>
+    <string name="connect">Connect</string>
+    <string name="ip_address">IP Address</string>
+    <string name="tcp_port">TCP Port</string>
+    <string name="toggle_run">Toggle run</string>
+    <string name="sw_update">SW update</string>
+    <string name="ultrasound_image">Ultrasound Image</string>
+    <string name="ask_state">Ask State</string>
+    <string name="power_down">Power Down</string>
+    <string name="probe_models">Probe models</string>
+    <string name="applications">Applications</string>
+    <string name="default_ip_address">192.168.1.1</string>
+    <string name="default_tcp_port">5000</string>
+    <string name="load_application">Load Application</string>
+    <string name="application_list_description">List of available applications</string>
+    <string name="probe_list_description">List of available probes</string>
+</resources>
