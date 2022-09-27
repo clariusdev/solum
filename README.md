@@ -1,7 +1,7 @@
 Clarius Solum API
 =================
 
-The Solum API allows third party applications to be developed for desktop systems that wish to connect to Clarius scanners for imaging functionality. Applications can be executed without the Clarius App running, unlike the Cast API and Mobile API tools. The API only provides connectivity and imaging control; there is no functionality for Clarius Cloud, DICOM, measurements, and other user interface technologies that are integrated into the Clarius App.
+The Solum API allows third party applications to be developed for desktop or mobile systems that wish to connect to Clarius scanners for imaging functionality. Applications can be executed without the Clarius App running, unlike the Cast API and Mobile API tools. The API only provides connectivity and imaging control; there is no functionality for Clarius Cloud, DICOM, measurements, and other user interface technologies that are integrated into the Clarius App.
 
 # Prerequisites
 
@@ -21,13 +21,17 @@ The Solum API allows third party applications to be developed for desktop system
 Structure:
 - **desktop/src/include**         desktop API headers
 - **desktop/src/example**         desktop example programs
+- **ios/src/Library**             iOS framework headers (for full framework, download iOS binary zip)
+- **ios/src/examples**            iOS example programs
+- **android/src/examples**        Android example programs
 
 # Architecture
 
 The API communicates with the _Clarius Scanner_ directly, and makes use of Bluetooth and TCP/UDP technologies to create and maintain the wireless connection to the scanner. The Bluetooth communications is not built directly into the API and thus must be written by the developer using the library/platform of their choice. For demonstration, the Qt Bluetooth module is used in the example provided in the repository - while this is cross-platform, it may not be the primary choice for all API developers.
 
                                       +-----------------------+
-                                      |  Desktop Application  |
+                                      |  Desktop or Mobile    |
+                                      |     Application       |
                                       |                       |
     +---------+                       |    +-------------+    |
     |         |   Images (via UDP)    |    |             |    |
@@ -172,4 +176,6 @@ The probe status can be retrieved at any time and will provide the following inf
 
 # Examples
 
-Two example programs are provided, one written as a console program, the other using Qt and a graphical interface. The console program does not use any Bluetooth connectivity, therefore it is only useful if the IP address and port are already known, or if a Bluetooth script is run through the console (for example, using hcitool or gatttool on Linux).
+Two desktop example programs are provided, one written as a console program, the other using Qt and a graphical interface. The console program does not use any Bluetooth connectivity, therefore it is only useful if the IP address and port are already known, or if a Bluetooth script is run through the console (for example, using hcitool or gatttool on Linux).
+
+The iOS example program is a simple SwiftUI program that demonstrates some of the features of the framework. To build, the full iOS framework zip must be extracted to the ../../Library/Frameworks/ path or the path must be adjusted in the project settings. A signing certificate must be specified in the project settings. Ensure that the build target is iOS 64-bit arm to match the downloaded framework. The program demonstrates download certificates from Clarius cloud, populating scanner details via bluetooth, and image streaming.
