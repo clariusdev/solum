@@ -25,7 +25,7 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_
     ui_->render->addWidget(QWidget::createWindowContainer(render_));
     auto reset = new QPushButton(QStringLiteral("Reset"), this);
     ui_->render->addWidget(reset);
-    render_->init(QStringLiteral("/home/kris/scanner.obj"));
+    render_->init(QStringLiteral("scanner.obj"));
     render_->show();
     ui_->cfigain->setVisible(false);
     ui_->velocity->setVisible(false);

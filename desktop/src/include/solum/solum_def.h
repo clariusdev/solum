@@ -138,9 +138,9 @@ typedef enum _CusRoi
 /// tgc structure
 typedef struct _CusTgc
 {
-    double top;             ///< top tgc in dB
-    double mid;             ///< mid tgc in dB
-    double bottom;          ///< bottom tgc in dB
+    double top;             ///< top tgc in dB. valid range is -20 to 20
+    double mid;             ///< mid tgc in dB. valid range is -20 to 20
+    double bottom;          ///< bottom tgc in dB. valid range is -20 to 20
 
 } CusTgc;
 
@@ -151,12 +151,14 @@ typedef struct _CusProbeSettings
     int autoFreeze;         ///< the number of seconds to enage freezing imaging after no contact mode has been engaged. valid range is 0 - 120, where 0 turns the function off (default 30s)
     int keepAwake;          ///< the number of minutes to power down the device once imaging has been frozen. valid range is 0 - 120, where 0 turns the function off (default 15 min)
     int deepSleep;          ///< the number of hours for and hd3 probe to go into deep sleep. valid range is 0 - 96, where 0 disables deep sleep (default 3 hours)
+    int stationary;         ///< the number of seconds to enage freezing imaging after being stationary for a specific timeframe. valid range is 0 - 120, where 0 turns the function off (default 0s)
     int wifiOptimization;   ///< flag allowing the probe to automatically freeze when poor wifi connectivity is detected (default on)
     int wifiSearch;         ///< flag to force the probe to scan the networks and choose the appropriate channel before bringing up it's wi-fi (default off)
     int htWifi;             ///< flag to enable 40mhz bands for the probe's wi-fi network
     int keepAwakeCharging;  ///< flag to force the probe to stay powered while being charged (default off)
     int powerOn;            ///< flag allowing the probe's buttons to power the device on (default on)
     int sounds;             ///< flag allowing the probe to make beeping sounds (default on)
+    int wakeOnShake;        ///< flag allowing the probe start imaging when it is picked up while frozen (default off)
     CusButtonSetting up;            ///< button up setting
     CusButtonSetting down;          ///< button down setting
     CusButtonHoldSetting upHold;    ///< button up hold setting
