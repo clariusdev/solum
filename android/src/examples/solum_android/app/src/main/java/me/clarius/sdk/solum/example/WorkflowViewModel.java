@@ -3,6 +3,7 @@ package me.clarius.sdk.solum.example;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Executor;
 
@@ -30,18 +31,12 @@ public class WorkflowViewModel extends ViewModel {
         return selectedProbe;
     }
 
-    public void refreshApplications(Executor executor, Solum solum, String probe) {
-        executor.execute(() -> {
-            List<String> applications = solum.getApplications(probe);
-            this.applications.postValue(applications);
-        });
+    public void refreshApplications(Solum solum, String probe) {
+        solum.getApplications(probe, result -> applications.postValue(Arrays.asList(result)));
     }
 
-    public void refreshProbes(Executor executor, Solum solum) {
-        executor.execute(() -> {
-            List<String> probes = solum.getProbes();
-            this.probes.postValue(probes);
-        });
+    public void refreshProbes(Solum solum) {
+        solum.getProbes(result -> probes.postValue(Arrays.asList(result)));
     }
 
     public void selectProbe(final String probe) {

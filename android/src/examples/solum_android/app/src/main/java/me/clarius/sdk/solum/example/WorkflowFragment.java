@@ -69,7 +69,7 @@ public class WorkflowFragment extends Fragment {
                 new AdapterView.OnItemSelectedListener() {
                     @Override
                     public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                        String application = probeListAdapter.getItem(position);
+                        String application = applicationListAdapter.getItem(position);
                         viewModel.selectApplication(application);
                     }
 
