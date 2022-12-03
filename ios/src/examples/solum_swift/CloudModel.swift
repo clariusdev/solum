@@ -137,7 +137,7 @@ class CloudModel: ObservableObject {
                 for serial in self.found {
                     self.handleDeviceFound(serial: serial)
                 }
-                // Check if any additonal results should be downloaded
+                // Check if any additional results should be downloaded
                 if let nextURL = results.next {
                     self.startDownload(location: nextURL)
                 }
