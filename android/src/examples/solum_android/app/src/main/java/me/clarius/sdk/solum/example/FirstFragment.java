@@ -19,8 +19,10 @@ import androidx.navigation.fragment.NavHostFragment;
 
 import java.nio.ByteBuffer;
 import java.util.Optional;
+import java.util.StringJoiner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.function.Consumer;
 
 import me.clarius.sdk.Button;
 import me.clarius.sdk.Connection;
@@ -50,6 +52,7 @@ public class FirstFragment extends Fragment {
     private FragmentFirstBinding binding;
     private Solum solum;
     private boolean isRunning = false;
+    private boolean isBuffering = false;
     private SolumViewModel viewModel;
     private WorkflowViewModel workflowViewModel;
     private ImageConverter imageConverter;
@@ -60,135 +63,39 @@ public class FirstFragment extends Fragment {
         }
 
         @Override
-        public void initializationResult(boolean result) {
-            Log.d(TAG, "Initialization result: " + result);
-            if (result) {
-                solum.setCertificate(getCertificate());
-                solum.getFirmwareVersion(Platform.HD, "asking FW version");
-                workflowViewModel.refreshProbes(executorService, solum);
-            }
-        }
-
-        @Override
-        public void swUpdateResult(SwUpdate result) {
-            Log.d(TAG, "SW update result: " + result);
-        }
-
-        @Override
-        public void swUpdateProgress(int percent) {
-            Log.d(TAG, "SW update progress: " + percent + "%");
-        }
-
-        @Override
         public void connectionResult(Connection result, int port, String status) {
             Log.d(TAG, "Connection result: " + result + ", port: " + port + ", status: " + status);
             if (result == Connection.ProbeConnected) {
-                Log.d(TAG, "Connected");
+                showMessage("Connected");
             } else if (result == Connection.SwUpdateRequired) {
-                Log.d(TAG, "Firmware update needed");
+                showMessage("Firmware update needed");
             } else {
-                Log.d(TAG, "Disconnected");
+                showMessage("Disconnected");
             }
         }
 
         @Override
         public void certInfo(int daysValid) {
-            Log.d(TAG, "Days valid for cert: " + daysValid);
+            showMessage("Days valid for cert: " + daysValid);
         }
 
         @Override
         public void imaging(ImagingState state, boolean imaging) {
-            Log.d(TAG, "Imaging state: " + state + " imaging? " + imaging);
+            showMessage("Imaging state: " + state + " imaging? " + imaging);
             isRunning = imaging;
         }
 
         @Override
         public void newProcessedImage(ByteBuffer buffer, ProcessedImageInfo info, PosInfo[] pos) {
-//            Log.d(TAG, "New processed image: " + Strings.fromProcessedImageInfo(info)
-//                    + " capacity = " + buffer.capacity() + " bytes");
             imageConverter.convertImage(buffer, info);
         }
 
         @Override
         public void newRawImageFn(ByteBuffer buffer, RawImageInfo info, PosInfo[] pos) {
-//            Log.d(TAG, "New raw image: " + Strings.fromRawImageInfo(info)
-//                    + " capacity = " + buffer.capacity() + " bytes");
         }
 
         @Override
         public void newSpectralImageFn(ByteBuffer buffer, SpectralImageInfo info) {
-            Log.d(TAG, "New raw image: " + Strings.fromSpectralImageInfo(info)
-                    + " capacity = " + buffer.capacity() + " bytes");
-        }
-
-        @Override
-        public void paramRetrieved(Optional<Double> maybeValue, Object user) {
-            Param param = (Param) user;
-            Log.d(TAG, "Retrieved param (" + param + "): " + maybeValue.orElse(-999.9));
-        }
-
-        @Override
-        public void rangeRetrieved(Optional<Range> maybeRange, Object user) {
-            Param param = (Param) user;
-            String msg;
-            msg = maybeRange.map(Strings::fromRange).orElse("<none>");
-            Log.d(TAG, "Retrieved range (" + param + "): " + msg);
-        }
-
-        @Override
-        public void tgcRetrieved(Optional<Tgc> maybeTgc, Object user) {
-            String msg = (String) user;
-            StringBuilder values = new StringBuilder();
-            if (maybeTgc.isPresent()) {
-                Tgc tgc = maybeTgc.get();
-                values.append("top: ").append(tgc.top).append(", mid: ").append(tgc.mid).append(", bottom: ").append(tgc.bottom);
-            }
-            Log.d(TAG, "Retrieved TGC (" + msg + "): " + values);
-        }
-
-        @Override
-        public void roiRetrieved(PointF[] points, Object user) {
-            String msg = (String) user;
-            StringBuilder values = new StringBuilder();
-            if (points != null) {
-                for (PointF p : points) {
-                    values.append("[").append(p.x).append(",").append(p.y).append("]");
-                }
-            }
-            Log.d(TAG, "Retrieved ROI (" + msg + "): " + values);
-        }
-
-        @Override
-        public void modeRetrieved(Optional<Mode> mode, Object user) {
-            String msg = (String) user;
-            String text = mode.map(Mode::toString).orElse("???");
-            Log.d(TAG, "Retrieved mode (" + msg + "): " + text);
-        }
-
-        @Override
-        public void firmwareVersionRetrieved(Optional<String> maybeVersion, Object user) {
-            String msg = (String) user;
-            Log.d(TAG, "Retrieved FW version (" + msg + "): " + maybeVersion.orElse("???"));
-        }
-
-        @Override
-        public void statusRetrieved(Optional<StatusInfo> maybeStatus, Object user) {
-            String msg = (String) user;
-            StringBuilder value = new StringBuilder();
-            if (maybeStatus.isPresent()) {
-                StatusInfo status = maybeStatus.get();
-                value.append("batt: ").append(status.battery).append(" temp: ").append(status.temperature)
-                        .append(" frameRate: ").append(status.frameRate)
-                        .append(" fan: ").append(status.fan).append(" charing: ").append(status.charger);
-            }
-            Log.d(TAG, "Retrieved status (" + msg + "): " + value);
-        }
-
-        @Override
-        public void probeInfoRetrieved(Optional<ProbeInfo> probeInfo, Object user) {
-            String msg = (String) user;
-            String text = probeInfo.map(Strings::fromProbeInfo).orElse("<none>");
-            Log.d(TAG, "Probe info retrieved (" + msg + "): " + text);
         }
 
         @Override
@@ -226,12 +133,23 @@ public class FirstFragment extends Fragment {
         viewModel.getProcessedImage().observe(getViewLifecycleOwner(), binding.imageView::setImageBitmap);
 
         solum = new Solum(requireContext(), solumListener);
-        solum.initialize(getCertDir());
+        solum.initialize(getCertDir(), new Solum.InitializationResult() {
+            @Override
+            public void accept(boolean connected) {
+                Log.d(TAG, "Initialization result: " + connected);
+                if (connected) {
+                    solum.setCertificate(getCertificate());
+                    solum.getFirmwareVersion(Platform.HD,
+                            maybeVersion -> showMessage("Retrieved FW version: " + maybeVersion.orElse("???")));
+                    workflowViewModel.refreshProbes(solum);
+                }
+            }
+        });
         solum.setProbeSettings(new ProbeSettings());
 
         workflowViewModel = new ViewModelProvider(requireActivity()).get(WorkflowViewModel.class);
         workflowViewModel.getSelectedProbe().observe(getViewLifecycleOwner(),
-                currentProbe -> workflowViewModel.refreshApplications(executorService, solum, currentProbe));
+                currentProbe -> workflowViewModel.refreshApplications(solum, currentProbe));
 
         imageConverter = new ImageConverter(executorService, new ImageCallback(viewModel.getProcessedImage()));
 
@@ -242,15 +160,69 @@ public class FirstFragment extends Fragment {
         binding.buttonDisconnect.setOnClickListener(v -> doDisconnect());
         binding.buttonRun.setOnClickListener(v -> toggleRun());
 
-        binding.buttonSwUpdate.setOnClickListener(v -> solum.updateSoftware());
+        binding.buttonSwUpdate.setOnClickListener(v -> doSwUpdate());
         binding.buttonAskState.setOnClickListener(v -> doAskState());
         binding.buttonPowerDown.setOnClickListener(v -> solum.powerDown());
         binding.buttonLoadApplication.setOnClickListener(v -> doLoadApplication());
+        binding.buttonToggleRawDataBuffering.setOnClickListener(v -> toggleBuffering());
+        binding.buttonGetRawData.setOnClickListener(v -> doRequestRawData());
+    }
+
+    private void doSwUpdate() {
+        solum.updateSoftware(
+                result -> showMessage("SW update result: " + result),
+                (progress, total) -> {
+                    binding.progressBar.setMax(total);
+                    binding.progressBar.setProgress(progress);
+                });
+    }
+
+    private class RawDataCallback {
+        void requestResult(int result) {
+            Log.d(TAG, "Raw data request: " + result);
+            if (result < 0) {
+                showError("Failed to request raw data (ensure buffering is enabled and probe is frozen)");
+            } else if (result == 0) {
+                showError("No raw data available");
+            } else {
+                solum.readRawData(this::retrieved, this::progress);
+            }
+        }
+
+        void retrieved(int result, ByteBuffer data) {
+            Log.d(TAG, "Raw data read: " + result);
+            if (result < 0) {
+                showError("Failed to read raw data (ensure buffering is enabled and probe is frozen)");
+            } else if (result == 0) {
+                showError("No raw data available");
+            } else {
+                showMessage("Raw data size: " + result + " bytes");
+            }
+        }
+
+        void progress(int progress, int total) {
+            binding.progressBar.setMax(total);
+            binding.progressBar.setProgress(progress);
+        }
+    }
+
+    private void doRequestRawData() {
+        final int start = 0;
+        final int end = 0;
+        RawDataCallback callback = new RawDataCallback();
+        solum.requestRawData(start, end, callback::requestResult);
+    }
+
+    private void toggleBuffering() {
+        boolean newState = !isBuffering;
+        showMessage("Toggling buffering to: " + newState);
+        isBuffering = newState;
+        solum.setParam(Param.RawBuffer, newState ? 1 : 0);
     }
 
     private void toggleRun() {
         boolean newState = !isRunning;
-        Log.d(TAG, "Toggling run to: " + newState);
+        showMessage("Toggling run to: " + newState);
         isRunning = newState;
         solum.run(newState);
     }
@@ -283,7 +255,7 @@ public class FirstFragment extends Fragment {
             binding.tcpPortLayout.setError("Invalid number");
             return;
         }
-        Log.d("Jle", "Connecting to " + ipAddress + ":" + tcpPort);
+        showMessage("Connecting to " + ipAddress + ":" + tcpPort);
         solum.connect(ipAddress, tcpPort);
     }
 
@@ -305,19 +277,29 @@ public class FirstFragment extends Fragment {
             showError("No application selected");
             return;
         }
-        Log.d(TAG, "Loading application '" + currentApplication + "' for probe " + currentProbe);
+        showMessage("Loading application '" + currentApplication + "' for probe " + currentProbe);
         solum.loadApplication(currentProbe, currentApplication);
     }
 
     private void doAskState() {
-        solum.getParam(Param.Gain, Param.Gain);
-        solum.getParam(Param.ImageDepth, Param.ImageDepth);
-        solum.getMode("asking mode");
-        solum.getTgc("asking TGC values");
-        solum.getRoi(6, "asking ROI");
-        solum.getStatus("asking status");
-        solum.getProbeInfo("asking probe info");
-        solum.getRange(Param.DynamicRange, Param.DynamicRange);
+        if (solum == null) {
+            return;
+        }
+        showMessage("Printing state in logcat");
+        solum.getParam(Param.Gain, result -> Log.d(TAG, "Gain: " + result.map(Object::toString).orElse("<none>")));
+        solum.getParam(Param.ImageDepth, result -> Log.d(TAG, "Depth: " + result.map(Object::toString).orElse("<none>")));
+        solum.getMode(result -> Log.d(TAG, "Mode: " + result.map(Mode::toString).orElse("<none>")));
+        solum.getTgc(result -> Log.d(TAG, "TGC: " + result.map(Strings::fromTgc).orElse("<none>")));
+        solum.getRoi(6, result -> Log.d(TAG, "ROI: " + Strings.fromPoints(result)));
+        solum.getStatus(result -> Log.d(TAG, "Status: " + result.map(Strings::fromStatusInfo).orElse("<none>")));
+        solum.getProbeInfo(result -> Log.d(TAG, "Probe Info: " + result.map(Strings::fromProbeInfo).orElse("<none>")));
+        solum.getRange(Param.DynamicRange, result -> Log.d(TAG, "Dynamic Range: " + result.map(Strings::fromRange).orElse("<none>")));
+    }
+
+    private void showMessage(CharSequence text) {
+        Log.d(TAG, (String) text);
+        Handler mainHandler = new Handler(Looper.getMainLooper());
+        mainHandler.post(() -> Toast.makeText(requireContext(), text, Toast.LENGTH_SHORT).show());
     }
 
     private void showError(CharSequence text) {
