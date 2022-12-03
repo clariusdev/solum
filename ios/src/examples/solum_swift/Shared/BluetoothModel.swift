@@ -40,7 +40,7 @@ struct DeviceFound {
     var serial: String
     /// Battery level in 0-100%
     var battery: Int
-    /// Temperature in degrees Celcius
+    /// Temperature in degrees Celsius
     var temperature: Int
     /// Turn if currently powered on
     var powered: Bool
@@ -235,7 +235,7 @@ class BluetoothModel: NSObject, ObservableObject, CBCentralManagerDelegate, CBPe
     /// Send the formatted data to the selected scanner on the given characteristic
     /// - Parameters:
     ///   - serviceUUID: UUID of the service which contains the characteristic
-    ///   - characteristicUUID: UUID of the characterstic to write to
+    ///   - characteristicUUID: UUID of the characteristic to write to
     ///   - data: Formatted data to send
     private func sendDataToSelected(serviceUUID: CBUUID, characteristicUUID: CBUUID, data: Data) {
         if selectedSerial.isEmpty {
