@@ -34,5 +34,6 @@ The iOS example program is a simple SwiftUI program that demonstrates some of th
 ## Documentation
 
 - [Specifications](specifications.md)
+- [Design](design.md)
 
 To create a PDF from one of our markdown documents, try the pandoc program: `pandoc document.md -o document.pdf`
