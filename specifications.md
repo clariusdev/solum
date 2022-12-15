@@ -9,23 +9,18 @@ Solum is a software development kit (SDK) that allows for 3rd party medical devi
 The API communicates with the Clarius probe directly, and makes use of TCP/UDP technologies to create and maintain the wireless connection to the probe.
 Bluetooth communications is not built directly into the API and thus must be written by the developer using the library/platform of their choice.
 
-                                      +-----------------------+
-                                      |  Desktop or Mobile    |
-                                      |     Application       |
-                                      |                       |
-    +---------+                       |    +-------------+    |
-    |         |   Images (via UDP)    |    |             |    |
-    |  Probe  +--------------------------->+  Solum API  |    |
-    |         |   Control (via TCP)   |    |             |    |
-    |         +<-------------------------->+             |    |
-    |         | Wi-Fi / Power Control |    |             |    |
-    |         +<--------------+       |    +-------------+    |
-    |         |               |       |                       |
-    +---------+               +-------|--->+-------------+    |
-                                      |    |  BLE Module |    |
-                                      |    +-------------+    |
-                                      |                       |
-                                      +-----------------------+
+```mermaid
+  flowchart RL
+  prb[Probe]
+  subgraph app[Application]
+    solum[Solum API]
+    ble[BLE Module]
+  end
+  prb-- Images/UDP -->solum
+  solum-- Control/TCP -->prb
+  ble-- Wi-Fi/Power Control -->prb
+```
+
 # Performance Specifications
 
 ## Scanners
