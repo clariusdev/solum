@@ -36,4 +36,5 @@ The iOS example program is a simple SwiftUI program that demonstrates some of th
 - [Specifications](specifications.md)
 - [Design](design.md)
 
-To create a PDF from one of our markdown documents, try the pandoc program: `pandoc document.md -o document.pdf`
+To create a PDF from one of our markdown documents, try the pandoc program: `pandoc document.md -o document.pdf`.
+In cases where mermaid is used for diagramming, also pass in: `-F mermaid-filter`, which can be installed via an npm package
