@@ -30,3 +30,9 @@ Structure:
 Two desktop example programs are provided, one written as a console program, the other using Qt and a graphical interface. The console program does not use any Bluetooth connectivity, therefore it is only useful if the IP address and port are already known, or if a Bluetooth script is run through the console (for example, using hcitool or gatttool on Linux).
 
 The iOS example program is a simple SwiftUI program that demonstrates some of the features of the framework. To build, the full iOS framework zip must be extracted to the ../../Library/Frameworks/ path or the path must be adjusted in the project settings. A signing certificate must be specified in the project settings. Ensure that the build target is iOS 64-bit arm to match the downloaded framework. The program demonstrates download certificates from Clarius cloud, populating scanner details via bluetooth, and image streaming.
+
+## Documentation
+
+- [Specifications](specifications.md)
+
+To create a PDF from one of our markdown documents, try the pandoc program: `pandoc document.md -o document.pdf`
