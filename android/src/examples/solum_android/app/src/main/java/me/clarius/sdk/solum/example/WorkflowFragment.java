@@ -15,6 +15,7 @@ import androidx.lifecycle.ViewModelProvider;
 import java.util.List;
 
 import me.clarius.sdk.solum.example.databinding.FragmentWorkflowBinding;
+import me.clarius.sdk.solum.example.viewmodels.WorkflowViewModel;
 
 public class WorkflowFragment extends Fragment {
 

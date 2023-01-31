@@ -1,3 +1,9 @@
-<resources >
-    <dimen name="spinner_height">32dp</dimen>
+<resources>
+    <dimen name="spinner_height">48dp</dimen>
+    <dimen name="serial_text_size">18sp</dimen>
+    <dimen name="serial_margin_top">21dp</dimen>
+    <dimen name="default_bluetooth_fragment_margin">16dp</dimen>
+    <dimen name="recyclerview_item_side_margin">5dp</dimen>
+    <dimen name="text_margin">16dp</dimen>
+    <dimen name="padding">16dp</dimen>
 </resources>

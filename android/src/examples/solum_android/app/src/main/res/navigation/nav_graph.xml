@@ -17,7 +17,7 @@
     </fragment>
     <fragment
         android:id="@+id/BluetoothFragment"
-        android:name="me.clarius.sdk.solum.example.BluetoothFragment"
+        android:name="me.clarius.sdk.solum.example.bluetooth.BluetoothFragment"
         android:label="@string/bluetooth_fragment_label"
         tools:layout="@layout/fragment_bluetooth">
 
