@@ -21,9 +21,10 @@ typedef enum _CusImagingState
     ImagingNotReady,        ///< imaging is not ready, probe and application need to be loaded
     ImagingReady,           ///< imaging is ready
     CertExpired,            ///< cannot image due to expired certificate
-    PoorWifi,               ///< stopped imaging due to poor wifi
+    PoorWifi,               ///< stopped imaging due to poor wifi, use solumOptimizeWifi to try and remedy if the state is continuously entered
     NoContact,              ///< stopped imaging due to no patient contact detected
-    ChargingChanged         ///< probe started running or stopped due to change in charging status
+    ChargingChanged,        ///< probe started running or stopped due to change in charging status
+    LowBandwidth            ///< low bandwidth was detected, imaging parameters were adjusted
 
 } CusImagingState;
 
@@ -44,6 +45,7 @@ typedef enum _CusSwUpdate
     SwUpdateSuccess = 0,    ///< successful update
     SwUpdateCurrent,        ///< software is current
     SwUpdateBattery,        ///< battery is too low to perform update
+    SwUpdateUnsupported,    ///< firmware being sent is no longer supported
     SwUpdateCorrupt,        ///< probe file system may be corrupt
 
 } CusSwUpdate;
@@ -72,6 +74,8 @@ typedef enum _CusParam
     DynamicRange,           ///< dynamic range in [percent] (default 50%)
     Chroma,                 ///< chroma map enable (default off)
     Smooth,                 ///< smooth enable (default on for most applications)
+    AutoFocus,              ///< auto focus enable (default on all applications)
+    FocusDepth,             ///< focus depth in [cm] (applied when auto focus turned off)
     Trapezoidal,            ///< trapezoidal imaging enable (available on linear probes, default off for most applications)
     ColorGain,              ///< color/power gain in [percent] (default 50%)
     ColorPrf,               ///< color/power pulse repetition frequency in [kHz] (default dependent on application)
@@ -96,10 +100,18 @@ typedef enum _CusFanStatus
 {
     NoFan,                  ///< no fan detected
     FanDetected,            ///< fan detected
-    FanRunning,             ///< fan running
-    FanReversed             ///< fan placed in reversed orientation
+    FanRunning              ///< fan running
 
 } CusFanStatus;
+
+/// guide status
+typedef enum _CusGuideStatus
+{
+    NoGuide,                ///< no guide detected
+    GuideDetected,          ///< guide detected
+    GuideRunning            ///< guide running
+
+} CusGuideStatus;
 
 /// charging status
 typedef enum _CusChargingStatus
@@ -127,6 +139,16 @@ typedef enum _CusButtonHoldSetting
 
 } CusButtonHoldSetting;
 
+/// wireless optimization methods
+/// available channels differ based on locale, the standard 5ghz 20MHz bandwidth channels include: 36,40,44,48,149,153,157,161,165
+typedef enum _CusWifiOpt
+{
+    WifiOptNext,            ///< jumps immediately to the next channel
+    WifiOptSearch,          ///< scans the surrounding networks to select the best channel (takes up to 10 seconds to search and optimize)
+    WifiOptDefault          ///< defaults to the production channel of 165
+
+} CusWifiOpt;
+
 /// roi functions
 typedef enum _CusRoi
 {
@@ -147,18 +169,19 @@ typedef struct _CusTgc
 /// probe settings
 typedef struct _CusProbeSettings
 {
-    int contactDetection;   ///< the number of seconds to enage a lower frame rate when no contact is detected. valid range is 0 - 30, where 0 turns the function off (default 3s)
-    int autoFreeze;         ///< the number of seconds to enage freezing imaging after no contact mode has been engaged. valid range is 0 - 120, where 0 turns the function off (default 30s)
-    int keepAwake;          ///< the number of minutes to power down the device once imaging has been frozen. valid range is 0 - 120, where 0 turns the function off (default 15 min)
-    int deepSleep;          ///< the number of hours for and hd3 probe to go into deep sleep. valid range is 0 - 96, where 0 disables deep sleep (default 3 hours)
-    int stationary;         ///< the number of seconds to enage freezing imaging after being stationary for a specific timeframe. valid range is 0 - 120, where 0 turns the function off (default 0s)
-    int wifiOptimization;   ///< flag allowing the probe to automatically freeze when poor wifi connectivity is detected (default on)
-    int wifiSearch;         ///< flag to force the probe to scan the networks and choose the appropriate channel before bringing up it's wi-fi (default off)
-    int htWifi;             ///< flag to enable 40mhz bands for the probe's wi-fi network
-    int keepAwakeCharging;  ///< flag to force the probe to stay powered while being charged (default off)
-    int powerOn;            ///< flag allowing the probe's buttons to power the device on (default on)
-    int sounds;             ///< flag allowing the probe to make beeping sounds (default on)
-    int wakeOnShake;        ///< flag allowing the probe start imaging when it is picked up while frozen (default off)
+    int contactDetection;       ///< the number of seconds to engage a lower frame rate when no contact is detected. valid range is 0 - 30, where 0 turns the function off (default 3s)
+    int autoFreeze;             ///< the number of seconds to engage freezing imaging after no contact mode has been engaged. valid range is 0 - 120, where 0 turns the function off (default 30s)
+    int keepAwake;              ///< the number of minutes to power down the device once imaging has been frozen. valid range is 0 - 120, where 0 turns the function off (default 15 min)
+    int deepSleep;              ///< the number of hours for and hd3 probe to go into deep sleep. valid range is 0 - 96, where 0 disables deep sleep (default 3 hours)
+    int stationary;             ///< the number of seconds to engage freezing imaging after being stationary for a specific timeframe. valid range is 0 - 120, where 0 turns the function off (default 0s)
+    int wifiOptimization;       ///< flag allowing the probe to automatically freeze when poor wifi connectivity is detected (default on)
+    int wifiSearch;             ///< flag to force the probe to scan the networks and choose the appropriate channel before bringing up it's wi-fi (default off)
+    int htWifi;                 ///< flag to enable 40mhz bands for the probe's wi-fi network
+    int keepAwakeCharging;      ///< flag to force the probe to stay powered while being charged (default off)
+    int powerOn;                ///< flag allowing the probe's buttons to power the device on (default on)
+    int sounds;                 ///< flag allowing the probe to make beeping sounds (default on)
+    int wakeOnShake;            ///< flag allowing the probe to start imaging when it is picked up while frozen (default off)
+    int bandwidthOptimization;  ///< flag allowing the system to adjust bandwidth parameters automatically when lag or dropped frames are determined (default off)
     CusButtonSetting up;            ///< button up setting
     CusButtonSetting down;          ///< button down setting
     CusButtonHoldSetting upHold;    ///< button up hold setting
@@ -174,6 +197,7 @@ typedef struct _CusStatusInfo
     int temperature;            ///< temperature level in percent
     double frameRate;           ///< current imaging frame rate
     CusFanStatus fan;           ///< fan status
+    CusGuideStatus guide;       ///< guide status
     CusChargingStatus charger;  ///< charger status
 
 } CusStatusInfo;

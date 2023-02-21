@@ -250,6 +250,17 @@ extern "C"
     /// @retval -1 the format could not be set
     SOLUM_EXPORT int solumSetFormat(CusImageFormat format);
 
+    /// will try and optimize the wireless channel when the probe is running it's own network
+    /// the function will return a failure if the probe is on an external wlan as nothing can be optimized, except for switching over to the probe's own network
+    /// to switch to the probe's network, see the bluetooth documentation for the wireless management service
+    /// @param[in] opt the optimization type to run
+    /// @return success of the call
+    /// @retval 0 the optimization is being performed
+    /// @retval -1 the optimization could not be performed
+    /// @note on some platforms it may be necessary to run the operation of re-connecting to the network through the operating system.
+    ///       it will not be necessary to re-parse the connection data through the bluetooth service, as ip address and port will not change after optimization
+    SOLUM_EXPORT int solumOptimizeWifi(CusWifiOpt opt);
+
     /// makes a request for raw data from the probe
     /// @param[in] start the first frame to request, as determined by timestamp in nanoseconds, set to 0 along with end to requests all data in buffer
     /// @param[in] end the last frame to request, as determined by timestamp in nanoseconds, set to 0 along with start to requests all data in buffer

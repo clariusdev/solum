@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>520</width>
+    <width>524</width>
     <height>560</height>
    </rect>
   </property>
@@ -589,6 +589,63 @@
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_2">
           <item>
+           <widget class="QCheckBox" name="autogain">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>Auto Gain</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="autofocus">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>Auto Focus</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="imu">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>IMU</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="rfStream">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>RF Stream</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_3">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_7">
+          <item>
            <widget class="QDial" name="gain">
             <property name="enabled">
              <bool>false</bool>
@@ -613,6 +670,40 @@
             </property>
             <property name="notchTarget">
              <double>10.000000000000000</double>
+            </property>
+            <property name="notchesVisible">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QDial" name="focus">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>50</width>
+              <height>50</height>
+             </size>
+            </property>
+            <property name="toolTip">
+             <string>Focus</string>
+            </property>
+            <property name="minimum">
+             <number>1</number>
+            </property>
+            <property name="maximum">
+             <number>10</number>
+            </property>
+            <property name="pageStep">
+             <number>1</number>
+            </property>
+            <property name="value">
+             <number>2</number>
+            </property>
+            <property name="notchTarget">
+             <double>1.000000000000000</double>
             </property>
             <property name="notchesVisible">
              <bool>true</bool>
@@ -713,37 +804,7 @@
            </widget>
           </item>
           <item>
-           <widget class="QCheckBox" name="autogain">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
-            <property name="text">
-             <string>Auto Gain</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QCheckBox" name="imu">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
-            <property name="text">
-             <string>IMU</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QCheckBox" name="rfStream">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
-            <property name="text">
-             <string>RF Stream</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <spacer name="horizontalSpacer_3">
+           <spacer name="horizontalSpacer_2">
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
             </property>
@@ -827,9 +888,6 @@
   <tabstop>tgctop</tabstop>
   <tabstop>tgcmid</tabstop>
   <tabstop>tgcbottom</tabstop>
-  <tabstop>gain</tabstop>
-  <tabstop>cfigain</tabstop>
-  <tabstop>rfzoom</tabstop>
   <tabstop>modes</tabstop>
  </tabstops>
  <resources/>
@@ -1282,6 +1340,38 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>autofocus</sender>
+   <signal>stateChanged(int)</signal>
+   <receiver>Solum</receiver>
+   <slot>onAutoFocus(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>164</x>
+     <y>343</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>261</x>
+     <y>279</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>focus</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>Solum</receiver>
+   <slot>onFocus(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>101</x>
+     <y>387</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>261</x>
+     <y>279</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>onConnect()</slot>
@@ -1312,5 +1402,7 @@
   <slot>onRing()</slot>
   <slot>onRetrieve()</slot>
   <slot>onOpacity(int)</slot>
+  <slot>onAutoFocus(int)</slot>
+  <slot>onFocus(int)</slot>
  </slots>
 </ui>

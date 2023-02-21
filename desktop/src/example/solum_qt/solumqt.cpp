@@ -463,18 +463,21 @@ void Solum::imagingState(CusImagingState state, bool imaging)
 {
     bool ready = (state != ImagingNotReady);
     ui_->freeze->setEnabled(ready ? true : false);
+    ui_->autogain->setEnabled(ready ? true : false);
+    ui_->autofocus->setEnabled(ready ? true : false);
     ui_->decdepth->setEnabled(ready ? true : false);
     ui_->incdepth->setEnabled(ready ? true : false);
     ui_->gain->setEnabled(ready ? true : false);
+    ui_->focus->setEnabled((ready && !ui_->autofocus->isChecked()) ? true : false);
     ui_->cfigain->setEnabled(ready ? true : false);
     ui_->opacity->setEnabled(ready ? true : false);
     ui_->rfzoom->setEnabled(ready ? true : false);
     ui_->rfStream->setEnabled(ready ? true : false);
     ui_->imu->setEnabled(ready ? true : false);
-    ui_->autogain->setEnabled(ready ? true : false);
-    ui_->tgctop->setEnabled(ready ? true : false);
-    ui_->tgcmid->setEnabled(ready ? true : false);
-    ui_->tgcbottom->setEnabled(ready ? true : false);
+    bool ag = ui_->autogain->isChecked();
+    ui_->tgctop->setEnabled((ready && !ag) ? true : false);
+    ui_->tgcmid->setEnabled((ready && !ag) ? true : false);
+    ui_->tgcbottom->setEnabled((ready && !ag) ? true : false);
     ui_->modes->setEnabled(ready ? true : false);
 
     ui_->status->showMessage(QStringLiteral("Image: %1").arg(imaging ? QStringLiteral("Running") : QStringLiteral("Frozen")));
@@ -687,6 +690,15 @@ void Solum::onGain(int gn)
     solumSetParam(Gain, gn);
 }
 
+/// called when manual focus adjusted
+/// @param[in] fd the focus depth
+void Solum::onFocus(int fd)
+{
+    auto v = solumGetParam(ImageDepth);
+    if (fd < v)
+        solumSetParam(FocusDepth, fd);
+}
+
 /// called when color gain adjusted
 /// @param[in] gn the gain level
 void Solum::onColorGain(int gn)
@@ -705,7 +717,24 @@ void Solum::onOpacity(int gn)
 /// @param[in] state checkbox state
 void Solum::onAutoGain(int state)
 {
-    solumSetParam(AutoGain, (state == Qt::Checked) ? 1 : 0);
+    bool en = (state == Qt::Checked);
+    solumSetParam(AutoGain, en ? 1 : 0);
+    ui_->tgctop->setEnabled(en ? false: true);
+    ui_->tgcmid->setEnabled(en ? false: true);
+    ui_->tgcbottom->setEnabled(en ? false: true);
+    // reset the tgc sliders
+    ui_->tgctop->setValue(0);
+    ui_->tgcmid->setValue(0);
+    ui_->tgcbottom->setValue(0);
+}
+
+/// called when auto focus enable adjusted
+/// @param[in] state checkbox state
+void Solum::onAutoFocus(int state)
+{
+    bool en = (state == Qt::Checked);
+    solumSetParam(AutoFocus, en ? 1 : 0);
+    ui_->focus->setEnabled(en ? false: true);
 }
 
 /// called when imu enable adjusted
@@ -765,6 +794,8 @@ void Solum::getParams()
 
     v = solumGetParam(AutoGain);
     ui_->autogain->setChecked(v > 0);
+    v = solumGetParam(AutoFocus);
+    ui_->autofocus->setChecked(v > 0);
     v = solumGetParam(ImuStreaming);
     ui_->imu->setChecked(v > 0);
     v = solumGetParam(RfStreaming);

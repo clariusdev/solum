@@ -5,7 +5,6 @@ import androidx.lifecycle.ViewModel;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.Executor;
 
 import me.clarius.sdk.Solum;
 

@@ -256,9 +256,11 @@ public slots:
     void incDepth();
     void decDepth();
     void onGain(int);
+    void onFocus(int);
     void onColorGain(int);
     void onOpacity(int);
     void onAutoGain(int);
+    void onAutoFocus(int);
     void onImu(int);
     void onRfStream(int);
     void tgcTop(int);

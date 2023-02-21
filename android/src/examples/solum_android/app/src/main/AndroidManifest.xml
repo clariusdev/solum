@@ -5,6 +5,8 @@
 
     <!-- INTERNET perm required to connect to network sockets -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- CHANGE_NETWORK_STATE needed to auto-join Wi-Fi -->
+    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE"/>
 
     <application
         android:allowBackup="true"
