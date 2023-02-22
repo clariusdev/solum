@@ -6,6 +6,7 @@ The Solum API allows third party applications to be developed for desktop or mob
 # Prerequisites
 
 - [Clarius Ultrasound Scanner](https://clarius.com/)
+- Must be a **commercial partner** purchasing bulk units on a quarterly basis
 - A valid "oem" license (managed per probe)
 
 # Supported Platforms
