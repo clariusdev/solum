@@ -5,8 +5,6 @@
     <string name="first_fragment_label">Image</string>
     <string name="bluetooth_fragment_label">Probe Selection</string>
     <string name="bluetooth">Bluetooth</string>
-    <string name="refresh">Refresh</string>
-    <string name="grant_permissions">Grant Permissions</string>
 
     <string name="disconnect">Disconnect</string>
     <string name="connect">Connect</string>
@@ -24,24 +22,13 @@
     <string name="application_list_description">List of available applications</string>
     <string name="probe_list_description">List of available probes</string>
     <string name="get_raw_data">Get Raw Data</string>
-    <string name="select_bluetooth_probe">Select Probe</string>
-    <string name="serial">Serial</string>
+    <string name="select_bluetooth_probe">Select</string>
+    <string name="probe_serial">Serial</string>
     <string name="unknown">Unknown</string>
 
-    <!-- Bluetooth Probe Info strings that accept 1 string argument -->
-    <string name="probe_ip_address">IP Address%1$s</string>
-    <string name="probe_tcp_port">TCP Port%1$s</string>
-    <string name="probe_serial">Serial%1$s</string>
-    <string name="probe_wifi_ssid">Wi-Fi SSID%1$s</string>
-    <string name="probe_wifi_passphrase">Wi-Fi Passphrase%1$s</string>
-    <string name="probe_certificate">Certificate%1$s</string>
-    <string name="probe_battery">Battery%1$s</string>
-    <string name="probe_temperature">Temperature%1$s</string>
-    <string name="probe_rssi">RSSI%1$s</string>
-    <string name="probe_availability">Availability%1$s</string>
-    <string name="probe_power">Power%1$s</string>
-    <string name="probe_listen">Listen%1$s</string>
-
+    <string name="request_permissions">Request Permissions</string>
+    <string name="scanning">Scanning...</string>
+    <string name="rescan">Rescan</string>
     <string name="toggle_raw_data">Toggle Raw Data</string>
     <string name="wifi_ssid">Wi-Fi SSID</string>
     <string name="wifi_passphrase">Wi-Fi Passphrase</string>
@@ -50,11 +37,17 @@
     <string name="mac_address">MAC address</string>
     <string name="mac_address_help">Optional, fill it to bypass Android auto-join prompt.</string>
     <string name="network_id_help">Required when doing Wi-Fi auto-join, leave empty if manually connecting.</string>
-    <string name="certificate">Certificate</string>
     <string name="battery">Battery</string>
     <string name="temperature">Temperature</string>
     <string name="rssi">RSSI</string>
     <string name="availability">Availability</string>
-    <string name="power">Power</string>
+    <string name="powered">Powered</string>
     <string name="listen">Listen</string>
+    <string name="send_alert">Ring</string>
+    <string name="disconnect_bluetooth">Disconnect</string>
+    <string name="connect_bluetooth">Connect</string>
+    <string name="power_on">Power On</string>
+    <string name="charging_status">Charging</string>
+    <string name="power_off">Power Off</string>
+    <string name="no_ble">Bluetooth LE not available</string>
 </resources>

@@ -3,18 +3,18 @@ package me.clarius.sdk.solum.example;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.os.Build;
 import android.os.Bundle;
-import android.os.Parcelable;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentResultListener;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.fragment.NavHostFragment;
@@ -37,12 +37,7 @@ import me.clarius.sdk.ProcessedImageInfo;
 import me.clarius.sdk.RawImageInfo;
 import me.clarius.sdk.Solum;
 import me.clarius.sdk.SpectralImageInfo;
-import me.clarius.sdk.solum.example.bluetooth.BluetoothProbeInfo;
 import me.clarius.sdk.solum.example.databinding.FragmentFirstBinding;
-import me.clarius.sdk.solum.example.exceptions.BadApiLevelException;
-import me.clarius.sdk.solum.example.helpers.MessageHelper;
-import me.clarius.sdk.solum.example.viewmodels.SolumViewModel;
-import me.clarius.sdk.solum.example.viewmodels.WorkflowViewModel;
 
 public class FirstFragment extends Fragment {
 
@@ -53,36 +48,35 @@ public class FirstFragment extends Fragment {
     private Solum solum;
     private boolean isRunning = false;
     private boolean isBuffering = false;
-    private SolumViewModel viewModel;
+    private SolumViewModel solumViewModel;
     private WorkflowViewModel workflowViewModel;
     private ImageConverter imageConverter;
-    private MessageHelper messageHelper;
     private final Solum.Listener solumListener = new Solum.Listener() {
         @Override
         public void error(String msg) {
-            messageHelper.showError(msg);
+            showError(msg);
         }
 
         @Override
         public void connectionResult(Connection result, int port, String status) {
             Log.d(TAG, "Connection result: " + result + ", port: " + port + ", status: " + status);
             if (result == Connection.ProbeConnected) {
-                messageHelper.showMessage("Connected");
+                showMessage("Connected");
             } else if (result == Connection.SwUpdateRequired) {
-                messageHelper.showMessage("Firmware update needed");
+                showMessage("Firmware update needed");
             } else {
-                messageHelper.showMessage("Disconnected");
+                showMessage("Disconnected");
             }
         }
 
         @Override
         public void certInfo(int daysValid) {
-            messageHelper.showMessage("Days valid for cert: " + daysValid);
+            showMessage("Days valid for cert: " + daysValid);
         }
 
         @Override
         public void imaging(ImagingState state, boolean imaging) {
-            messageHelper.showMessage("Imaging state: " + state + " imaging? " + imaging);
+            showMessage("Imaging state: " + state + " imaging? " + imaging);
             isRunning = imaging;
         }
 
@@ -113,28 +107,16 @@ public class FirstFragment extends Fragment {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        getParentFragmentManager().setFragmentResultListener("bluetoothProbeInfo", this, (requestKey, result) -> {
-            BluetoothProbeInfo probeInfo;
+        getParentFragmentManager().setFragmentResultListener("probe_info", this, (requestKey, result) -> {
             Log.d(TAG, "Received bluetooth info");
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                probeInfo = result.getParcelable("bluetoothProbeInfo", BluetoothProbeInfo.class);
-            } else {
-                probeInfo = result.getParcelable("bluetoothProbeInfo");
-            }
-            addWifiInfoFromBluetooth(probeInfo);
+            addWifiInfoFromBluetooth(result);
         });
     }
 
+    @Nullable
     @Override
-    public View onCreateView
-    (
-        @NonNull LayoutInflater inflater,
-        ViewGroup container,
-        Bundle savedInstanceState
-    )
-    {
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         binding = FragmentFirstBinding.inflate(inflater, container, false);
-        messageHelper = new MessageHelper(requireActivity(), TAG);
         return binding.getRoot();
     }
 
@@ -143,15 +125,16 @@ public class FirstFragment extends Fragment {
     }
 
     private String getCertificate() {
-        // get actual certificate at https://cloud.clarius.com/api/public/v0/devices/oem/
+        // TODO: get from cloud at https://cloud.clarius.com/api/public/v0/devices/oem/
         return ClariusConfig.maybeCert().orElse("research");
     }
 
-    public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        viewModel = new ViewModelProvider(this).get(SolumViewModel.class);
-        viewModel.getProcessedImage().observe(getViewLifecycleOwner(), binding.imageView::setImageBitmap);
+        solumViewModel = new ViewModelProvider(this).get(SolumViewModel.class);
+        solumViewModel.getProcessedImage().observe(getViewLifecycleOwner(), binding.imageView::setImageBitmap);
 
         solum = new Solum(requireContext(), solumListener);
         solum.initialize(getCertDir(), new Solum.InitializationResult() {
@@ -160,8 +143,7 @@ public class FirstFragment extends Fragment {
                 Log.d(TAG, "Initialization result: " + connected);
                 if (connected) {
                     solum.setCertificate(getCertificate());
-                    solum.getFirmwareVersion(Platform.HD,
-                            maybeVersion -> messageHelper.showMessage("Retrieved FW version: " + maybeVersion.orElse("???")));
+                    solum.getFirmwareVersion(Platform.HD, maybeVersion -> showMessage("Retrieved FW version: " + maybeVersion.orElse("???")));
                     workflowViewModel.refreshProbes(solum);
                 }
             }
@@ -169,13 +151,11 @@ public class FirstFragment extends Fragment {
         solum.setProbeSettings(new ProbeSettings());
 
         workflowViewModel = new ViewModelProvider(requireActivity()).get(WorkflowViewModel.class);
-        workflowViewModel.getSelectedProbe().observe(getViewLifecycleOwner(),
-                currentProbe -> workflowViewModel.refreshApplications(solum, currentProbe));
+        workflowViewModel.getSelectedProbe().observe(getViewLifecycleOwner(), currentProbe -> workflowViewModel.refreshApplications(solum, currentProbe));
 
-        imageConverter = new ImageConverter(executorService, new ImageCallback(viewModel.getProcessedImage()));
+        imageConverter = new ImageConverter(executorService, new ImageCallback(solumViewModel.getProcessedImage()));
 
-        binding.buttonBluetooth.setOnClickListener(view1 -> NavHostFragment.findNavController(FirstFragment.this)
-                .navigate(R.id.action_FirstFragment_to_BluetoothFragment));
+        binding.buttonBluetooth.setOnClickListener(view1 -> NavHostFragment.findNavController(FirstFragment.this).navigate(R.id.action_FirstFragment_to_BluetoothFragment));
 
         binding.buttonConnect.setOnClickListener(v -> doConnect());
         binding.buttonDisconnect.setOnClickListener(v -> doDisconnect());
@@ -194,20 +174,15 @@ public class FirstFragment extends Fragment {
         ClariusConfig.maybePassphrase().ifPresent(s -> binding.wifiPassphrase.setText(s));
 
         if (!hasBleFeature()) {
-            messageHelper.showDialogError(
-                    "Bluetooth Low Energy (BLE) is unavailable on this device; unable to demonstrate the Bluetooth feature",
-                    MessageHelper.getDismissAction()
-            );
+            showError("Bluetooth Low Energy (BLE) is unavailable on this device; unable to demonstrate the Bluetooth feature");
         }
     }
 
     private void doSwUpdate() {
-        solum.updateSoftware(
-                result -> messageHelper.showMessage("SW update result: " + result),
-                (progress, total) -> {
-                    binding.progressBar.setMax(total);
-                    binding.progressBar.setProgress(progress);
-                });
+        solum.updateSoftware(result -> showMessage("SW update result: " + result), (progress, total) -> {
+            binding.progressBar.setMax(total);
+            binding.progressBar.setProgress(progress);
+        });
     }
 
     private void doRequestRawData() {
@@ -219,14 +194,14 @@ public class FirstFragment extends Fragment {
 
     private void toggleBuffering() {
         boolean newState = !isBuffering;
-        messageHelper.showMessage("Toggling buffering to: " + newState);
+        showMessage("Toggling buffering to: " + newState);
         isBuffering = newState;
         solum.setParam(Param.RawBuffer, newState ? 1 : 0);
     }
 
     private void toggleRun() {
         boolean newState = !isRunning;
-        messageHelper.showMessage("Toggling run to: " + newState);
+        showMessage("Toggling run to: " + newState);
         isRunning = newState;
         solum.run(newState);
     }
@@ -242,7 +217,7 @@ public class FirstFragment extends Fragment {
 
     private void doConnect() {
         if (solum == null) {
-            messageHelper.showError("Solum not initialized");
+            showError("Solum not initialized");
             return;
         }
         binding.ipAddressLayout.setError(null);
@@ -270,7 +245,7 @@ public class FirstFragment extends Fragment {
             }
         }
 
-        messageHelper.showMessage("Connecting to " + ipAddress + ":" + tcpPort);
+        showMessage("Connecting to " + ipAddress + ":" + tcpPort);
         solum.connect(ipAddress, tcpPort, maybeNetworkID);
     }
 
@@ -284,15 +259,15 @@ public class FirstFragment extends Fragment {
     private void doLoadApplication() {
         String currentProbe = workflowViewModel.getSelectedProbe().getValue();
         if (currentProbe == null || currentProbe.isEmpty()) {
-            messageHelper.showError("No probe selected");
+            showError("No probe selected");
             return;
         }
         String currentApplication = workflowViewModel.getSelectedApplication().getValue();
         if (currentApplication == null || currentApplication.isEmpty()) {
-            messageHelper.showError("No application selected");
+            showError("No application selected");
             return;
         }
-        messageHelper.showMessage("Loading application '" + currentApplication + "' for probe " + currentProbe);
+        showMessage("Loading application '" + currentApplication + "' for probe " + currentProbe);
         solum.loadApplication(currentProbe, currentApplication);
     }
 
@@ -300,7 +275,7 @@ public class FirstFragment extends Fragment {
         if (solum == null) {
             return;
         }
-        messageHelper.showMessage("Printing state in logcat");
+        showMessage("Printing state in logcat");
         solum.getParam(Param.Gain, result -> Log.d(TAG, "Gain: " + result.map(Object::toString).orElse("<none>")));
         solum.getParam(Param.ImageDepth, result -> Log.d(TAG, "Depth: " + result.map(Object::toString).orElse("<none>")));
         solum.getMode(result -> Log.d(TAG, "Mode: " + result.map(Mode::toString).orElse("<none>")));
@@ -325,32 +300,57 @@ public class FirstFragment extends Fragment {
             binding.wifiPassphrase.setError("Cannot be empty");
             return;
         }
-        messageHelper.showMessage("Auto-joining Wi-Fi " + ssid);
-        try {
-            wifiAutoJoin.join(requireContext(), ssid, passphrase, Optional.empty(), new WifiAutoJoin.Result() {
-                @Override
-                public void accept(boolean result, String ssid, Optional<Long> networkID) {
-                    if (result) {
-                        messageHelper.showMessage("Joined Wi-Fi " + ssid);
-                    } else {
-                        messageHelper.showError("Failed to join Wi-Fi " + ssid);
-                    }
-                    networkID.ifPresent(v -> binding.networkId.setText(Long.toString(v)));
+        final String macAddress = String.valueOf(binding.macAddress.getText());
+        showMessage("Auto-joining Wi-Fi " + ssid);
+        wifiAutoJoin.join(requireContext(), ssid, passphrase, macAddress, new WifiAutoJoin.Result() {
+            @Override
+            public void accept(boolean result, String ssid, Optional<Long> networkID) {
+                if (result) {
+                    showMessage("Joined Wi-Fi " + ssid);
+                } else {
+                    showError("Failed to join Wi-Fi " + ssid);
                 }
-            });
-        } catch (BadApiLevelException e) {
-            messageHelper.showError(e.toString());
-            e.printStackTrace();
-        }
+                networkID.ifPresent(v -> binding.networkId.setText(Long.toString(v)));
+            }
+        });
+    }
+
+    private void showMessage(CharSequence text) {
+        Log.d(TAG, (String) text);
+        Handler mainHandler = new Handler(Looper.getMainLooper());
+        mainHandler.post(() -> Toast.makeText(requireContext(), text, Toast.LENGTH_SHORT).show());
+    }
+
+    private void showError(CharSequence text) {
+        Log.e(TAG, "Error: " + text);
+        Handler mainHandler = new Handler(Looper.getMainLooper());
+        mainHandler.post(() -> Toast.makeText(requireContext(), text, Toast.LENGTH_SHORT).show());
+    }
+
+    private boolean hasBleFeature() {
+        return requireActivity().getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE);
+    }
+
+    private void addWifiInfoFromBluetooth(Bundle fields) {
+        if (fields.containsKey("wifi_ssid"))
+            binding.wifiSsid.setText(fields.getString("wifi_ssid"));
+        if (fields.containsKey("wifi_passphrase"))
+            binding.wifiPassphrase.setText(fields.getString("wifi_passphrase"));
+        if (fields.containsKey("ip_address"))
+            binding.ipAddress.setText(fields.getString("ip_address"));
+        if (fields.containsKey("tcp_port"))
+            binding.tcpPort.setText(String.valueOf(fields.getInt("tcp_port")));
+        if (fields.containsKey("mac_address"))
+            binding.macAddress.setText(String.valueOf(fields.getString("mac_address")));
     }
 
     private class RawDataCallback {
         void requestResult(int result) {
             Log.d(TAG, "Raw data request: " + result);
             if (result < 0) {
-                messageHelper.showError("Failed to request raw data (ensure buffering is enabled and probe is frozen)");
+                showError("Failed to request raw data (ensure buffering is enabled and probe is frozen)");
             } else if (result == 0) {
-                messageHelper.showError("No raw data available");
+                showError("No raw data available");
             } else {
                 solum.readRawData(this::retrieved, this::progress);
             }
@@ -359,11 +359,11 @@ public class FirstFragment extends Fragment {
         void retrieved(int result, ByteBuffer data) {
             Log.d(TAG, "Raw data read: " + result);
             if (result < 0) {
-                messageHelper.showError("Failed to read raw data (ensure buffering is enabled and probe is frozen)");
+                showError("Failed to read raw data (ensure buffering is enabled and probe is frozen)");
             } else if (result == 0) {
-                messageHelper.showError("No raw data available");
+                showError("No raw data available");
             } else {
-                messageHelper.showMessage("Raw data size: " + result + " bytes");
+                showMessage("Raw data size: " + result + " bytes");
             }
         }
 
@@ -373,18 +373,9 @@ public class FirstFragment extends Fragment {
         }
     }
 
-    private boolean hasBleFeature() {
-        return requireActivity().getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE);
-    }
-
-    private void addWifiInfoFromBluetooth(BluetoothProbeInfo probeInfo) {
-        BluetoothProbeInfo.WifiInfo wifiInfo = probeInfo.getWifiInfo();
-        binding.wifiSsid.setText(wifiInfo.getSsid());
-        binding.wifiPassphrase.setText(wifiInfo.getPassword());
-        binding.ipAddress.setText(wifiInfo.getIp());
-        binding.tcpPort.setText(wifiInfo.getPort());
-    }
-
+    /**
+     * "Glue class" between the conversion thread and display thread
+     */
     private class ImageCallback implements ImageConverter.Callback {
         private final MutableLiveData<Bitmap> dest;
 
@@ -399,7 +390,7 @@ public class FirstFragment extends Fragment {
 
         @Override
         public void onError(Exception e) {
-            messageHelper.showError("Error while converting image: " + e);
+            showError("Error while converting image: " + e);
         }
     }
 }

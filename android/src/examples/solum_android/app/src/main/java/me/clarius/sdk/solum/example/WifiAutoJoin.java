@@ -7,14 +7,9 @@ import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.NetworkRequest;
 import android.net.wifi.WifiNetworkSpecifier;
-import android.os.Build;
 import android.util.Log;
 
-import androidx.annotation.RequiresApi;
-
 import java.util.Optional;
-
-import me.clarius.sdk.solum.example.exceptions.BadApiLevelException;
 
 /**
  * Helper to auto-join a Wi-Fi network.
@@ -33,18 +28,8 @@ public class WifiAutoJoin {
      * @param macAddress is used to bypass user approval if the network was already joined before (optional).
      *                   https://developer.android.com/guide/topics/connectivity/wifi-bootstrap?#bypass-approval
      * @param result     get the result.
-     * @throws BadApiLevelException if the API level is too low (auto-join is available starting API level 29).
      */
-    public void join(Context context, String ssid, String passphrase, Optional<String> macAddress, Result result) throws BadApiLevelException {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            doJoin(context, ssid, passphrase, macAddress, result);
-        } else {
-            throw new BadApiLevelException(Build.VERSION_CODES.Q);
-        }
-    }
-
-    @RequiresApi(api = Build.VERSION_CODES.Q)
-    private void doJoin(Context context, String ssid, String passphrase, Optional<String> macAddress, Result result) {
+    public void join(Context context, String ssid, String passphrase, String macAddress, Result result) {
         final ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
         assert null != connectivityManager;
         if (callback != null) {
@@ -53,16 +38,11 @@ public class WifiAutoJoin {
             callback = null;
         }
         callback = new MyCallback(ssid, result);
-        WifiNetworkSpecifier.Builder specifierBuilder = new WifiNetworkSpecifier.Builder()
-                .setSsid(ssid)
-                .setWpa2Passphrase(passphrase);
-        macAddress.ifPresent(s -> specifierBuilder.setBssid(MacAddress.fromString(s)));
-        NetworkRequest request = new NetworkRequest.Builder()
-                .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
-                .addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_RESTRICTED)
-                .removeCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-                .setNetworkSpecifier(specifierBuilder.build())
-                .build();
+        WifiNetworkSpecifier.Builder specifierBuilder = new WifiNetworkSpecifier.Builder().setSsid(ssid).setWpa2Passphrase(passphrase);
+        if (null != macAddress && !macAddress.isEmpty()) {
+            specifierBuilder.setBssid(MacAddress.fromString(macAddress));
+        }
+        NetworkRequest request = new NetworkRequest.Builder().addTransportType(NetworkCapabilities.TRANSPORT_WIFI).addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_RESTRICTED).removeCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET).setNetworkSpecifier(specifierBuilder.build()).build();
         connectivityManager.requestNetwork(request, callback);
     }
 

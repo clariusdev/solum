@@ -15,7 +15,6 @@ import androidx.lifecycle.ViewModelProvider;
 import java.util.List;
 
 import me.clarius.sdk.solum.example.databinding.FragmentWorkflowBinding;
-import me.clarius.sdk.solum.example.viewmodels.WorkflowViewModel;
 
 public class WorkflowFragment extends Fragment {
 
@@ -24,13 +23,8 @@ public class WorkflowFragment extends Fragment {
     private ArrayAdapter<String> probeListAdapter;
     private ArrayAdapter<String> applicationListAdapter;
 
-    public static WorkflowFragment newInstance() {
-        return new WorkflowFragment();
-    }
-
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
-                             @Nullable Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         binding = FragmentWorkflowBinding.inflate(inflater, container, false);
         return binding.getRoot();
     }
@@ -51,34 +45,30 @@ public class WorkflowFragment extends Fragment {
         applicationListAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         binding.applicationList.setAdapter(applicationListAdapter);
 
-        binding.probeList.setOnItemSelectedListener(
-                new AdapterView.OnItemSelectedListener() {
-                    @Override
-                    public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                        String probe = probeListAdapter.getItem(position);
-                        viewModel.selectProbe(probe);
-                        viewModel.selectApplication(null);
-                    }
+        binding.probeList.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                String probe = probeListAdapter.getItem(position);
+                viewModel.selectProbe(probe);
+                viewModel.selectApplication(null);
+            }
 
-                    @Override
-                    public void onNothingSelected(AdapterView<?> parent) {
-                    }
-                }
-        );
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
+        });
 
-        binding.applicationList.setOnItemSelectedListener(
-                new AdapterView.OnItemSelectedListener() {
-                    @Override
-                    public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                        String application = applicationListAdapter.getItem(position);
-                        viewModel.selectApplication(application);
-                    }
+        binding.applicationList.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                String application = applicationListAdapter.getItem(position);
+                viewModel.selectApplication(application);
+            }
 
-                    @Override
-                    public void onNothingSelected(AdapterView<?> parent) {
-                    }
-                }
-        );
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
+        });
     }
 
     private void onNewProbeList(List<String> probes) {
