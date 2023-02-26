@@ -172,10 +172,6 @@ public class FirstFragment extends Fragment {
 
         ClariusConfig.maybeSSID().ifPresent(s -> binding.wifiSsid.setText(s));
         ClariusConfig.maybePassphrase().ifPresent(s -> binding.wifiPassphrase.setText(s));
-
-        if (!hasBleFeature()) {
-            showError("Bluetooth Low Energy (BLE) is unavailable on this device; unable to demonstrate the Bluetooth feature");
-        }
     }
 
     private void doSwUpdate() {
@@ -325,10 +321,6 @@ public class FirstFragment extends Fragment {
         Log.e(TAG, "Error: " + text);
         Handler mainHandler = new Handler(Looper.getMainLooper());
         mainHandler.post(() -> Toast.makeText(requireContext(), text, Toast.LENGTH_SHORT).show());
-    }
-
-    private boolean hasBleFeature() {
-        return requireActivity().getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE);
     }
 
     private void addWifiInfoFromBluetooth(Bundle fields) {
