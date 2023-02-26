@@ -11,6 +11,11 @@ import me.clarius.sdk.ProcessedImageInfo;
 
 /**
  * Convert image data in separate thread to avoid blocking Solum
+ * <p>
+ * Image conversion workflow:
+ * <pre>
+ * Solum -> ImageConverter -> thread work -> ImageCallback -> live data -> display
+ * </pre>
  */
 
 public class ImageConverter {
@@ -52,8 +57,7 @@ public class ImageConverter {
             bitmap = Bitmap.createBitmap(info.width, info.height, Bitmap.Config.ARGB_8888);
             bitmap.copyPixelsFromBuffer(buffer);
         }
-        if (bitmap == null)
-            throw new AssertionError("bad image data");
+        if (bitmap == null) throw new AssertionError("bad image data");
         return bitmap;
     }
 

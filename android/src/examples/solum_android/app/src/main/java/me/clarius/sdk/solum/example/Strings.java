@@ -10,12 +10,7 @@ import me.clarius.sdk.Tgc;
 
 public class Strings {
     public static String fromProbeInfo(final ProbeInfo probeInfo) {
-        return new StringJoiner(", ")
-                .add("version: " + probeInfo.version)
-                .add("element count: " + probeInfo.elements)
-                .add("pitch: " + probeInfo.pitch)
-                .add("radius: " + probeInfo.radius + " mm")
-                .toString();
+        return new StringJoiner(", ").add("version: " + probeInfo.version).add("element count: " + probeInfo.elements).add("pitch: " + probeInfo.pitch).add("radius: " + probeInfo.radius + " mm").toString();
     }
 
     public static String fromRange(final Range range) {
@@ -23,21 +18,11 @@ public class Strings {
     }
 
     public static String fromTgc(final Tgc tgc) {
-        return new StringJoiner(", ")
-                .add("top: " + tgc.top)
-                .add("mid: " + tgc.mid)
-                .add("bottom: " + tgc.bottom)
-                .toString();
+        return new StringJoiner(", ").add("top: " + tgc.top).add("mid: " + tgc.mid).add("bottom: " + tgc.bottom).toString();
     }
 
     public static String fromStatusInfo(final StatusInfo status) {
-        return new StringJoiner(", ")
-                .add("batt: " + status.battery)
-                .add("temp: " + status.temperature)
-                .add("frame rate: " + status.frameRate)
-                .add("fan: " + status.fan)
-                .add("charging: " + status.charger)
-                .toString();
+        return new StringJoiner(", ").add("batt: " + status.battery).add("temp: " + status.temperature).add("frame rate: " + status.frameRate).add("fan: " + status.fan).add("charging: " + status.charger).toString();
     }
 
     public static String fromPoints(final PointF[] points) {

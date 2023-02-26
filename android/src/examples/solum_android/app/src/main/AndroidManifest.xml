@@ -3,10 +3,29 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="me.clarius.sdk.solum.example">
 
+    <!-- WI-FI PERMISSIONS -->
     <!-- INTERNET perm required to connect to network sockets -->
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- CHANGE_NETWORK_STATE needed to auto-join Wi-Fi -->
     <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE"/>
+
+    <!-- BLUETOOTH PERMISSIONS -->
+    <!-- Needed only if the app looks for Bluetooth devices -->
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN"
+        android:usesPermissionFlags="neverForLocation" />
+    <!-- Needed only if the app communicates with already-paired Bluetooth devices. -->
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <!-- Hardware options -->
+    <uses-feature android:name="android.hardware.bluetooth" android:required="false"/>
+    <uses-feature android:name="android.hardware.bluetooth_le" android:required="true"/>
+
+    <!-- LEGACY PERMISSIONS -->
+    <uses-permission android:name="android.permission.BLUETOOTH"
+        android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"
+        android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"
+        android:maxSdkVersion="30" />
 
     <application
         android:allowBackup="true"
@@ -30,6 +49,8 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <service android:name=".bluetooth.GattService" />
+        <service android:name=".bluetooth.ScanService" />
     </application>
 
 </manifest>

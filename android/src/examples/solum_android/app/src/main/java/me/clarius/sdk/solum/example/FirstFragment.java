@@ -1,6 +1,7 @@
 package me.clarius.sdk.solum.example;
 
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.os.Handler;
@@ -12,6 +13,7 @@ import android.view.ViewGroup;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModelProvider;
@@ -46,7 +48,7 @@ public class FirstFragment extends Fragment {
     private Solum solum;
     private boolean isRunning = false;
     private boolean isBuffering = false;
-    private SolumViewModel viewModel;
+    private SolumViewModel solumViewModel;
     private WorkflowViewModel workflowViewModel;
     private ImageConverter imageConverter;
     private final Solum.Listener solumListener = new Solum.Listener() {
@@ -103,10 +105,17 @@ public class FirstFragment extends Fragment {
     };
 
     @Override
-    public View onCreateView(
-            @NonNull LayoutInflater inflater, ViewGroup container,
-            Bundle savedInstanceState
-    ) {
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        getParentFragmentManager().setFragmentResultListener("probe_info", this, (requestKey, result) -> {
+            Log.d(TAG, "Received bluetooth info");
+            addWifiInfoFromBluetooth(result);
+        });
+    }
+
+    @Nullable
+    @Override
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         binding = FragmentFirstBinding.inflate(inflater, container, false);
         return binding.getRoot();
     }
@@ -116,15 +125,16 @@ public class FirstFragment extends Fragment {
     }
 
     private String getCertificate() {
-        // get actual certificate at https://cloud.clarius.com/api/public/v0/devices/oem/
+        // TODO: get from cloud at https://cloud.clarius.com/api/public/v0/devices/oem/
         return ClariusConfig.maybeCert().orElse("research");
     }
 
-    public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        viewModel = new ViewModelProvider(this).get(SolumViewModel.class);
-        viewModel.getProcessedImage().observe(getViewLifecycleOwner(), binding.imageView::setImageBitmap);
+        solumViewModel = new ViewModelProvider(this).get(SolumViewModel.class);
+        solumViewModel.getProcessedImage().observe(getViewLifecycleOwner(), binding.imageView::setImageBitmap);
 
         solum = new Solum(requireContext(), solumListener);
         solum.initialize(getCertDir(), new Solum.InitializationResult() {
@@ -133,8 +143,7 @@ public class FirstFragment extends Fragment {
                 Log.d(TAG, "Initialization result: " + connected);
                 if (connected) {
                     solum.setCertificate(getCertificate());
-                    solum.getFirmwareVersion(Platform.HD,
-                            maybeVersion -> showMessage("Retrieved FW version: " + maybeVersion.orElse("???")));
+                    solum.getFirmwareVersion(Platform.HD, maybeVersion -> showMessage("Retrieved FW version: " + maybeVersion.orElse("???")));
                     workflowViewModel.refreshProbes(solum);
                 }
             }
@@ -142,13 +151,11 @@ public class FirstFragment extends Fragment {
         solum.setProbeSettings(new ProbeSettings());
 
         workflowViewModel = new ViewModelProvider(requireActivity()).get(WorkflowViewModel.class);
-        workflowViewModel.getSelectedProbe().observe(getViewLifecycleOwner(),
-                currentProbe -> workflowViewModel.refreshApplications(solum, currentProbe));
+        workflowViewModel.getSelectedProbe().observe(getViewLifecycleOwner(), currentProbe -> workflowViewModel.refreshApplications(solum, currentProbe));
 
-        imageConverter = new ImageConverter(executorService, new ImageCallback(viewModel.getProcessedImage()));
+        imageConverter = new ImageConverter(executorService, new ImageCallback(solumViewModel.getProcessedImage()));
 
-        binding.buttonBluetooth.setOnClickListener(view1 -> NavHostFragment.findNavController(FirstFragment.this)
-                .navigate(R.id.action_FirstFragment_to_BluetoothFragment));
+        binding.buttonBluetooth.setOnClickListener(view1 -> NavHostFragment.findNavController(FirstFragment.this).navigate(R.id.action_FirstFragment_to_BluetoothFragment));
 
         binding.buttonConnect.setOnClickListener(v -> doConnect());
         binding.buttonDisconnect.setOnClickListener(v -> doDisconnect());
@@ -168,12 +175,10 @@ public class FirstFragment extends Fragment {
     }
 
     private void doSwUpdate() {
-        solum.updateSoftware(
-                result -> showMessage("SW update result: " + result),
-                (progress, total) -> {
-                    binding.progressBar.setMax(total);
-                    binding.progressBar.setProgress(progress);
-                });
+        solum.updateSoftware(result -> showMessage("SW update result: " + result), (progress, total) -> {
+            binding.progressBar.setMax(total);
+            binding.progressBar.setProgress(progress);
+        });
     }
 
     private void doRequestRawData() {
@@ -291,23 +296,19 @@ public class FirstFragment extends Fragment {
             binding.wifiPassphrase.setError("Cannot be empty");
             return;
         }
+        final String macAddress = String.valueOf(binding.macAddress.getText());
         showMessage("Auto-joining Wi-Fi " + ssid);
-        try {
-            wifiAutoJoin.join(requireContext(), ssid, passphrase, Optional.empty(), new WifiAutoJoin.Result() {
-                @Override
-                public void accept(boolean result, String ssid, Optional<Long> networkID) {
-                    if (result) {
-                        showMessage("Joined Wi-Fi " + ssid);
-                    } else {
-                        showError("Failed to join Wi-Fi " + ssid);
-                    }
-                    networkID.ifPresent(v -> binding.networkId.setText(Long.toString(v)));
+        wifiAutoJoin.join(requireContext(), ssid, passphrase, macAddress, new WifiAutoJoin.Result() {
+            @Override
+            public void accept(boolean result, String ssid, Optional<Long> networkID) {
+                if (result) {
+                    showMessage("Joined Wi-Fi " + ssid);
+                } else {
+                    showError("Failed to join Wi-Fi " + ssid);
                 }
-            });
-        } catch (BadApiLevelException e) {
-            showError(e.toString());
-            e.printStackTrace();
-        }
+                networkID.ifPresent(v -> binding.networkId.setText(Long.toString(v)));
+            }
+        });
     }
 
     private void showMessage(CharSequence text) {
@@ -320,6 +321,19 @@ public class FirstFragment extends Fragment {
         Log.e(TAG, "Error: " + text);
         Handler mainHandler = new Handler(Looper.getMainLooper());
         mainHandler.post(() -> Toast.makeText(requireContext(), text, Toast.LENGTH_SHORT).show());
+    }
+
+    private void addWifiInfoFromBluetooth(Bundle fields) {
+        if (fields.containsKey("wifi_ssid"))
+            binding.wifiSsid.setText(fields.getString("wifi_ssid"));
+        if (fields.containsKey("wifi_passphrase"))
+            binding.wifiPassphrase.setText(fields.getString("wifi_passphrase"));
+        if (fields.containsKey("ip_address"))
+            binding.ipAddress.setText(fields.getString("ip_address"));
+        if (fields.containsKey("tcp_port"))
+            binding.tcpPort.setText(String.valueOf(fields.getInt("tcp_port")));
+        if (fields.containsKey("mac_address"))
+            binding.macAddress.setText(String.valueOf(fields.getString("mac_address")));
     }
 
     private class RawDataCallback {
@@ -351,6 +365,9 @@ public class FirstFragment extends Fragment {
         }
     }
 
+    /**
+     * "Glue class" between the conversion thread and display thread
+     */
     private class ImageCallback implements ImageConverter.Callback {
         private final MutableLiveData<Bitmap> dest;
 

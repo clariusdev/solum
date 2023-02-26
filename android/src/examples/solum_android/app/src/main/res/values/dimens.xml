@@ -1,5 +1,6 @@
 <resources>
     <dimen name="spinner_height">48dp</dimen>
-    <dimen name="text_margin">16dp</dimen>
     <dimen name="padding">16dp</dimen>
+    <dimen name="flow_spacing">8dp</dimen>
+    <dimen name="table_padding">3dp</dimen>
 </resources>
