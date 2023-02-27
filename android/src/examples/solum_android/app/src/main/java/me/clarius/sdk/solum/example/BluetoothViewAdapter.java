@@ -100,6 +100,7 @@ public class BluetoothViewAdapter extends RecyclerView.Adapter<BluetoothViewAdap
         ViewHolder(@NonNull final View itemView) {
             super(itemView);
             itemView.setOnClickListener(view -> {
+                notifyItemChanged(selectedPosition);
                 selectedPosition = getLayoutPosition();
                 notifyItemChanged(selectedPosition);
             });
