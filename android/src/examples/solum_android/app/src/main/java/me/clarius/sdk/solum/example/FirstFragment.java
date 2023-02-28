@@ -172,6 +172,7 @@ public class FirstFragment extends Fragment {
 
         ClariusConfig.maybeSSID().ifPresent(s -> binding.wifiSsid.setText(s));
         ClariusConfig.maybePassphrase().ifPresent(s -> binding.wifiPassphrase.setText(s));
+        ClariusConfig.maybeMacAddress().ifPresent(s -> binding.macAddress.setText(s));
     }
 
     private void doSwUpdate() {

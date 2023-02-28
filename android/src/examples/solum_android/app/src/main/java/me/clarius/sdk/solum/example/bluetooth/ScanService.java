@@ -13,6 +13,7 @@ import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.util.Log;
 
 import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
@@ -30,6 +31,7 @@ import java.util.List;
 
 public class ScanService extends Service {
     private static final long SCAN_PERIOD = 10000;
+    private static final String TAG = "BLE(scan)";
     private final List<String> found = new ArrayList<>();
     private final Handler handler = new Handler(Looper.myLooper());
     private final IBinder binder = new ScanService.CustomBinder();
@@ -42,6 +44,7 @@ public class ScanService extends Service {
             String deviceName = result.getScanRecord().getDeviceName();
             if (null != deviceName && deviceName.startsWith("CUS-")) {
                 if (addIfMissing(deviceName)) {
+                    Log.i(TAG, "Found clarius probe: " + deviceName + " with address: " + result.getDevice().getAddress());
                     listener.newProbe(deviceName, result);
                 }
             }
@@ -50,6 +53,7 @@ public class ScanService extends Service {
         @Override
         public void onScanFailed(int errorCode) {
             super.onScanFailed(errorCode);
+            Log.e(TAG, "Scan failed with code: " + errorCode);
             listener.failed(errorCode);
         }
     };
@@ -62,18 +66,23 @@ public class ScanService extends Service {
     }
 
     @Override
-    public boolean onUnbind(Intent intent) {
-        stopScan();
-        return super.onUnbind(intent);
+    public void onCreate() {
+        super.onCreate();
+        Log.d(TAG, "Creating bluetooth scan service");
+        bluetoothLeScanner = ((BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE)).getAdapter().getBluetoothLeScanner();
+        assert bluetoothLeScanner != null: "Unable to get the system BLE scanner, is bluetooth enabled?";
     }
 
-    public boolean initialize(Listener listener) {
-        bluetoothLeScanner = ((BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE)).getAdapter().getBluetoothLeScanner();
-        if (bluetoothLeScanner == null) {
-            return false;
-        }
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        Log.d(TAG, "Destroying bluetooth scan service");
+        stopScan();
+        bluetoothLeScanner = null;
+    }
+
+    public void initialize(Listener listener) {
         this.listener = listener;
-        return true;
     }
 
     public void startScan() {
@@ -84,6 +93,7 @@ public class ScanService extends Service {
             bluetoothLeScanner.startScan(scanCallback);
             listener.started();
             handler.postDelayed(this::stopScan, SCAN_PERIOD);
+            Log.d(TAG, "Scan started");
         }
     }
 
@@ -91,6 +101,7 @@ public class ScanService extends Service {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
         }
         if (setScanningFlag(false)) {
+            Log.d(TAG, "Scan finished, found " + found.size() + " probe(s)");
             bluetoothLeScanner.stopScan(scanCallback);
             listener.finished(found);
         }

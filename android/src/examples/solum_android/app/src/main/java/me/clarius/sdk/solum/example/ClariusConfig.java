@@ -14,24 +14,29 @@ import java.util.Optional;
  * This is useful during development to import network values instead of typing them in the GUI.
  * <p>
  * Known properties:
- * - clariusScannerCert: the scanner cert here, obtained from https://cloud.clarius.com/api/public/v0/devices/oem/
- * - clariusScannerSSID: the scanner Wi-Fi Direct SSID, obtained from Bluetooth scanning
- * - clariusScannerPassphrase: the scanner Wi-Fi WPA2 passphrase, obtained from Bluetooth scanning
+ * - clariusProbeCert: the scanner cert here, obtained from https://cloud.clarius.com/api/public/v0/devices/oem/
+ * - clariusProbeSSID: the scanner Wi-Fi Direct SSID, obtained from Bluetooth scanning
+ * - clariusProbePassphrase: the scanner Wi-Fi WPA2 passphrase, obtained from Bluetooth scanning
+ * - clariusProbeMacAddress: the probe's MAC address, obtained from Bluetooth scanning
  */
 
 public class ClariusConfig {
     private static final String TAG = "ClariusConfig";
 
     public static Optional<String> maybeCert() {
-        return Optional.ofNullable((String) getFieldValue(BuildConfig.class, "clariusScannerCert"));
+        return Optional.ofNullable((String) getFieldValue(BuildConfig.class, "clariusProbeCert"));
     }
 
     public static Optional<String> maybeSSID() {
-        return Optional.ofNullable((String) getFieldValue(BuildConfig.class, "clariusScannerSSID"));
+        return Optional.ofNullable((String) getFieldValue(BuildConfig.class, "clariusProbeSSID"));
     }
 
     public static Optional<String> maybePassphrase() {
-        return Optional.ofNullable((String) getFieldValue(BuildConfig.class, "clariusScannerPassphrase"));
+        return Optional.ofNullable((String) getFieldValue(BuildConfig.class, "clariusProbePassphrase"));
+    }
+
+    public static Optional<String> maybeMacAddress() {
+        return Optional.ofNullable((String) getFieldValue(BuildConfig.class, "clariusProbeMacAddress"));
     }
 
     private static Object getFieldValue(Class<?> fromClass, String name) {

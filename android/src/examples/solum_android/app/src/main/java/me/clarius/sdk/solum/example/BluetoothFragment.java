@@ -54,7 +54,6 @@ public class BluetoothFragment extends Fragment {
     private final ScanService.Listener scanServiceListener = new ScanService.Listener() {
         @Override
         public void newProbe(String deviceName, ScanResult result) {
-            Log.d(TAG, "Found clarius probe: " + deviceName + " with address: " + result.getDevice().getAddress());
             bluetoothViewModel.addOrUpdateProbe(deviceName, probe -> {
                 probe.updateAddress(result.getDevice().getAddress());
                 probe.updateRssi(result.getRssi());
@@ -68,18 +67,15 @@ public class BluetoothFragment extends Fragment {
 
         @Override
         public void failed(int errorCode) {
-            Log.e(TAG, "Scan failed with code: " + errorCode);
         }
 
         @Override
         public void started() {
-            Log.d(TAG, "Scan started");
             scanning.set(true);
         }
 
         @Override
         public void finished(List<String> found) {
-            Log.d(TAG, "Scan finished, found " + found.size() + " probe(s)");
             scanning.set(false);
         }
     };
@@ -129,20 +125,13 @@ public class BluetoothFragment extends Fragment {
     private final ServiceConnection gattServiceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
-            Log.d(TAG, "Bluetooth gatt service connected");
             gattService = ((GattService.CustomBinder) service).getService();
-            if (gattService != null) {
-                if (gattService.initialize(gattServiceListener)) {
-                    Log.d(TAG, "Bluetooth gatt service initialized");
-                } else {
-                    Log.e(TAG, "Unable to initialize the bluetooth gatt service");
-                }
-            }
+            assert gattService != null;
+            gattService.initialize(gattServiceListener);
         }
 
         @Override
         public void onServiceDisconnected(ComponentName name) {
-            Log.d(TAG, "Bluetooth service disconnected");
             gattService = null;
         }
     };
@@ -150,21 +139,14 @@ public class BluetoothFragment extends Fragment {
     private final ServiceConnection scanServiceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
-            Log.d(TAG, "Bluetooth scan service connected");
             scanService = ((ScanService.CustomBinder) service).getService();
-            if (scanService != null) {
-                if (scanService.initialize(scanServiceListener)) {
-                    Log.d(TAG, "Bluetooth scan service initialized");
-                    tryStartScan();
-                } else {
-                    Log.e(TAG, "Unable to initialize the bluetooth scan service");
-                }
-            }
+            assert scanService != null;
+            scanService.initialize(scanServiceListener);
+            tryStartScan();
         }
 
         @Override
         public void onServiceDisconnected(ComponentName name) {
-            Log.d(TAG, "Probe scan service disconnected");
             gattService = null;
         }
     };

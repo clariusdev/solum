@@ -37,7 +37,7 @@ import java.util.UUID;
  */
 
 public class GattService extends Service {
-    private static final String TAG = "BLE(GATT)";
+    private static final String TAG = "BLE(gatt)";
     private static final UUID CLIENT_CHARACTERISTIC_CONFIGURATION_DESCRIPTOR_UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
     private static final int MAX_MTU = 256;
 
@@ -203,21 +203,25 @@ public class GattService extends Service {
         return binder;
     }
 
-    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
     @Override
-    public boolean onUnbind(Intent intent) {
-        close();
-        return super.onUnbind(intent);
+    public void onCreate() {
+        super.onCreate();
+        Log.d(TAG, "Creating bluetooth gatt service");
+        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        assert bluetoothAdapter != null: "Unable to get the system BLE adapter, is bluetooth enabled?";
     }
 
-    public boolean initialize(Listener listener) {
-        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        if (bluetoothAdapter == null) {
-            Log.e(TAG, "Unable to obtain a BluetoothAdapter.");
-            return false;
-        }
+    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        Log.d(TAG, "Destroying the bluetooth gatt service");
+        close();
+        bluetoothAdapter = null;
+    }
+
+    public void initialize(Listener listener) {
         this.listener = listener;
-        return true;
     }
 
     public void connect(String address) {
