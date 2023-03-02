@@ -113,7 +113,7 @@ public class Probe {
         if (null != powered) fields.putBoolean("powered", powered);
         if (null != wifi) {
             if (null != wifi.ssid) fields.putString("wifi_ssid", wifi.ssid);
-            if (null != wifi.passphrase) fields.putString("wifi_password", wifi.passphrase);
+            if (null != wifi.passphrase) fields.putString("wifi_passphrase", wifi.passphrase);
             if (null != wifi.ip) fields.putString("ip_address", wifi.ip);
             if (null != wifi.port) fields.putInt("tcp_port", wifi.port);
             if (null != wifi.mac) fields.putString("mac_address", wifi.mac);
