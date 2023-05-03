@@ -69,7 +69,7 @@ void UltrasoundImage::checkGate()
     CusGateLines lines;
     if (solumGetGate(&lines) == 0)
     {
-        auto convertLine = [](const CusLine& line) -> QLineF
+        auto convertLine = [](const CusLineF& line) -> QLineF
         {
             return QLineF(QPointF(line.p1.x, line.p1.y), QPointF(line.p2.x, line.p2.y));
         };

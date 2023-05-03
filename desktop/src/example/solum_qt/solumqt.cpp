@@ -218,7 +218,7 @@ void Solum::onRetrieve()
     if (!token.isEmpty())
     {
         settings_->setValue("token", token);
-        QNetworkRequest request(QUrl("https://cloud.clarius.com/api/public/v0/devices/oem/?format=json"));
+        QNetworkRequest request(QUrl("https://cloud.clarius.com/api/public/v0/devices/oem/?limit=300&format=json"));
         request.setTransferTimeout(5000);
         QByteArray auth(QString("OEM-API-Key %1").arg(token).toUtf8());
         request.setRawHeader("Authorization", auth);
@@ -273,7 +273,7 @@ void Solum::onWiFi()
     QString req(QStringLiteral("ap: false\n"));
     req += QStringLiteral("ssid: %1\n").arg(ssid);
     if (!pw.isEmpty())
-        req += QStringLiteral("password: %1\n").arg(pw);
+        req += QStringLiteral("pw: %1\n").arg(pw);
     ble_.requestWifi(req);
 }
 

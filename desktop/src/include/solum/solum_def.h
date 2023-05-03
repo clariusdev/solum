@@ -1,222 +1,367 @@
 #pragma once
 
-#include "api_common.h"
+// SDK: solum
+// Version: 10.3.0
 
-#define CERT_INVALID    -1  ///< certificate is not valid
+#define CUS_MAXTGC  10
+#define CUS_SUCCESS 0
+#define CUS_FAILURE (-1)
+#define CERT_INVALID (-1) ///< certificate is not valid
 
-/// tcp connection results
-typedef enum _CusConnection
+/// The probe buttons
+typedef enum _CusButton
 {
-    ConnectionError = -1,   ///< connection call error
-    ProbeConnected = 0,     ///< connected to probe
-    ProbeDisconnected,      ///< disconnected from probe
-    ConnectionFailed,       ///< failed to connect to probe
-    SwUpdateRequired,       ///< software update required
+    ButtonUp,           ///< Up button
+    ButtonDown,         ///< Down button
+    ButtonHandle,       ///< Handle button (custom probes only)
 
-} CusConnection;
+} CusButton;
 
-/// imaging state
-typedef enum _CusImagingState
+/// The types of image data compression which are handled in the software
+typedef enum _CusImageFormat
 {
-    ImagingNotReady,        ///< imaging is not ready, probe and application need to be loaded
-    ImagingReady,           ///< imaging is ready
-    CertExpired,            ///< cannot image due to expired certificate
-    PoorWifi,               ///< stopped imaging due to poor wifi, use solumOptimizeWifi to try and remedy if the state is continuously entered
-    NoContact,              ///< stopped imaging due to no patient contact detected
-    ChargingChanged,        ///< probe started running or stopped due to change in charging status
-    LowBandwidth            ///< low bandwidth was detected, imaging parameters were adjusted
+    Uncompressed,       ///< Processed images are sent in a raw and uncompressed in 32 bits ARGB
+    Jpeg,               ///< Processed images are sent as a jpeg (with header)
+    Png,                ///< Processed images are sent as a png (with header)
 
-} CusImagingState;
+} CusImageFormat;
 
-/// power down reason
-typedef enum _CusPowerDown
+/// Major Clarius platforms
+typedef enum _CusPlatform
 {
-    Idle,                   ///< probe was idle from imaging for extended period
-    TooHot,                 ///< probe got too hot
-    LowBattery,             ///< low battery
-    ButtonOff               ///< user held button to shut down probe
+    V1,                 ///< First generation
+    HD,                 ///< Second generation
+    HD3,                ///< Third generation
 
-} CusPowerDown;
+} CusPlatform;
 
-/// software update results
-typedef enum _CusSwUpdate
-{
-    SwUpdateError = -1,     ///< software update error
-    SwUpdateSuccess = 0,    ///< successful update
-    SwUpdateCurrent,        ///< software is current
-    SwUpdateBattery,        ///< battery is too low to perform update
-    SwUpdateUnsupported,    ///< firmware being sent is no longer supported
-    SwUpdateCorrupt,        ///< probe file system may be corrupt
-
-} CusSwUpdate;
-
-/// imaging modes
-typedef enum _CusMode
-{
-    BMode,                  ///< brightness (b) grayscale imaging mode
-    Compounding,            ///< spatial compounding mode (available in most workflows)
-    MMode,                  ///< motion (m) imaging mode
-    ColorMode,              ///< color flow imaging mode (available in most workflows)
-    PowerMode,              ///< power doppler imaging mode (available in most workflows, excluding cardiac)
-    PwMode,                 ///< pulsed wave doppler imaging mode (available in most workflows)
-    NeedleEnhance,          ///< needle enhance mode (available on linear probes)
-    Strain,                 ///< strain elastography (available in most workflows)
-    RfMode                  ///< rf capture mode (interleaved with b)
-
-} CusMode;
-
-/// imaging parameters
-typedef enum _CusParam
-{
-    ImageDepth,             ///< imaging depth in [cm] (default dependent on application)
-    Gain,                   ///< gain in [percent] (default 50%)
-    AutoGain,               ///< auto gain enable (default on for most applications)
-    DynamicRange,           ///< dynamic range in [percent] (default 50%)
-    Chroma,                 ///< chroma map enable (default off)
-    Smooth,                 ///< smooth enable (default on for most applications)
-    AutoFocus,              ///< auto focus enable (default on all applications)
-    FocusDepth,             ///< focus depth in [cm] (applied when auto focus turned off)
-    Trapezoidal,            ///< trapezoidal imaging enable (available on linear probes, default off for most applications)
-    ColorGain,              ///< color/power gain in [percent] (default 50%)
-    ColorPrf,               ///< color/power pulse repetition frequency in [kHz] (default dependent on application)
-    ColorSteer,             ///< color/power steering angle in [degrees] (available on linear probes, default dependent on application)
-    ColorInvert,            ///< color map invert (default off - red towards probe, blue away from probe)
-    PwGain,                 ///< pulsed wave doppler gain in [percent] (default 50%)
-    PwPrf,                  ///< pulsed wave doppler pulse repetition frequency in [kHz] (default dependent on application)
-    PwSteer,                ///< pulsed wave doppler steering angle in [degrees] (available on linear probes, default dependent on application)
-    DopplerVelocity,        ///< read only velocity range in [cm/s] if the system is operating in a doppler mode based on the current prf programmed (returns 0 if not in a doppler mode)
-    NeedleSide,             ///< needle enhance side (default 0 - led side)
-    StrainOpacity,          ///< opacity of the strain image overlay (default 50%)
-    RawBuffer,              ///< raw data buffering enable (default off)
-    RfStreaming,            ///< rf streaming enable (default on)
-    ImuStreaming,           ///< imu streaming enable (default off)
-    SyncPulse,              ///< sync pulse enable (default off)
-    EcoMode                 ///< eco mode enable (default off)
-
-} CusParam;
-
-/// fan status
-typedef enum _CusFanStatus
-{
-    NoFan,                  ///< no fan detected
-    FanDetected,            ///< fan detected
-    FanRunning              ///< fan running
-
-} CusFanStatus;
-
-/// guide status
-typedef enum _CusGuideStatus
-{
-    NoGuide,                ///< no guide detected
-    GuideDetected,          ///< guide detected
-    GuideRunning            ///< guide running
-
-} CusGuideStatus;
-
-/// charging status
-typedef enum _CusChargingStatus
-{
-    NotCharging,            ///< probe is not charging
-    Charging                ///< probe is charging
-
-} CusChargingStatus;
-
-/// button settings
-typedef enum _CusButtonSetting
-{
-    ButtonDisabled,         ///< disable handling
-    ButtonFreeze,           ///< freeze/unfreeze image
-    ButtonUser              ///< send interrupt through api
-
-} CusButtonSetting;
-
-/// button hold settings
+/// Button hold functions
 typedef enum _CusButtonHoldSetting
 {
-    ButtonHoldDisabled,     ///< disable handling
-    ButtonHoldShutdown,     ///< shutdown probe
-    ButtonHoldUser          ///< send interrupt through api
+    ButtonHoldDisabled, ///< Disable handling
+    ButtonHoldShutdown, ///< Shutdown probe
+    ButtonHoldUser,     ///< Send interrupt through API
 
 } CusButtonHoldSetting;
 
-/// wireless optimization methods
-/// available channels differ based on locale, the standard 5ghz 20MHz bandwidth channels include: 36,40,44,48,149,153,157,161,165
+/// Button functions
+typedef enum _CusButtonSetting
+{
+    ButtonDisabled,     ///< Disable handling
+    ButtonFreeze,       ///< Freeze/unfreeze image
+    ButtonUser,         ///< Send interrupt through API
+
+} CusButtonSetting;
+
+/// Charging status
+typedef enum _CusChargingStatus
+{
+    NotCharging,        ///< Probe is not charging
+    Charging,           ///< Probe is charging
+
+} CusChargingStatus;
+
+/// TCP connection results
+typedef enum _CusConnection
+{
+    ConnectionError = -1, ///< Connection error
+    ProbeConnected,     ///< Connected to probe
+    ProbeDisconnected,  ///< Disconnected from probe
+    ConnectionFailed,   ///< Failed to connect to probe
+    SwUpdateRequired,   ///< Software update required
+
+} CusConnection;
+
+/// Fan status
+typedef enum _CusFanStatus
+{
+    NoFan,              ///< No fan detected
+    FanDetected,        ///< Fan detected
+    FanRunning,         ///< Fan running
+
+} CusFanStatus;
+
+/// Guide status
+typedef enum _CusGuideStatus
+{
+    NoGuide,            ///< No guide detected
+    GuideDetected,      ///< Guide detected
+    GuideRunning,       ///< Guide detected and powered
+
+} CusGuideStatus;
+
+/// Imaging state
+typedef enum _CusImagingState
+{
+    ImagingNotReady,    ///< Imaging is not ready, probe and application need to be loaded
+    ImagingReady,       ///< Imaging is ready
+    CertExpired,        ///< Cannot image due to expired certificate
+    PoorWifi,           ///< Stopped imaging due to poor Wi-Fi
+    NoContact,          ///< Stopped imaging due to no patient contact detected
+    ChargingChanged,    ///< Probe started running or stopped due to change in charging status
+    LowBandwidth,       ///< Low bandwidth was detected, imaging parameters were adjusted
+    MotionSensor,       ///< Probe started running or stopped due to change in motion sensor
+
+} CusImagingState;
+
+/// Imaging modes
+typedef enum _CusMode
+{
+    BMode,              ///< Brightness (B) grayscale imaging mode
+    Compounding,        ///< Spatial compounding mode (available in most workflows)
+    MMode,              ///< Motion (M) imaging mode
+    ColorMode,          ///< Color flow imaging mode (available in most workflows)
+    PowerMode,          ///< Power Doppler imaging mode (available in most workflows, excluding cardiac)
+    PwMode,             ///< Pulsed wave Doppler imaging mode (available in most workflows)
+    NeedleEnhance,      ///< Needle enhance mode (available on linear probes)
+    Strain,             ///< Strain elastography (available in most workflows)
+    RfMode,             ///< RF capture mode (interleaved with B)
+
+} CusMode;
+
+/// Imaging parameters
+typedef enum _CusParam
+{
+    ImageDepth,         ///< Imaging depth in cm (default dependent on application)
+    Gain,               ///< Gain in percent (default 50%)
+    AutoGain,           ///< Auto gain enable (default on for most applications)
+    DynamicRange,       ///< Dynamic range in percent (default 50%)
+    Chroma,             ///< Chroma map enable (default off)
+    Smooth,             ///< Smooth enable (default on for most applications)
+    AutoFocus,          ///< Auto focus enable (default on all applications)
+    FocusDepth,         ///< Focus depth in cm (applied when auto focus turned off)
+    Trapezoidal,        ///< Trapezoidal imaging enable (available on linear probes, default off for most applications)
+    ColorGain,          ///< Color/power gain in percent (default 50%)
+    ColorPrf,           ///< Color/power pulse repetition frequency in kHz (default dependent on application)
+    ColorSteer,         ///< Color/power steering angle in degrees (available on linear probes, default dependent on application)
+    ColorInvert,        ///< Color map invert (default off - red towards probe, blue away from probe)
+    PwGain,             ///< Pulsed wave Doppler gain in [percent] (default 50%)
+    PwPrf,              ///< Pulsed wave Doppler pulse repetition frequency in [kHz] (default dependent on application)
+    PwSteer,            ///< Pulsed wave Doppler steering angle in [degrees] (available on linear probes, default dependent on application)
+    DopplerVelocity,    ///< Read only velocity range in [cm/s] if the system is operating in a Doppler mode based on the current PRF programmed (returns 0 if not in a doppler mode)
+    NeedleSide,         ///< Needle enhance side (default 0 - LED side)
+    StrainOpacity,      ///< Opacity of the strain image overlay (default 50%)
+    RawBuffer,          ///< Raw data buffering enable (default off)
+    RfStreaming,        ///< RF streaming enable (default on)
+    ImuStreaming,       ///< IMU streaming enable (default off)
+    SyncPulse,          ///< Sync pulse enable (default off)
+    EcoMode,            ///< Eco mode enable (default off)
+
+} CusParam;
+
+/// Power down reason
+typedef enum _CusPowerDown
+{
+    Idle,               ///< Probe was idle from imaging for extended period
+    TooHot,             ///< Probe got too hot
+    LowBattery,         ///< Low battery
+    ButtonOff,          ///< User held button to shut down probe
+
+} CusPowerDown;
+
+/// ROI functions
+typedef enum _CusRoiFunction
+{
+    SizeRoi,            ///< ROI resizing function (adjusts bottom-right)
+    MoveRoi,            ///< ROI move function (adjusts top-left)
+
+} CusRoiFunction;
+
+/// Software update results
+typedef enum _CusSwUpdate
+{
+    SwUpdateError = -1, ///< Software update error
+    SwUpdateSuccess,    ///< Successful update
+    SwUpdateCurrent,    ///< Software is current
+    SwUpdateBattery,    ///< Battery is too low to perform update
+    SwUpdateUnsupported, ///< Firmware being sent is no longer supported
+    SwUpdateCorrupt,    ///< Probe file system may be corrupt
+
+} CusSwUpdate;
+
+/// Wireless optimization methods
+///
+/// Available channels differ based on locale.
+/// The standard 5Ghz 20MHz bandwidth channels include: 36, 40, 44, 48, 149, 153, 157, 161, 165.
 typedef enum _CusWifiOpt
 {
-    WifiOptNext,            ///< jumps immediately to the next channel
-    WifiOptSearch,          ///< scans the surrounding networks to select the best channel (takes up to 10 seconds to search and optimize)
-    WifiOptDefault          ///< defaults to the production channel of 165
+    WifiOptNext,        ///< Jump immediately to the next channel
+    WifiOptSearch,      ///< Scan the surrounding networks to select the best channel (takes up to 10 seconds to search and optimize)
+    WifiOptDefault,     ///< Default to the production channel of 165
 
 } CusWifiOpt;
 
-/// roi functions
-typedef enum _CusRoi
+/// TGC information
+typedef struct _CusTgcInfo
 {
-    SizeRoi,                ///< roi resizing function (adjusts bottom/right)
-    MoveRoi                 ///< roi move function (adjusts top/left)
+    double depth;       ///< Depth in millimeters
+    double gain;        ///< Gain in decibels
 
-} CusRoi;
+} CusTgcInfo;
 
-/// tgc structure
-typedef struct _CusTgc
+/// Positional data information structure
+typedef struct _CusPosInfo
 {
-    double top;             ///< top tgc in dB. valid range is -20 to 20
-    double mid;             ///< mid tgc in dB. valid range is -20 to 20
-    double bottom;          ///< bottom tgc in dB. valid range is -20 to 20
+    long long int tm;   ///< Timestamp in nanoseconds
+    double gx;          ///< Gyroscope x; angular velocity is given in radians per second (RPS)
+    double gy;          ///< Gyroscope y; angular velocity is given in radians per second (RPS)
+    double gz;          ///< Gyroscope z; angular velocity is given in radians per second (RPS)
+    double ax;          ///< Accelerometer x; acceleration is normalized to gravity [~9.81m/s^2] (m/s^2)/(m/s^2)
+    double ay;          ///< Accelerometer y; acceleration is normalized to gravity [~9.81m/s^2] (m/s^2)/(m/s^2)
+    double az;          ///< Accelerometer z; acceleration is normalized to gravity [~9.81m/s^2] (m/s^2)/(m/s^2)
+    double mx;          ///< Magnetometer x; magnetic flux density is normalized to the earth's field [~50 mT] (T/T)
+    double my;          ///< Magnetometer y; magnetic flux density is normalized to the earth's field [~50 mT] (T/T)
+    double mz;          ///< Magnetometer z; magnetic flux density is normalized to the earth's field [~50 mT] (T/T)
+    double qw;          ///< W component (real) of the orientation quaternion
+    double qx;          ///< X component (imaginary) of the orientation quaternion
+    double qy;          ///< Y component (imaginary) of the orientation quaternion
+    double qz;          ///< Z component (imaginary) of the orientation quaternion
 
-} CusTgc;
+} CusPosInfo;
 
-/// probe settings
-typedef struct _CusProbeSettings
+/// Probe information
+typedef struct _CusProbeInfo
 {
-    int contactDetection;       ///< the number of seconds to engage a lower frame rate when no contact is detected. valid range is 0 - 30, where 0 turns the function off (default 3s)
-    int autoFreeze;             ///< the number of seconds to engage freezing imaging after no contact mode has been engaged. valid range is 0 - 120, where 0 turns the function off (default 30s)
-    int keepAwake;              ///< the number of minutes to power down the device once imaging has been frozen. valid range is 0 - 120, where 0 turns the function off (default 15 min)
-    int deepSleep;              ///< the number of hours for and hd3 probe to go into deep sleep. valid range is 0 - 96, where 0 disables deep sleep (default 3 hours)
-    int stationary;             ///< the number of seconds to engage freezing imaging after being stationary for a specific timeframe. valid range is 0 - 120, where 0 turns the function off (default 0s)
-    int wifiOptimization;       ///< flag allowing the probe to automatically freeze when poor wifi connectivity is detected (default on)
-    int wifiSearch;             ///< flag to force the probe to scan the networks and choose the appropriate channel before bringing up it's wi-fi (default off)
-    int htWifi;                 ///< flag to enable 40mhz bands for the probe's wi-fi network
-    int keepAwakeCharging;      ///< flag to force the probe to stay powered while being charged (default off)
-    int powerOn;                ///< flag allowing the probe's buttons to power the device on (default on)
-    int sounds;                 ///< flag allowing the probe to make beeping sounds (default on)
-    int wakeOnShake;            ///< flag allowing the probe to start imaging when it is picked up while frozen (default off)
-    int bandwidthOptimization;  ///< flag allowing the system to adjust bandwidth parameters automatically when lag or dropped frames are determined (default off)
-    CusButtonSetting up;            ///< button up setting
-    CusButtonSetting down;          ///< button down setting
-    CusButtonHoldSetting upHold;    ///< button up hold setting
-    CusButtonHoldSetting downHold;  ///< button down hold setting
+    int version;        ///< Version (1 = clarius 1st generation, 2 = clarius HD, 3 = clarius HD3)
+    int elements;       ///< Number of probe elements
+    int pitch;          ///< Element pitch
+    int radius;         ///< Radius in millimeters
 
-} CusProbeSettings;
+} CusProbeInfo;
 
-
-/// status information
-typedef struct _CusStatusInfo
+/// Processed image information supplied with each frame
+typedef struct _CusProcessedImageInfo
 {
-    int battery;                ///< battery level in percent
-    int temperature;            ///< temperature level in percent
-    double frameRate;           ///< current imaging frame rate
-    CusFanStatus fan;           ///< fan status
-    CusGuideStatus guide;       ///< guide status
-    CusChargingStatus charger;  ///< charger status
+    int width;          ///< Width of the image in pixels
+    int height;         ///< Height of the image in pixels
+    int bitsPerPixel;   ///< Bits per pixel
+    int imageSize;      ///< Total size of image in bytes
+    double micronsPerPixel; ///< Microns per pixel (always 1:1 aspect ratio axially/laterally)
+    double originX;     ///< Image origin in microns in the horizontal axis
+    double originY;     ///< Image origin in microns in the vertical axis
+    long long int tm;   ///< Timestamp of images
+    double angle;       ///< Acquisition angle for volumetric data
+    int overlay;        ///< Flag that the image is an overlay without grayscale (ie. color doppler or strain)
+    CusImageFormat format; ///< Flag specifying the format of the image (see format definitions above)
+    CusTgcInfo tgc [CUS_MAXTGC]; ///< TGC points
 
-} CusStatusInfo;
+} CusProcessedImageInfo;
 
-/// parameter range
+/// Raw image information supplied with each frame
+typedef struct _CusRawImageInfo
+{
+    int lines;          ///< Number of ultrasound lines in the image
+    int samples;        ///< Number of samples per line in the image
+    int bitsPerSample;  ///< Bits per sample
+    double axialSize;   ///< Axial microns per sample
+    double lateralSize; ///< Lateral microns per line
+    long long int tm;   ///< Timestamp of image
+    int jpeg;           ///< Size of the jpeg image, 0 if not a jpeg compressed image
+    int rf;             ///< Flag specifying data is rf and not envelope
+    double angle;       ///< Acquisition angle for volumetric data
+    CusTgcInfo tgc [CUS_MAXTGC]; ///< TGC points
+
+} CusRawImageInfo;
+
+/// Spectral image information supplied with each block
+typedef struct _CusSpectralImageInfo
+{
+    int lines;          ///< Number of lines in the block
+    int samples;        ///< Number of samples per line
+    int bitsPerSample;  ///< Bits per sample
+    double period;      ///< Line acquisition period in seconds
+    double micronsPerSample; ///< Microns per pixel/sample in an M spectrum
+    double velocityPerSample; ///< Velocity in m/s per pixel/sample in a PW spectrum
+    int pw;             ///< Flag specifying the data is PW and not M
+
+} CusSpectralImageInfo;
+
+/// 2D point with double precision
+typedef struct _CusPointF
+{
+    double x;           ///< X coordinate
+    double y;           ///< Y coordinate
+
+} CusPointF;
+
+/// 2D line with double precision
+typedef struct _CusLineF
+{
+    CusPointF p1;       ///< First point in the line
+    CusPointF p2;       ///< Second point in the line
+
+} CusLineF;
+
+/// Parameter range
 typedef struct _CusRange
 {
-    double min;                 ///< minimum value
-    double max;                 ///< maximum value
+    double min;         ///< Minimum value
+    double max;         ///< Maximum value
 
 } CusRange;
 
-/// holds the lines in pixel co-ordinates that can be used to draw an m or pw gate
+/// TGC values to send to the API
+typedef struct _CusTgc
+{
+    double top;         ///< Top tgc in dB. valid range is -20 to 20
+    double mid;         ///< Mid tgc in dB. valid range is -20 to 20
+    double bottom;      ///< Bottom tgc in dB. valid range is -20 to 20
+
+} CusTgc;
+
+/// Status information
+typedef struct _CusStatusInfo
+{
+    int battery;        ///< Battery level in percent
+    int temperature;    ///< Temperature level in percent
+    double frameRate;   ///< Current imaging frame rate
+    CusFanStatus fan;   ///< Fan status
+    CusGuideStatus guide; ///< Guide status
+    CusChargingStatus charger; ///< Charger status
+
+} CusStatusInfo;
+
+/// Probe settings
+typedef struct _CusProbeSettings
+{
+    int contactDetection; ///< The number of seconds to engage a lower frame rate when no contact is detected, valid range is 0 - 30, where 0 turns the function off
+    int autoFreeze;     ///< The number of seconds to engage freezing imaging after no contact mode has been engaged, valid range is 0 - 120, where 0 turns the function off
+    int keepAwake;      ///< The number of minutes to power down the device once imaging has been frozen, valid range is 0 - 120, where 0 turns the function off
+    int deepSleep;      ///< The number of hours for probe to go into deep sleep, valid range is 0 - 96, where 0 disables deep sleep
+    int stationary;     ///< The number of seconds to engage freezing imaging after being stationary for a specific time frame
+    int wifiOptimization; ///< Flag allowing the probe to automatically freeze when poor wifi connectivity is detected
+    int wifiSearch;     ///< Flag to force the probe to scan the networks and choose the appropriate channel before bringing up its Wi-Fi
+    int htWifi;         ///< Flag to enable 40 MHz bands for the probe's Wi-Fi network
+    int keepAwakeCharging; ///< Flag to force the probe to stay powered while being charged
+    int powerOn;        ///< Flag allowing the probe's buttons to power the device on
+    int sounds;         ///< Flag allowing the probe to make beeping sounds
+    int wakeOnShake;    ///< Flag allowing the probe to start imaging when it is picked up while frozen
+    int bandwidthOptimization; ///< Flag allowing the system to adjust bandwidth parameters automatically when lag or dropped frames are determined
+    CusButtonSetting up; ///< Button up setting
+    CusButtonSetting down; ///< Button down setting
+    CusButtonSetting handle; ///< Button handle setting
+    CusButtonHoldSetting upHold; ///< Button up hold setting
+    CusButtonHoldSetting downHold; ///< Button down hold setting
+
+} CusProbeSettings;
+
+/// Gate coordinates
+///
+/// Hold the lines in pixel coordinates that can be used to draw an M or PW gate.
 typedef struct _CusGateLines
 {
-    CusLine active;             ///< active region for signal
-    CusLine top;                ///< line above the active region
-    CusLine normalTop;          ///< normal line above the active region
-    CusLine normalBottom;       ///< normal line below the active region
-    CusLine bottom;             ///< line below the active region
+    CusLineF active;    ///< Active region for signal
+    CusLineF top;       ///< Line above the active region
+    CusLineF normalTop; ///< Normal line above the active region
+    CusLineF normalBottom; ///< Normal line below the active region
+    CusLineF bottom;    ///< Line below the active region
 
 } CusGateLines;
+
+#ifndef SOLUM_DEPRECATED
+#define SOLUM_DEPRECATED __attribute__ ((__deprecated__))
+#endif
+
+SOLUM_DEPRECATED typedef enum _CusRoiFunction CusRoi;
+SOLUM_DEPRECATED typedef struct _CusLineF CusLine;
+SOLUM_DEPRECATED typedef struct _CusPointF CusPoint;

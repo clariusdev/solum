@@ -208,7 +208,7 @@ extern "C"
     /// @return success of the call
     /// @retval 0 roi could be adjusted
     /// @retval -1 roi could not be adjusted
-    SOLUM_EXPORT int solumAdjustRoi(int x, int y, CusRoi fn);
+    SOLUM_EXPORT int solumAdjustRoi(int x, int y, CusRoiFunction fn);
 
     /// retrieves the gate for the current mode if valid
     /// @param[out] lines holds the lines that can be drawn to portray the gate on the image
@@ -250,7 +250,7 @@ extern "C"
     /// @retval -1 the format could not be set
     SOLUM_EXPORT int solumSetFormat(CusImageFormat format);
 
-    /// will try and optimize the wireless channel when the probe is running it's own network
+    /// will try and optimize the wireless channel when the probe is running its own network
     /// the function will return a failure if the probe is on an external wlan as nothing can be optimized, except for switching over to the probe's own network
     /// to switch to the probe's network, see the bluetooth documentation for the wireless management service
     /// @param[in] opt the optimization type to run

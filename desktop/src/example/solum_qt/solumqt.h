@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ble.h"
-#include <solum/solum_def.h>
+#include <sdk/solum_def.h>
 
 namespace Ui
 {
