@@ -35,7 +35,7 @@ public class ProbeWifi {
      */
     static ProbeWifi parse(final String yaml) {
         final Yaml parser = new Yaml();
-        final Map map = parser.load(yaml);
+        final Map<String, Object> map = parser.load(yaml);
 
         if ("disabled".equals(map.get("state"))) return null;
 
@@ -51,12 +51,10 @@ public class ProbeWifi {
 
     @NonNull
     public String toString() {
-        StringBuilder builder = new StringBuilder();
-        builder.append("SSID: ").append(ssid).append("\n");
-        builder.append("passphrase: ").append(passphrase).append("\n");
-        builder.append("IP: ").append(ip).append("\n");
-        builder.append("TCP port: ").append(port).append("\n");
-        builder.append("Mac: ").append(mac);
-        return builder.toString();
+        return "SSID: " + ssid + "\n" +
+                "passphrase: " + passphrase + "\n" +
+                "IP: " + ip + "\n" +
+                "TCP port: " + port + "\n" +
+                "Mac: " + mac;
     }
 }

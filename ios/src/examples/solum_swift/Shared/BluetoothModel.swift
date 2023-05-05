@@ -29,9 +29,9 @@ struct PowerService {
     /// Characteristic for writing requests
     public static let requestCharacteristic = CBUUID.init(string: "8c853b6a-2297-44c1-8277-73627c8d2abe")
     /// Value to send in order to power on the scanner
-    public static let powerOnKey = "A83D22556966".data(using: .ascii)!
+    public static let powerOnKey = Data([1])
     /// Value to send in order to power off the scanner
-    public static let powerOffKey = "60123D41540F".data(using: .ascii)!
+    public static let powerOffKey = Data([0])
 }
 
 /// Details about a scanner found over bluetooth

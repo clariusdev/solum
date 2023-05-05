@@ -8,12 +8,12 @@ import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
+import android.bluetooth.BluetoothGattService;
+import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
-import android.bluetooth.BluetoothStatusCodes;
+import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.os.Binder;
-import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
@@ -22,7 +22,6 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresPermission;
-import androidx.core.app.ActivityCompat;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -32,8 +31,6 @@ import java.util.UUID;
  * Connect to a clarius probe gatt service
  * <p>
  * See: https://developer.android.com/guide/topics/connectivity/bluetooth/connect-gatt-server
- * <p>
- * NOTE: this class avoids error management by using asserts to focus on BLE commands.
  */
 
 public class GattService extends Service {
@@ -57,7 +54,7 @@ public class GattService extends Service {
                 Log.d(TAG, "Connected to probe " + gatt.getDevice().getName());
                 gatt.discoverServices();
                 connectedToProbe = true;
-                listener.connected(gatt.getDevice());
+                listener.connected(gatt.getDevice().getName());
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 Log.d(TAG, "Probe disconnected with status: " + status);
                 connectedToProbe = false;
@@ -73,10 +70,10 @@ public class GattService extends Service {
                 Log.d(TAG, "Probe services discovered");
                 increaseMtu(gatt);
                 // some delay is needed between accesses to the gatt service on some devices
-                handler.postDelayed(() -> subscribe(gatt, ClariusCharacteristic.PowerPublished), 200);
-                handler.postDelayed(() -> subscribe(gatt, ClariusCharacteristic.WiFiPublished), 400);
+                handler.postDelayed(() -> subscribe(ClariusCharacteristic.PowerPublished), 200);
+                handler.postDelayed(() -> subscribe(ClariusCharacteristic.WiFiPublished), 400);
                 handler.postDelayed(() -> readWifi(), 600);
-                listener.ready(gatt.getDevice());
+                listener.ready(gatt.getDevice().getName());
                 startPingTimer();
             } else {
                 Log.e(TAG, "Failed to discover services, status: " + status);
@@ -106,7 +103,7 @@ public class GattService extends Service {
         }
 
         @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
-        private void onCharacteristicReadCompat(@NonNull BluetoothGatt gatt, @NonNull BluetoothGattCharacteristic characteristic, @NonNull byte[] value, int status) {
+        private void onCharacteristicReadCompat(@NonNull BluetoothGatt gatt, @NonNull BluetoothGattCharacteristic characteristic, @NonNull byte[] ignoredValue, int status) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 parseCharacteristic(gatt, characteristic, characteristic.getValue());
             } else {
@@ -120,12 +117,12 @@ public class GattService extends Service {
             if (ClariusCharacteristic.PowerPublished.equals(characteristic)) {
                 boolean powered = (value[0] & 0xFF) == 0x01;
                 Log.i(TAG, "Probe power changed: " + powered);
-                listener.powerChanged(gatt.getDevice(), powered);
+                listener.powerChanged(gatt.getDevice().getName(), powered);
             } else if (ClariusCharacteristic.WiFiPublished.equals(characteristic)) {
                 String yaml = new String(value, 0, value.length, StandardCharsets.UTF_8);
                 ProbeWifi wifi = ProbeWifi.parse(yaml);
                 Log.i(TAG, "Probe wifi changed: " + wifi);
-                listener.wifiChanged(gatt.getDevice(), wifi);
+                listener.wifiChanged(gatt.getDevice().getName(), wifi);
             } else {
                 Log.d(TAG, "Retrieved unknown characteristic value: " + ByteBuffer.wrap(value) + " service: " + service.getUuid() + " characteristic: " + characteristic.getUuid());
             }
@@ -152,48 +149,28 @@ public class GattService extends Service {
     };
 
     @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
-    private static void writeCharacteristicCompat(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, byte[] value, int writeType) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            int ret = gatt.writeCharacteristic(characteristic, value, writeType);
-            assert BluetoothStatusCodes.SUCCESS == ret : "Failed to write characteristic, return code: " + ret;
-        } else {
-            boolean set = characteristic.setValue(value);
-            assert set : "Failed to write value in characteristic";
-            characteristic.setWriteType(writeType);
-            boolean write = gatt.writeCharacteristic(characteristic);
-            assert write : "Failed to write characteristic";
+    private static void increaseMtu(BluetoothGatt gatt) {
+        assert null != gatt;
+        if (!gatt.requestMtu(MAX_MTU)) {
+            Log.e(TAG, "Failed to change MTU (wifi info might be truncated)");
         }
     }
 
     @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
-    private static void writeDescriptorCompat(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, byte[] value) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            int ret = gatt.writeDescriptor(descriptor, value);
-            assert BluetoothStatusCodes.SUCCESS == ret : "Failed to write descriptor, return code: " + ret;
-        } else {
-            boolean set = descriptor.setValue(value);
-            assert set : "Failed to write value in descriptor";
-            boolean write = gatt.writeDescriptor(descriptor);
-            assert write : "Failed to write descriptor";
-        }
+    private static void doPing(BluetoothGatt gatt) throws BluetoothException {
+        assert null != gatt;
+        byte[] value = {0x0};
+        BluetoothGattCharacteristic characteristic = getCharacteristic(gatt, ClariusCharacteristic.Alert);
+        Compat.writeCharacteristic(gatt, characteristic, value);
     }
 
-    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
-    private static void subscribe(BluetoothGatt gatt, ClariusCharacteristic type) {
-        BluetoothGattCharacteristic characteristic = getCharacteristic(gatt, type);
-        boolean set = gatt.setCharacteristicNotification(characteristic, true);
-        assert set : "Failed to set characteristic notification";
-        BluetoothGattDescriptor descriptor = characteristic.getDescriptor(CLIENT_CHARACTERISTIC_CONFIGURATION_DESCRIPTOR_UUID);
-        assert null != descriptor : "Failed to get the client characteristic configuration descriptor";
-        byte[] enable = {0x1, 0x0};
-        writeDescriptorCompat(gatt, descriptor, enable);
-    }
-
-    private static BluetoothGattCharacteristic getCharacteristic(BluetoothGatt gatt, ClariusCharacteristic type) {
-        android.bluetooth.BluetoothGattService service = gatt.getService(type.serviceUuid);
-        assert null != service : "Could not find service " + type.name();
+    static BluetoothGattCharacteristic getCharacteristic(BluetoothGatt gatt, ClariusCharacteristic type) throws BluetoothException {
+        assert null != gatt;
+        BluetoothGattService service = gatt.getService(type.serviceUuid);
+        if (null == service) throw new BluetoothException("Could not find service " + type.name());
         BluetoothGattCharacteristic characteristic = service.getCharacteristic(type.uuid);
-        assert null != characteristic : "Could not find characteristic for " + type.name();
+        if (null == characteristic)
+            throw new BluetoothException("Could not find characteristic for " + type.name());
         return characteristic;
     }
 
@@ -207,15 +184,15 @@ public class GattService extends Service {
     public void onCreate() {
         super.onCreate();
         Log.d(TAG, "Creating bluetooth gatt service");
-        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        assert bluetoothAdapter != null: "Unable to get the system BLE adapter, is bluetooth enabled?";
+        bluetoothAdapter = ((BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE)).getAdapter();
+        assert bluetoothAdapter != null : "Unable to get the system BLE adapter, is bluetooth enabled?";
     }
 
     @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
     @Override
     public void onDestroy() {
         super.onDestroy();
-        Log.d(TAG, "Destroying the bluetooth gatt service");
+        Log.d(TAG, "Destroying bluetooth gatt service");
         close();
         bluetoothAdapter = null;
     }
@@ -224,52 +201,73 @@ public class GattService extends Service {
         this.listener = listener;
     }
 
-    public void connect(String address) {
-        assert null != bluetoothAdapter && null != address;
+    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
+    public void connect(String address) throws BluetoothException {
+        if (null == bluetoothAdapter)
+            throw new BluetoothException("Missing ble adapter, did you connect?");
+        if (null == address) throw new BluetoothException("Missing ble address");
         BluetoothDevice device = bluetoothAdapter.getRemoteDevice(address);
-        assert null != device : "Failed to find device with address " + address;
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-        }
-        Log.i(TAG, "Connecting to probe: " + device.getName());
+        if (null == device)
+            throw new BluetoothException("Failed to find device with ble address " + address);
         close();
+        Log.i(TAG, "Connecting to probe: " + device.getName());
         bluetoothGatt = device.connectGatt(this, false, bluetoothGattCallback);
     }
 
+    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
     public void sendAlert(boolean high) {
-        assert null != bluetoothGatt;
-        byte[] value = {(byte) (high ? 0x1 : 0x2)};
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-        }
-        Log.d(TAG, "Sending alert to probe: " + bluetoothGatt.getDevice().getName());
-        BluetoothGattCharacteristic characteristic = getCharacteristic(bluetoothGatt, ClariusCharacteristic.Alert);
-        writeCharacteristicCompat(bluetoothGatt, characteristic, value, BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
+        execute(gatt -> {
+            assert null != gatt;
+            Log.d(TAG, "Sending alert to probe");
+            byte[] value = {(byte) (high ? 0x1 : 0x2)};
+            BluetoothGattCharacteristic characteristic = getCharacteristic(gatt, ClariusCharacteristic.Alert);
+            Compat.writeCharacteristic(gatt, characteristic, value);
+        });
     }
 
+    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
+    public void subscribe(ClariusCharacteristic type) {
+        execute(gatt -> {
+            assert null != gatt;
+            Log.d(GattService.TAG, "Subscribing to probe's service: " + type.name());
+            BluetoothGattCharacteristic characteristic = getCharacteristic(gatt, type);
+            boolean set = gatt.setCharacteristicNotification(characteristic, true);
+            if (!set) throw new BluetoothException("Failed to set characteristic notification");
+            BluetoothGattDescriptor descriptor = characteristic.getDescriptor(GattService.CLIENT_CHARACTERISTIC_CONFIGURATION_DESCRIPTOR_UUID);
+            if (null == descriptor)
+                throw new BluetoothException("Failed to get the client characteristic configuration descriptor");
+            byte[] enable = {0x1, 0x0};
+            Compat.writeDescriptor(gatt, descriptor, enable);
+        });
+    }
+
+    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
     public void powerOn(boolean on) {
-        assert null != bluetoothGatt;
-        byte[] value = {(byte) (on ? 0x1 : 0x0)};
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-        }
-        Log.d(TAG, "Powering " + (on ? "on" : "off") + " probe: " + bluetoothGatt.getDevice().getName());
-        BluetoothGattCharacteristic characteristic = getCharacteristic(bluetoothGatt, ClariusCharacteristic.PowerRequest);
-        writeCharacteristicCompat(bluetoothGatt, characteristic, value, BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
+        execute(gatt -> {
+            assert null != gatt;
+            Log.d(TAG, "Powering probe " + (on ? "on" : "off"));
+            byte[] value = {(byte) (on ? 0x1 : 0x0)};
+            BluetoothGattCharacteristic characteristic = getCharacteristic(gatt, ClariusCharacteristic.PowerRequest);
+            Compat.writeCharacteristic(gatt, characteristic, value);
+        });
     }
 
+    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
     void readWifi() {
-        assert null != bluetoothGatt;
-        BluetoothGattCharacteristic characteristic = getCharacteristic(bluetoothGatt, ClariusCharacteristic.WiFiPublished);
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-        }
-        bluetoothGatt.readCharacteristic(characteristic);
+        execute(gatt -> {
+            assert null != gatt;
+            Log.d(TAG, "Reading probe's Wi-Fi info");
+            BluetoothGattCharacteristic characteristic = getCharacteristic(gatt, ClariusCharacteristic.WiFiPublished);
+            gatt.readCharacteristic(characteristic);
+        });
     }
 
+    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
     public void disconnect() {
-        if (null != bluetoothGatt) {
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-            }
-            connectedToProbe = false;
+        execute(gatt -> {
             bluetoothGatt.disconnect();
-        }
+            connectedToProbe = false;
+        });
     }
 
     @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
@@ -279,13 +277,7 @@ public class GattService extends Service {
             // close() releases all resources unlike disconnect() which allows subsequent re-connections
             bluetoothGatt.close();
             bluetoothGatt = null;
-        }
-    }
-
-    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
-    private void increaseMtu(BluetoothGatt gatt) {
-        if (!gatt.requestMtu(MAX_MTU)) {
-            Log.e(TAG, "Failed to change MTU (wifi info might be truncated)");
+            listener.disconnected();
         }
     }
 
@@ -294,30 +286,42 @@ public class GattService extends Service {
     private void startPingTimer() {
         handler.postDelayed(() -> {
             if (connectedToProbe) { // should be in critical section to avoid race conditions
-                ping();
+                execute(GattService::doPing);
                 startPingTimer();
             }
         }, 5000);
     }
 
     @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
-    private void ping() {
-        assert null != bluetoothGatt;
-        byte[] value = {0x0};
-        BluetoothGattCharacteristic characteristic = getCharacteristic(bluetoothGatt, ClariusCharacteristic.Alert);
-        writeCharacteristicCompat(bluetoothGatt, characteristic, value, BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
+    private void execute(RunnableThatCanFail runnable) {
+        BluetoothGatt gatt = bluetoothGatt;
+        if (null == gatt) return;
+        try {
+            runnable.run(gatt);
+        } catch (BluetoothException e) {
+            Log.e(TAG, e.toString());
+            close();
+            listener.error(e.toString());
+        }
     }
 
     public interface Listener {
-        void connected(BluetoothDevice device);
+        void connected(String deviceName);
 
         void disconnected();
 
-        void ready(BluetoothDevice device);
+        void ready(String deviceName);
 
-        void powerChanged(BluetoothDevice device, boolean powered);
+        void powerChanged(String deviceName, boolean powered);
 
-        void wifiChanged(BluetoothDevice device, ProbeWifi wifi);
+        void wifiChanged(String deviceName, ProbeWifi wifi);
+
+        void error(String error);
+    }
+
+    @FunctionalInterface
+    interface RunnableThatCanFail {
+        void run(BluetoothGatt gatt) throws BluetoothException;
     }
 
     public class CustomBinder extends Binder {

@@ -1,14 +1,11 @@
 package me.clarius.sdk.solum.example.bluetooth;
 
-import android.os.Bundle;
-
 import java.util.Optional;
 
 public class Probe {
     private final String deviceName;
-    private String address;
+    private String bleAddress;
     private Integer rssi;
-    private ProbeWifi wifi;
     private Integer battery;
     private Integer temperature;
     private ProbeStatus.Availability availability;
@@ -33,16 +30,12 @@ public class Probe {
         this.powered = status.powered;
     }
 
-    public void updateWifi(final ProbeWifi wifi) {
-        this.wifi = wifi;
-    }
-
     public void updatePowered(boolean powered) {
         this.powered = powered;
     }
 
-    public void updateAddress(final String address) {
-        this.address = address;
+    public void updateBleAddress(final String bleAddress) {
+        this.bleAddress = bleAddress;
     }
 
     public String getDeviceName() {
@@ -53,8 +46,8 @@ public class Probe {
         return deviceName.substring(4);
     }
 
-    public Optional<String> getAddress() {
-        return Optional.ofNullable(address);
+    public Optional<String> getBleAddress() {
+        return Optional.ofNullable(bleAddress);
     }
 
     public Optional<Integer> getRssi() {
@@ -83,41 +76,5 @@ public class Probe {
 
     public Optional<Boolean> getPowered() {
         return Optional.of(powered);
-    }
-
-    public Optional<String> getWifiSsid() {
-        return null != wifi ? Optional.ofNullable(wifi.ssid) : Optional.empty();
-    }
-
-    public Optional<String> getWifiPassphrase() {
-        return null != wifi ? Optional.ofNullable(wifi.passphrase) : Optional.empty();
-    }
-
-    public Optional<String> getIpAddress() {
-        return null != wifi ? Optional.ofNullable(wifi.ip) : Optional.empty();
-    }
-
-    public Optional<Integer> getTcpPort() {
-        return null != wifi ? Optional.ofNullable(wifi.port) : Optional.empty();
-    }
-
-    public Bundle makeBundle() {
-        Bundle fields = new Bundle();
-        fields.putString("device_name", getDeviceName());
-        fields.putString("serial", getSerial());
-        if (null != battery) fields.putInt("battery", battery);
-        if (null != temperature) fields.putInt("temperature", temperature);
-        if (null != availability) fields.putSerializable("availability", availability);
-        if (null != listenPolicy) fields.putSerializable("listenPolicy", listenPolicy);
-        if (null != chargingStatus) fields.putSerializable("chargingStatus", chargingStatus);
-        if (null != powered) fields.putBoolean("powered", powered);
-        if (null != wifi) {
-            if (null != wifi.ssid) fields.putString("wifi_ssid", wifi.ssid);
-            if (null != wifi.passphrase) fields.putString("wifi_passphrase", wifi.passphrase);
-            if (null != wifi.ip) fields.putString("ip_address", wifi.ip);
-            if (null != wifi.port) fields.putInt("tcp_port", wifi.port);
-            if (null != wifi.mac) fields.putString("mac_address", wifi.mac);
-        }
-        return fields;
     }
 }

@@ -59,7 +59,7 @@ public class BluetoothViewAdapter extends RecyclerView.Adapter<BluetoothViewAdap
     }
 
     private ObservableList.OnListChangedCallback<ObservableList<Probe>> makeDeviceListCallback() {
-        return new ObservableList.OnListChangedCallback<ObservableList<Probe>>() {
+        return new ObservableList.OnListChangedCallback<>() {
             @Override
             public void onChanged(ObservableList sender) {
                 notifyItemRangeChanged(0, devices.size());
@@ -88,14 +88,14 @@ public class BluetoothViewAdapter extends RecyclerView.Adapter<BluetoothViewAdap
     }
 
     class ViewHolder extends RecyclerView.ViewHolder {
-        TextView serialValue;
-        TextView temperature;
-        TextView rssi;
-        TextView availability;
-        TextView battery;
-        TextView powered;
-        TextView listen;
-        TextView chargingStatus;
+        final TextView serialValue;
+        final TextView temperature;
+        final TextView rssi;
+        final TextView availability;
+        final TextView battery;
+        final TextView powered;
+        final TextView listen;
+        final TextView chargingStatus;
 
         ViewHolder(@NonNull final View itemView) {
             super(itemView);

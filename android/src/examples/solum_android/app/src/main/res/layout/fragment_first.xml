@@ -189,7 +189,7 @@
             android:layout_gravity="center"
             android:adjustViewBounds="true"
             android:contentDescription="@string/ultrasound_image"
-            android:src="@drawable/ic_baseline_image_24" />
+            android:src="@drawable/ic_baseline_image" />
     </LinearLayout>
 
 </androidx.core.widget.NestedScrollView>

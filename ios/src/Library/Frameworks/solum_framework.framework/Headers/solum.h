@@ -2,7 +2,6 @@
 
 #import <Foundation/Foundation.h>
 
-#include "api_common.h"
 #include "solum_def.h"
 
 /// initialization callback function
@@ -210,7 +209,7 @@ __attribute__((visibility("default"))) @interface Solum : NSObject
 /// @param[in] fn ROI function
 /// @param[in] x the pixel x position
 /// @param[in] y the pixel y position
-- (void)adjustRoi:(CusRoi)fn
+- (void)adjustRoi:(CusRoiFunction)fn
             x:(double)x
             y:(double)y;
 

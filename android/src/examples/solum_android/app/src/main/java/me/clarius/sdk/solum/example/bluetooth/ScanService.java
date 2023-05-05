@@ -8,7 +8,6 @@ import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanResult;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
@@ -16,10 +15,11 @@ import android.os.Looper;
 import android.util.Log;
 
 import androidx.annotation.Nullable;
-import androidx.core.app.ActivityCompat;
+import androidx.annotation.RequiresPermission;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Find clarius probes over bluetooth
@@ -35,6 +35,7 @@ public class ScanService extends Service {
     private final List<String> found = new ArrayList<>();
     private final Handler handler = new Handler(Looper.myLooper());
     private final IBinder binder = new ScanService.CustomBinder();
+    private final AtomicBoolean scanning = new AtomicBoolean(false);
     private BluetoothLeScanner bluetoothLeScanner;
     private Listener listener;
     private final ScanCallback scanCallback = new ScanCallback() {
@@ -57,7 +58,6 @@ public class ScanService extends Service {
             listener.failed(errorCode);
         }
     };
-    private boolean scanning = false;
 
     @Nullable
     @Override
@@ -70,9 +70,10 @@ public class ScanService extends Service {
         super.onCreate();
         Log.d(TAG, "Creating bluetooth scan service");
         bluetoothLeScanner = ((BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE)).getAdapter().getBluetoothLeScanner();
-        assert bluetoothLeScanner != null: "Unable to get the system BLE scanner, is bluetooth enabled?";
+        assert bluetoothLeScanner != null : "Unable to get the system BLE scanner, is bluetooth enabled?";
     }
 
+    @RequiresPermission(Manifest.permission.BLUETOOTH_SCAN)
     @Override
     public void onDestroy() {
         super.onDestroy();
@@ -85,10 +86,9 @@ public class ScanService extends Service {
         this.listener = listener;
     }
 
+    @RequiresPermission(Manifest.permission.BLUETOOTH_SCAN)
     public void startScan() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
-        }
-        if (setScanningFlag(true)) {
+        if (scanning.compareAndSet(false, true)) {
             found.clear();
             bluetoothLeScanner.startScan(scanCallback);
             listener.started();
@@ -97,22 +97,12 @@ public class ScanService extends Service {
         }
     }
 
+    @RequiresPermission(Manifest.permission.BLUETOOTH_SCAN)
     void stopScan() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
-        }
-        if (setScanningFlag(false)) {
+        if (scanning.compareAndSet(true, false)) {
             Log.d(TAG, "Scan finished, found " + found.size() + " probe(s)");
             bluetoothLeScanner.stopScan(scanCallback);
             listener.finished(found);
-        }
-    }
-
-    private synchronized boolean setScanningFlag(boolean scanning) {
-        if (scanning != this.scanning) {
-            this.scanning = scanning;
-            return true;
-        } else {
-            return false;
         }
     }
 

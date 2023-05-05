@@ -1,7 +1,6 @@
 package me.clarius.sdk.solum.example;
 
 import android.content.Context;
-import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.os.Handler;
@@ -43,12 +42,11 @@ public class FirstFragment extends Fragment {
 
     private static final String TAG = "Solum";
     private final ExecutorService executorService = Executors.newFixedThreadPool(1);
-    private final WifiAutoJoin wifiAutoJoin = new WifiAutoJoin();
+    private WifiAutoJoin wifiAutoJoin;
     private FragmentFirstBinding binding;
     private Solum solum;
     private boolean isRunning = false;
     private boolean isBuffering = false;
-    private SolumViewModel solumViewModel;
     private WorkflowViewModel workflowViewModel;
     private ImageConverter imageConverter;
     private final Solum.Listener solumListener = new Solum.Listener() {
@@ -126,26 +124,34 @@ public class FirstFragment extends Fragment {
 
     private String getCertificate() {
         // TODO: get from cloud at https://cloud.clarius.com/api/public/v0/devices/oem/
-        return ClariusConfig.maybeCert().orElse("research");
+        return Secrets.maybeCert().orElse("research");
     }
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        solumViewModel = new ViewModelProvider(this).get(SolumViewModel.class);
+        wifiAutoJoin = new WifiAutoJoin(new WifiAutoJoin.Listener() {
+            @Override
+            public void onSuccess(final String ssid, final Long networkID) {
+                showMessage("Joined Wi-Fi " + ssid);
+                binding.networkId.setText(String.valueOf(networkID));
+            }
+            public void onFailure(final String ssid) {
+                showError("Failed to join Wi-Fi " + ssid);
+            }
+        });
+
+        SolumViewModel solumViewModel = new ViewModelProvider(this).get(SolumViewModel.class);
         solumViewModel.getProcessedImage().observe(getViewLifecycleOwner(), binding.imageView::setImageBitmap);
 
-        solum = new Solum(requireContext(), solumListener);
-        solum.initialize(getCertDir(), new Solum.InitializationResult() {
-            @Override
-            public void accept(boolean connected) {
-                Log.d(TAG, "Initialization result: " + connected);
-                if (connected) {
-                    solum.setCertificate(getCertificate());
-                    solum.getFirmwareVersion(Platform.HD, maybeVersion -> showMessage("Retrieved FW version: " + maybeVersion.orElse("???")));
-                    workflowViewModel.refreshProbes(solum);
-                }
+        solum = new Solum(requireContext().getApplicationInfo().nativeLibraryDir, solumListener);
+        solum.initialize(getCertDir(), connected -> {
+            Log.d(TAG, "Initialization result: " + connected);
+            if (connected) {
+                solum.setCertificate(getCertificate());
+                solum.getFirmwareVersion(Platform.HD, maybeVersion -> showMessage("Retrieved FW version: " + maybeVersion.orElse("???")));
+                workflowViewModel.refreshProbes(solum);
             }
         });
         solum.setProbeSettings(new ProbeSettings());
@@ -158,7 +164,7 @@ public class FirstFragment extends Fragment {
         binding.buttonBluetooth.setOnClickListener(view1 -> NavHostFragment.findNavController(FirstFragment.this).navigate(R.id.action_FirstFragment_to_BluetoothFragment));
 
         binding.buttonConnect.setOnClickListener(v -> doConnect());
-        binding.buttonDisconnect.setOnClickListener(v -> doDisconnect());
+        binding.buttonDisconnect.setOnClickListener(v -> solum.disconnect());
         binding.buttonRun.setOnClickListener(v -> toggleRun());
 
         binding.buttonSwUpdate.setOnClickListener(v -> doSwUpdate());
@@ -170,9 +176,9 @@ public class FirstFragment extends Fragment {
 
         binding.buttonWifiAutoJoin.setOnClickListener(v -> doWifiAutoJoin());
 
-        ClariusConfig.maybeSSID().ifPresent(s -> binding.wifiSsid.setText(s));
-        ClariusConfig.maybePassphrase().ifPresent(s -> binding.wifiPassphrase.setText(s));
-        ClariusConfig.maybeMacAddress().ifPresent(s -> binding.macAddress.setText(s));
+        Secrets.maybeSSID().ifPresent(s -> binding.wifiSsid.setText(s));
+        Secrets.maybePassphrase().ifPresent(s -> binding.wifiPassphrase.setText(s));
+        Secrets.maybeMacAddress().ifPresent(s -> binding.macAddress.setText(s));
     }
 
     private void doSwUpdate() {
@@ -206,17 +212,13 @@ public class FirstFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        doDisconnect();
+        solum.disconnect();
         solum.release();
         solum = null;
         binding = null;
     }
 
     private void doConnect() {
-        if (solum == null) {
-            showError("Solum not initialized");
-            return;
-        }
         binding.ipAddressLayout.setError(null);
         binding.tcpPortLayout.setError(null);
         String ipAddress = String.valueOf(binding.ipAddress.getText());
@@ -231,26 +233,21 @@ public class FirstFragment extends Fragment {
             binding.tcpPortLayout.setError("Invalid number");
             return;
         }
-        Optional<Long> maybeNetworkID = Optional.empty();
-        String networkID = String.valueOf(binding.networkId.getText());
-        if (!networkID.isEmpty()) {
-            try {
-                maybeNetworkID = Optional.of(Long.parseLong(networkID));
-            } catch (RuntimeException e) {
-                binding.networkIdLayout.setError("Invalid number");
-                return;
-            }
+        Optional<Long> maybeNetworkId;
+        try {
+            maybeNetworkId = maybeLong(binding.networkId.getText());
+        } catch (RuntimeException e) {
+            binding.networkIdLayout.setError("Invalid number");
+            return;
         }
 
         showMessage("Connecting to " + ipAddress + ":" + tcpPort);
-        solum.connect(ipAddress, tcpPort, maybeNetworkID);
+        solum.connect(ipAddress, tcpPort, maybeNetworkId);
     }
 
-    private void doDisconnect() {
-        if (solum == null) {
-            return;
-        }
-        solum.disconnect();
+    private static Optional<Long> maybeLong(CharSequence from) throws RuntimeException {
+        if (null == from || 0 == from.length()) return Optional.empty();
+        return Optional.of(Long.parseLong(String.valueOf(from)));
     }
 
     private void doLoadApplication() {
@@ -269,9 +266,6 @@ public class FirstFragment extends Fragment {
     }
 
     private void doAskState() {
-        if (solum == null) {
-            return;
-        }
         showMessage("Printing state in logcat");
         solum.getParam(Param.Gain, result -> Log.d(TAG, "Gain: " + result.map(Object::toString).orElse("<none>")));
         solum.getParam(Param.ImageDepth, result -> Log.d(TAG, "Depth: " + result.map(Object::toString).orElse("<none>")));
@@ -299,17 +293,7 @@ public class FirstFragment extends Fragment {
         }
         final String macAddress = String.valueOf(binding.macAddress.getText());
         showMessage("Auto-joining Wi-Fi " + ssid);
-        wifiAutoJoin.join(requireContext(), ssid, passphrase, macAddress, new WifiAutoJoin.Result() {
-            @Override
-            public void accept(boolean result, String ssid, Optional<Long> networkID) {
-                if (result) {
-                    showMessage("Joined Wi-Fi " + ssid);
-                } else {
-                    showError("Failed to join Wi-Fi " + ssid);
-                }
-                networkID.ifPresent(v -> binding.networkId.setText(Long.toString(v)));
-            }
-        });
+        wifiAutoJoin.join(requireContext(), ssid, passphrase, macAddress);
     }
 
     private void showMessage(CharSequence text) {

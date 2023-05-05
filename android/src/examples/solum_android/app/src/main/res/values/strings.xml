@@ -27,7 +27,7 @@
     <string name="unknown">Unknown</string>
 
     <string name="request_permissions">Request Permissions</string>
-    <string name="scanning">Scanning...</string>
+    <string name="scanning">Scanning…</string>
     <string name="rescan">Rescan</string>
     <string name="toggle_raw_data">Toggle Raw Data</string>
     <string name="wifi_ssid">Wi-Fi SSID</string>

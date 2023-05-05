@@ -6,6 +6,7 @@ import androidx.annotation.NonNull;
 
 import java.nio.ByteBuffer;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -32,8 +33,8 @@ public class ProbeStatus {
         this.powered = powered;
     }
 
-    private static <T extends Enum> T enumFromOrdinal(final Class<T> type, final int ordinal) {
-        int index = Math.min(ordinal, type.getEnumConstants().length);
+    private static <T extends Enum<T>> T enumFromOrdinal(final Class<T> type, final int ordinal) {
+        int index = Math.min(ordinal, Objects.requireNonNull(type.getEnumConstants()).length);
         return type.getEnumConstants()[index];
     }
 
@@ -46,11 +47,7 @@ public class ProbeStatus {
     public static ProbeStatus fromScanRecord(final ScanRecord record) {
         Map<Integer, byte[]> adRecords = AdvertisingRecords.getAdvertisingDataMap(record);
         Optional<Map.Entry<Integer, byte[]>> maybeEntry = adRecords.entrySet().stream().filter(entry -> entry.getKey().equals(AdvertisingRecords.FIELD_MANUFACTURER_SPECIFIC_DATA)).findAny();
-        if (maybeEntry.isPresent()) {
-            return parse(maybeEntry.get().getValue());
-        } else {
-            return null;
-        }
+        return maybeEntry.map(entry -> parse(entry.getValue())).orElse(null);
     }
 
     /**
@@ -78,14 +75,12 @@ public class ProbeStatus {
 
     @NonNull
     public String toString() {
-        StringBuilder builder = new StringBuilder();
-        builder.append("batt: ").append(battery).append("% ");
-        builder.append("temp: ").append(temperature).append(" ");
-        builder.append("avail: ").append(availability.name()).append(" ");
-        builder.append("listen: ").append(listenPolicy.name()).append(" ");
-        builder.append("charging: ").append(chargingStatus.name()).append(" ");
-        builder.append("on: ").append(powered);
-        return builder.toString();
+        return "batt: " + battery + "% " +
+                "temp: " + temperature + " " +
+                "avail: " + availability.name() + " " +
+                "listen: " + listenPolicy.name() + " " +
+                "charging: " + chargingStatus.name() + " " +
+                "on: " + powered;
     }
 
     public enum Availability {

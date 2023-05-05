@@ -3,9 +3,13 @@ plugins {
     id 'com.google.android.libraries.mapsplatform.secrets-gradle-plugin'
 }
 
+secrets {
+    propertiesFileName 'secrets.properties'
+    defaultPropertiesFileName 'secrets.properties.in'
+}
+
 android {
     compileSdk 33
-
     defaultConfig {
         applicationId "me.clarius.sdk.solum.example"
         minSdk 29
@@ -29,6 +33,13 @@ android {
         dataBinding true
         viewBinding true
     }
+    packagingOptions {
+        jniLibs {
+            // required to load qt plugins because qt cannot find uncompressed shared libs in apk
+            useLegacyPackaging = true
+        }
+    }
+    namespace 'me.clarius.sdk.solum.example'
 }
 
 dependencies {
@@ -40,5 +51,5 @@ dependencies {
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     implementation 'androidx.navigation:navigation-fragment:2.5.3'
     implementation 'androidx.navigation:navigation-ui:2.5.3'
-    implementation group: 'org.yaml', name: 'snakeyaml', version: '1.33'
+    implementation group: 'org.yaml', name: 'snakeyaml', version: '2.0'
 }
