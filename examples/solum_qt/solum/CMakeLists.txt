@@ -12,12 +12,12 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(Qt6 REQUIRED COMPONENTS Core Gui 3DExtras Bluetooth Widgets)
 message("Found Qt? ${Qt6_FOUND}")
 
-find_library(SOLUM_SDK_BINARY solum PATHS ${CMAKE_SOURCE_DIR}/../../lib)
+find_library(SOLUM_SDK_BINARY solum PATHS ${CMAKE_SOURCE_DIR}/../../../lib)
 message("Solum SDK binary location: ${SOLUM_SDK_BINARY}")
 add_library(SOLUM_SDK UNKNOWN IMPORTED)
 set_target_properties(SOLUM_SDK PROPERTIES
     IMPORTED_LOCATION ${SOLUM_SDK_BINARY}
-    INTERFACE_INCLUDE_DIRECTORIES ${CMAKE_SOURCE_DIR}/../../include
+    INTERFACE_INCLUDE_DIRECTORIES ${CMAKE_SOURCE_DIR}/../../../include
 )
 
 qt_add_executable(solum_qt

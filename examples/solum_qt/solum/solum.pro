@@ -8,8 +8,8 @@ PRECOMPILED_HEADER = pch.h
 CONFIG(release, debug|release): CONFIG += ltcg
 
 # ensure to unpack the appropriate libs from the zip file into this folder
-LIBPATH = $$PWD/../../lib
-INCLUDEPATH += $$PWD/../../include
+LIBPATH = $$PWD/../../../lib
+INCLUDEPATH += $$PWD/../../../include
 LIBS += -L$$LIBPATH/ -lsolum
 
 SOURCES += main.cpp solumqt.cpp ble.cpp display.cpp 3d.cpp jobbutton.cpp
