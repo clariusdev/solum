@@ -12,13 +12,15 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(Qt6 REQUIRED COMPONENTS Core Gui 3DExtras Bluetooth Widgets)
 message("Found Qt? ${Qt6_FOUND}")
 
-find_library(SOLUM_SDK_BINARY solum PATHS ${CMAKE_SOURCE_DIR}/../../../lib)
+find_library(SOLUM_SDK_BINARY solum PATHS ${CMAKE_CURRENT_SOURCE_DIR}/../../../lib)
 message("Solum SDK binary location: ${SOLUM_SDK_BINARY}")
 add_library(SOLUM_SDK UNKNOWN IMPORTED)
 set_target_properties(SOLUM_SDK PROPERTIES
     IMPORTED_LOCATION ${SOLUM_SDK_BINARY}
-    INTERFACE_INCLUDE_DIRECTORIES ${CMAKE_SOURCE_DIR}/../../../include
+    INTERFACE_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/../../../include
 )
+
+find_package(OpenIGTLink REQUIRED)
 
 qt_add_executable(solum_qt
     main.cpp solumqt.cpp ble.cpp display.cpp 3d.cpp jobbutton.cpp
@@ -30,7 +32,7 @@ qt_add_executable(solum_qt
 set_target_properties(solum_qt PROPERTIES
     WIN32_EXECUTABLE TRUE
     MACOSX_BUNDLE TRUE
-    MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/macos/Info.plist
+    MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/macos/Info.plist
     MACOSX_BUNDLE_GUI_IDENTIFIER "me.clarius.sdk.solum_qt"
 )
 
@@ -45,4 +47,5 @@ target_link_libraries(solum_qt PRIVATE
     Qt::Bluetooth
     Qt::Widgets
     SOLUM_SDK
+    OpenIGTLink
 )
