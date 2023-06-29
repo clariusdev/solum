@@ -391,7 +391,7 @@ bool Solum::event(QEvent *event)
 /// @param[in] status the status message
 void Solum::addStatus(const QString &status)
 {
-    ui_->status->appendPlainText(status);
+    ui_->status->appendPlainText(QStringLiteral("(%1) %2").arg(QTime::currentTime().toString()).arg(status));
 }
 
 /// called when the api returns an error
