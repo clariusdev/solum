@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>584</width>
-    <height>657</height>
+    <height>705</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -924,6 +924,13 @@
      </widget>
     </item>
     <item>
+     <widget class="QPlainTextEdit" name="status">
+      <property name="readOnly">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+    <item>
      <widget class="QLabel" name="probeStatus">
       <property name="toolTip">
        <string>Probe Status</string>
@@ -938,7 +945,6 @@
     </item>
    </layout>
   </widget>
-  <widget class="QStatusBar" name="status"/>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <tabstops>
