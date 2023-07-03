@@ -218,8 +218,6 @@ void Solum::closeEvent(QCloseEvent*)
 {
     if (connected_)
         solumDisconnect();
-
-    solumDestroy();
 }
 
 /// called for starting a cloud request to retrieve the probe credentials
