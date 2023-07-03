@@ -29,6 +29,25 @@ int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
 
+    // When using the default `windowsvista` style on Windows 10 in Dark Mode,
+    // Qt 6.5.1 renders the labels of disabled QPushButtons with the same
+    // black color as enabled ones, making it hard to distinguish the two:
+    //
+    //     https://bugreports.qt.io/browse/QTBUG-115036
+    //
+    // The `fusion` style is bundled with Qt as well, does not have this issue,
+    // and looks much nicer in general. We only override the specific
+    // `windowsvista` style though: Other styles don't have this issue, and we
+    // do want to retain a potential system-wide Qt style setting, especially
+    // on Linux.
+    //
+    // QStyle::name() is also only available on Qt 6.1 and above.
+#if QT_VERSION >= QT_VERSION_CHECK(6, 1, 0)
+    if (a.style()->name() == "windowsvista") {
+        QApplication::setStyle("fusion");
+    }
+#endif
+
     QCoreApplication::setOrganizationName(QStringLiteral("Clarius"));
     QCoreApplication::setOrganizationDomain(QStringLiteral("clarius.com"));
     QCoreApplication::setApplicationName(QStringLiteral("Solum Demo"));
