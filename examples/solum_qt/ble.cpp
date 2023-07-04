@@ -64,15 +64,16 @@ void Ble::search()
 /// called when ble search has completed
 void Ble::searchComplete()
 {
+    constexpr auto PREFIX = "CUS-";
     const auto devs = search_.discoveredDevices();
     probes_.clear();
     QStringList probes;
 
     for (auto d : devs)
     {
-        if (d.name().startsWith(QStringLiteral("CUS")))
+        if (d.name().startsWith(PREFIX))
         {
-            auto name = d.name().remove(QStringLiteral("CUS-"));
+            auto name = d.name().remove(PREFIX);
             probes_.push_back(qMakePair(name, d));
             probes.push_back(name);
         }
