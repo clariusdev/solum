@@ -202,6 +202,9 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_
         if (!ip.isEmpty() && !port.isEmpty())
             addStatus(tr("Wi-Fi: %1 (%2) [SSID: %3]").arg(ip).arg(port).arg(ssid));
     });
+
+    // Automatically trigger a BLE search at startup
+    ui_.blesearch->click();
 }
 
 /// destructor
