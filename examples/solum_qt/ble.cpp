@@ -45,6 +45,9 @@ Ble::Ble()
 Ble::~Ble()
 {
     search_.stop();
+
+    // This would be done automatically by QLowEnergyController`'s destructor,
+    // but we must emit the `disconnect` signal while `ping_` is still valid.
     disconnectFromProbe();
 }
 
@@ -125,7 +128,7 @@ bool Ble::connectToProbe(const QString& name)
 /// @return success of the call
 bool Ble::disconnectFromProbe()
 {
-    if (!probe_ || probe_->state() != QLowEnergyController::ConnectedState)
+    if (!probe_)
         return false;
 
     probe_->disconnectFromDevice();
