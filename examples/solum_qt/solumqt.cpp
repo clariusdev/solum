@@ -19,6 +19,12 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_
     ui_.blesearch->setLabels(tr("Search"), tr("Searching..."));
     ui_.bleconnect->setLabels(tr("Connect"), tr("Connecting..."));
 
+    // UI polish handlers
+    connect(ui_.token, &QLineEdit::textChanged, [this](auto& text)
+    {
+        ui_.retrieve->setEnabled(!text.isEmpty());
+    });
+
     ui_.status->viewport()->setAutoFillBackground(false);
     setWindowIcon(QIcon(":/res/logo.png"));
     image_ = new UltrasoundImage(false, this);
