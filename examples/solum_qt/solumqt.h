@@ -1,12 +1,8 @@
 #pragma once
 
 #include "ble.h"
+#include "ui_solumqt.h"
 #include <solum/solum_def.h>
-
-namespace Ui
-{
-    class Solum;
-}
 
 class UltrasoundImage;
 class Spectrum;
@@ -303,7 +299,7 @@ private:
     bool connected_;                ///< connection state
     bool imaging_;                  ///< imaging state
     bool teeConnected_;             ///< tee connected state
-    Ui::Solum *ui_;                 ///< ui controls, etc.
+    Ui::Solum ui_;                  ///< ui controls, etc.
     UltrasoundImage* image_;        ///< image display
     UltrasoundImage* image2_;       ///< secondary image display
     Spectrum* spectrum_;            ///< spectrum display

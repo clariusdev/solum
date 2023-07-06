@@ -1,7 +1,6 @@
 #include "solumqt.h"
 #include "display.h"
 #include "3d.h"
-#include "ui_solumqt.h"
 #include <solum/solum.h>
 
 #define IMU_TAB     4
@@ -10,11 +9,11 @@ static Solum* _me;
 
 /// default constructor
 /// @param[in] parent the parent object
-Solum::Solum(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_(false), teeConnected_(false), ui_(new Ui::Solum)
+Solum::Solum(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_(false), teeConnected_(false)
 {
     _me = this;
-    ui_->setupUi(this);
-    ui_->status->viewport()->setAutoFillBackground(false);
+    ui_.setupUi(this);
+    ui_.status->viewport()->setAutoFillBackground(false);
     setWindowIcon(QIcon(":/res/logo.png"));
     image_ = new UltrasoundImage(false, this);
     image2_ = new UltrasoundImage(true, this);
@@ -22,36 +21,36 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_
     spectrum_ = new Spectrum(this);
     signal_ = new RfSignal(this);
     prescan_ = new Prescan(this);
-    ui_->image->addWidget(image_);
-    ui_->image->addWidget(prescan_);
-    ui_->image->addWidget(spectrum_);
-    ui_->image->addWidget(signal_);
-    ui_->image2->addWidget(image2_);
+    ui_.image->addWidget(image_);
+    ui_.image->addWidget(prescan_);
+    ui_.image->addWidget(spectrum_);
+    ui_.image->addWidget(signal_);
+    ui_.image2->addWidget(image2_);
     render_ = new ProbeRender(QGuiApplication::primaryScreen());
-    ui_->render->addWidget(QWidget::createWindowContainer(render_));
+    ui_.render->addWidget(QWidget::createWindowContainer(render_));
     auto reset = new QPushButton(QStringLiteral("Reset"), this);
-    ui_->render->addWidget(reset);
+    ui_.render->addWidget(reset);
     render_->init(QStringLiteral("scanner.obj"));
     render_->show();
-    ui_->cfigain->setVisible(false);
-    ui_->velocity->setVisible(false);
-    ui_->opacity->setVisible(false);
-    ui_->rfzoom->setVisible(false);
-    ui_->rfStream->setVisible(false);
-    ui_->split->setVisible(false);
-    ui_->_tabs->setTabEnabled(IMU_TAB, false);
+    ui_.cfigain->setVisible(false);
+    ui_.velocity->setVisible(false);
+    ui_.opacity->setVisible(false);
+    ui_.rfzoom->setVisible(false);
+    ui_.rfStream->setVisible(false);
+    ui_.split->setVisible(false);
+    ui_._tabs->setTabEnabled(IMU_TAB, false);
 
     settings_ = std::make_unique<QSettings>(QStringLiteral("settings.ini"), QSettings::IniFormat);
-    ui_->token->setText(settings_->value("token").toString());
+    ui_.token->setText(settings_->value("token").toString());
     auto ip = settings_->value("ip").toString();
     if (!ip.isEmpty())
-        ui_->ip->setText(ip);
+        ui_.ip->setText(ip);
     auto port = settings_->value("port").toString();
     if (!port.isEmpty())
-        ui_->port->setText(port);
+        ui_.port->setText(port);
     auto probe = settings_->value("probe").toString();
     if (!probe.isEmpty())
-        ui_->probes->setCurrentText(probe);
+        ui_.probes->setCurrentText(probe);
 
     // handle the reply from the call to clarius cloud to obtain json probe information
     connect(&cloud_, &QNetworkAccessManager::finished, [this](QNetworkReply* reply)
@@ -100,17 +99,17 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_
         QApplication::postEvent(_me, new event::List(list, true));
     });
 
-    ui_->modes->blockSignals(true);
-    ui_->modes->addItem(QStringLiteral("B"));
-    ui_->modes->addItem(QStringLiteral("SC"));
-    ui_->modes->addItem(QStringLiteral("M"));
-    ui_->modes->addItem(QStringLiteral("CFI"));
-    ui_->modes->addItem(QStringLiteral("PDI"));
-    ui_->modes->addItem(QStringLiteral("PW"));
-    ui_->modes->addItem(QStringLiteral("NE"));
-    ui_->modes->addItem(QStringLiteral("SI"));
-    ui_->modes->addItem(QStringLiteral("RF"));
-    ui_->modes->blockSignals(false);
+    ui_.modes->blockSignals(true);
+    ui_.modes->addItem(QStringLiteral("B"));
+    ui_.modes->addItem(QStringLiteral("SC"));
+    ui_.modes->addItem(QStringLiteral("M"));
+    ui_.modes->addItem(QStringLiteral("CFI"));
+    ui_.modes->addItem(QStringLiteral("PDI"));
+    ui_.modes->addItem(QStringLiteral("PW"));
+    ui_.modes->addItem(QStringLiteral("NE"));
+    ui_.modes->addItem(QStringLiteral("SI"));
+    ui_.modes->addItem(QStringLiteral("RF"));
+    ui_.modes->blockSignals(false);
 
     // connect status timer
     connect(&timer_, &QTimer::timeout, [this]()
@@ -122,7 +121,7 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_
             if (teeConnected_)
                 teeTime = QStringLiteral(", TEE: %1%").arg(st.teeTimeRemaining);
 
-            ui_->probeStatus->setText(QStringLiteral("Battery: %1%, Temp: %2%, FR: %3 Hz%4")
+            ui_.probeStatus->setText(QStringLiteral("Battery: %1%, Temp: %2%, FR: %3 Hz%4")
                    .arg(st.battery).arg(st.temperature).arg(QString::number(st.frameRate, 'f', 0)).arg(teeTime));
         }
     });
@@ -130,26 +129,26 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_
     // connect ble device list
     connect(&ble_, &Ble::devices, [this](const QStringList& devs)
     {
-        ui_->bleprobes->clear();
+        ui_.bleprobes->clear();
         for (auto d : devs)
-            ui_->bleprobes->addItem(d);
-        if (ui_->bleprobes->count())
-            ui_->bleprobes->setCurrentIndex(0);
+            ui_.bleprobes->addItem(d);
+        if (ui_.bleprobes->count())
+            ui_.bleprobes->setCurrentIndex(0);
     });
 
     // power service ready
     connect(&ble_, &Ble::powerReady, [this](bool en)
     {
-        ui_->poweron->setEnabled(en);
-        ui_->poweroff->setEnabled(en);
-        ui_->ring->setEnabled(en);
+        ui_.poweron->setEnabled(en);
+        ui_.poweroff->setEnabled(en);
+        ui_.ring->setEnabled(en);
     });
 
     // wifi service ready
     connect(&ble_, &Ble::wifiReady, [this](bool en)
     {
-        ui_->wifi->setEnabled(en);
-        ui_->ap->setEnabled(en);
+        ui_.wifi->setEnabled(en);
+        ui_.ap->setEnabled(en);
     });
 
     // power status sent
@@ -177,8 +176,8 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_
         auto ip = getField(QStringLiteral("ip4:"));
         auto port = getField(QStringLiteral("ctl:"));
         auto ssid = getField(QStringLiteral("ssid:"));
-        ui_->ip->setText(ip);
-        ui_->port->setText(port);
+        ui_.ip->setText(ip);
+        ui_.port->setText(port);
         if (!ip.isEmpty() && !port.isEmpty())
             addStatus(tr("Wi-Fi: %1 (%2) [SSID: %3]").arg(ip).arg(port).arg(ssid));
     });
@@ -188,29 +187,28 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_
 Solum::~Solum()
 {
     timer_.stop();
-    delete ui_;
 }
 
 /// loads a list of probes into the selection box
 /// @param[in] probes the probes list
 void Solum::loadProbes(const QStringList& probes)
 {
-    ui_->probes->clear();
+    ui_.probes->clear();
     for (auto p : probes)
-        ui_->probes->addItem(p);
-    if (ui_->probes->count())
-        ui_->probes->setCurrentIndex(0);
+        ui_.probes->addItem(p);
+    if (ui_.probes->count())
+        ui_.probes->setCurrentIndex(0);
 }
 
 /// loads a list of applications into selection box
 /// @param[in] apps the applications list
 void Solum::loadApplications(const QStringList& apps)
 {
-    ui_->workflows->clear();
+    ui_.workflows->clear();
     for (auto a : apps)
-        ui_->workflows->addItem(a);
-    if (ui_->workflows->count())
-        ui_->workflows->setCurrentIndex(0);
+        ui_.workflows->addItem(a);
+    if (ui_.workflows->count())
+        ui_.workflows->setCurrentIndex(0);
 }
 
 /// called when the window is closing to clean up the library
@@ -223,7 +221,7 @@ void Solum::closeEvent(QCloseEvent*)
 /// called for starting a cloud request to retrieve the probe credentials
 void Solum::onRetrieve()
 {
-    auto token = ui_->token->text();
+    auto token = ui_.token->text();
     if (!token.isEmpty())
     {
         settings_->setValue("token", token);
@@ -244,13 +242,13 @@ void Solum::onBleSearch()
 /// called when a ble probe is selected
 void Solum::onBleProbe(int index)
 {
-    ui_->bleconnect->setEnabled(index >= 0);
+    ui_.bleconnect->setEnabled(index >= 0);
 }
 
 /// called when a ble connect is initiated
 void Solum::onBleConnect()
 {
-    ble_.connectToProbe(ui_->bleprobes->currentText());
+    ble_.connectToProbe(ui_.bleprobes->currentText());
 }
 
 /// tries to power on probe
@@ -274,8 +272,8 @@ void Solum::onRing()
 /// tries to reprogram probe to a new wifi network (router)
 void Solum::onWiFi()
 {
-    auto ssid = ui_->ssid->text();
-    auto pw = ui_->password->text();
+    auto ssid = ui_.ssid->text();
+    auto pw = ui_.password->text();
     if (ssid.isEmpty())
         return;
 
@@ -390,7 +388,7 @@ bool Solum::event(QEvent *event)
 /// @param[in] status the status message
 void Solum::addStatus(const QString &status)
 {
-    ui_->status->appendPlainText(QStringLiteral("(%1) %2").arg(QTime::currentTime().toString()).arg(status));
+    ui_.status->appendPlainText(QStringLiteral("(%1) %2").arg(QTime::currentTime().toString()).arg(status));
 }
 
 /// called when the api returns an error
@@ -411,12 +409,12 @@ void Solum::setConnected(CusConnection res, int port, const QString& msg)
         timer_.start(1000);
         connected_ = true;
         addStatus(tr("Connected on port: %1").arg(port));
-        ui_->connect->setText("Disconnect");
-        ui_->update->setEnabled(true);
-        ui_->load->setEnabled(true);
+        ui_.connect->setText("Disconnect");
+        ui_.update->setEnabled(true);
+        ui_.load->setEnabled(true);
 
         // load the certificate if it was already retrieved from the cloud
-        QString serial = ui_->bleprobes->currentText();
+        QString serial = ui_.bleprobes->currentText();
         if (certified_.count(serial))
             solumSetCert(certified_[serial].toLatin1());
     }
@@ -425,11 +423,11 @@ void Solum::setConnected(CusConnection res, int port, const QString& msg)
         timer_.stop();
         connected_ = false;
         addStatus(tr("Disconnected"));
-        ui_->connect->setText(QStringLiteral("Connect"));
-        ui_->cert->clear();
-        ui_->freeze->setEnabled(false);
-        ui_->update->setEnabled(false);
-        ui_->load->setEnabled(false);
+        ui_.connect->setText(tr("Connect"));
+        ui_.cert->clear();
+        ui_.freeze->setEnabled(false);
+        ui_.update->setEnabled(false);
+        ui_.load->setEnabled(false);
         // disable controls upon disconnect
         imagingState(ImagingNotReady, false);
     }
@@ -444,11 +442,11 @@ void Solum::setConnected(CusConnection res, int port, const QString& msg)
 void Solum::certification(int daysValid)
 {
     if (daysValid == CERT_INVALID)
-        ui_->cert->setText(QStringLiteral("Invalid"));
+        ui_.cert->setText(QStringLiteral("Invalid"));
     else if (!daysValid)
-        ui_->cert->setText(QStringLiteral("Expired"));
+        ui_.cert->setText(QStringLiteral("Expired"));
     else
-        ui_->cert->setText(QStringLiteral("%1 Days").arg(daysValid));
+        ui_.cert->setText(QStringLiteral("%1 Days").arg(daysValid));
 }
 
 /// called when there's a power down event
@@ -484,30 +482,30 @@ void Solum::softwareUpdate(CusSwUpdate res)
 void Solum::imagingState(CusImagingState state, bool imaging)
 {
     bool ready = (state != ImagingNotReady);
-    ui_->freeze->setEnabled(ready ? true : false);
-    ui_->autogain->setEnabled(ready ? true : false);
-    ui_->autofocus->setEnabled(ready ? true : false);
-    ui_->decdepth->setEnabled(ready ? true : false);
-    ui_->incdepth->setEnabled(ready ? true : false);
-    ui_->gain->setEnabled(ready ? true : false);
-    ui_->focus->setEnabled((ready && !ui_->autofocus->isChecked()) ? true : false);
-    ui_->cfigain->setEnabled(ready ? true : false);
-    ui_->opacity->setEnabled(ready ? true : false);
-    ui_->rfzoom->setEnabled(ready ? true : false);
-    ui_->rfStream->setEnabled(ready ? true : false);
-    ui_->prescan->setEnabled(ready ? true : false);
-    ui_->split->setEnabled(ready ? true : false);
-    ui_->imu->setEnabled(ready ? true : false);
-    bool ag = ui_->autogain->isChecked();
-    ui_->tgctop->setEnabled((ready && !ag) ? true : false);
-    ui_->tgcmid->setEnabled((ready && !ag) ? true : false);
-    ui_->tgcbottom->setEnabled((ready && !ag) ? true : false);
-    ui_->modes->setEnabled(ready ? true : false);
+    ui_.freeze->setEnabled(ready ? true : false);
+    ui_.autogain->setEnabled(ready ? true : false);
+    ui_.autofocus->setEnabled(ready ? true : false);
+    ui_.decdepth->setEnabled(ready ? true : false);
+    ui_.incdepth->setEnabled(ready ? true : false);
+    ui_.gain->setEnabled(ready ? true : false);
+    ui_.focus->setEnabled((ready && !ui_.autofocus->isChecked()) ? true : false);
+    ui_.cfigain->setEnabled(ready ? true : false);
+    ui_.opacity->setEnabled(ready ? true : false);
+    ui_.rfzoom->setEnabled(ready ? true : false);
+    ui_.rfStream->setEnabled(ready ? true : false);
+    ui_.prescan->setEnabled(ready ? true : false);
+    ui_.split->setEnabled(ready ? true : false);
+    ui_.imu->setEnabled(ready ? true : false);
+    bool ag = ui_.autogain->isChecked();
+    ui_.tgctop->setEnabled((ready && !ag) ? true : false);
+    ui_.tgcmid->setEnabled((ready && !ag) ? true : false);
+    ui_.tgcbottom->setEnabled((ready && !ag) ? true : false);
+    ui_.modes->setEnabled(ready ? true : false);
 
     addStatus(tr("Image: %1").arg(imaging ? tr("Running") : tr("Frozen")));
     if (ready)
     {
-        ui_->freeze->setText(imaging ? QStringLiteral("Stop") : QStringLiteral("Run"));
+        ui_.freeze->setText(imaging ? QStringLiteral("Stop") : QStringLiteral("Run"));
         imaging_ = imaging;
         getParams();
         image_->checkRoi();
@@ -550,7 +548,7 @@ void Solum::onTee(bool connected, const QString& serial, double timeRemaining)
 /// @param[in] progress the current progress
 void Solum::setProgress(int progress)
 {
-    ui_->progress->setValue(progress);
+    ui_.progress->setValue(progress);
 }
 
 /// called when a new image has been sent
@@ -609,13 +607,13 @@ void Solum::onConnect()
 {
     if (!connected_)
     {
-        if (solumConnect(ui_->ip->text().toStdString().c_str(), ui_->port->text().toInt()) < 0)
+        if (solumConnect(ui_.ip->text().toStdString().c_str(), ui_.port->text().toInt()) < 0)
             addStatus(tr("Connection failed"));
         else
             addStatus(tr("Trying connection"));
 
-        settings_->setValue("ip", ui_->ip->text());
-        settings_->setValue("port", ui_->port->text());
+        settings_->setValue("ip", ui_.ip->text());
+        settings_->setValue("port", ui_.port->text());
     }
     else
     {
@@ -689,7 +687,7 @@ void Solum::onLoad()
     if (!connected_)
         return;
 
-    if (solumLoadApplication(ui_->probes->currentText().toStdString().c_str(), ui_->workflows->currentText().toStdString().c_str()) < 0)
+    if (solumLoadApplication(ui_.probes->currentText().toStdString().c_str(), ui_.workflows->currentText().toStdString().c_str()) < 0)
         addStatus(tr("Error requesting application load"));
     // update depth range on a successful load
     else
@@ -701,7 +699,7 @@ void Solum::onLoad()
             CusRange range;
             if (solumGetRange(ImageDepth, &range) == 0)
             {
-                ui_->maxdepth->setText(QStringLiteral("Max: %1cm").arg(range.max));
+                ui_.maxdepth->setText(QStringLiteral("Max: %1cm").arg(range.max));
             }
         });
     }
@@ -773,13 +771,13 @@ void Solum::onAutoGain(int state)
 {
     bool en = (state == Qt::Checked);
     solumSetParam(AutoGain, en ? 1 : 0);
-    ui_->tgctop->setEnabled(en ? false: true);
-    ui_->tgcmid->setEnabled(en ? false: true);
-    ui_->tgcbottom->setEnabled(en ? false: true);
+    ui_.tgctop->setEnabled(en ? false: true);
+    ui_.tgcmid->setEnabled(en ? false: true);
+    ui_.tgcbottom->setEnabled(en ? false: true);
     // reset the tgc sliders
-    ui_->tgctop->setValue(0);
-    ui_->tgcmid->setValue(0);
-    ui_->tgcbottom->setValue(0);
+    ui_.tgctop->setValue(0);
+    ui_.tgcmid->setValue(0);
+    ui_.tgcbottom->setValue(0);
 }
 
 /// called when auto focus enable adjusted
@@ -788,14 +786,14 @@ void Solum::onAutoFocus(int state)
 {
     bool en = (state == Qt::Checked);
     solumSetParam(AutoFocus, en ? 1 : 0);
-    ui_->focus->setEnabled(en ? false: true);
+    ui_.focus->setEnabled(en ? false: true);
 }
 
 /// called when imu enable adjusted
 /// @param[in] state checkbox state
 void Solum::onImu(int state)
 {
-    ui_->_tabs->setTabEnabled(IMU_TAB, (state == Qt::Checked));
+    ui_._tabs->setTabEnabled(IMU_TAB, (state == Qt::Checked));
     solumSetParam(ImuStreaming, (state == Qt::Checked) ? 1 : 0);
 }
 
@@ -829,8 +827,8 @@ void Solum::tgcTop(int v)
 {
     CusTgc t;
     t.top = v;
-    t.mid = ui_->tgcmid->value();
-    t.bottom = ui_->tgcbottom->value();
+    t.mid = ui_.tgcmid->value();
+    t.bottom = ui_.tgcbottom->value();
     solumSetTgc(&t);
 }
 
@@ -839,9 +837,9 @@ void Solum::tgcTop(int v)
 void Solum::tgcMid(int v)
 {
     CusTgc t;
-    t.top = ui_->tgctop->value();
+    t.top = ui_.tgctop->value();
     t.mid = v;
-    t.bottom = ui_->tgcbottom->value();
+    t.bottom = ui_.tgcbottom->value();
     solumSetTgc(&t);
 }
 
@@ -850,8 +848,8 @@ void Solum::tgcMid(int v)
 void Solum::tgcBottom(int v)
 {
     CusTgc t;
-    t.top = ui_->tgctop->value();
-    t.mid = ui_->tgcmid->value();
+    t.top = ui_.tgctop->value();
+    t.mid = ui_.tgcmid->value();
     t.bottom = v;
     solumSetTgc(&t);
 }
@@ -864,20 +862,20 @@ void Solum::getParams()
         image_->setDepth(v);
 
     v = solumGetParam(AutoGain);
-    ui_->autogain->setChecked(v > 0);
+    ui_.autogain->setChecked(v > 0);
     v = solumGetParam(AutoFocus);
-    ui_->autofocus->setChecked(v > 0);
+    ui_.autofocus->setChecked(v > 0);
     v = solumGetParam(ImuStreaming);
-    ui_->imu->setChecked(v > 0);
+    ui_.imu->setChecked(v > 0);
     v = solumGetParam(RfStreaming);
-    ui_->rfStream->setChecked(v > 0);
+    ui_.rfStream->setChecked(v > 0);
 
     CusTgc t;
     if (solumGetTgc(&t) == 0)
     {
-        ui_->tgctop->setValue(static_cast<int>(t.top));
-        ui_->tgcmid->setValue(static_cast<int>(t.mid));
-        ui_->tgcbottom->setValue(static_cast<int>(t.bottom));
+        ui_.tgctop->setValue(static_cast<int>(t.top));
+        ui_.tgcmid->setValue(static_cast<int>(t.mid));
+        ui_.tgcbottom->setValue(static_cast<int>(t.bottom));
     }
 }
 
@@ -891,12 +889,12 @@ void Solum::onMode(int mode)
     {
         spectrum_->setVisible(m == MMode || m == PwMode);
         signal_->setVisible(m == RfMode);
-        ui_->cfigain->setVisible(m == ColorMode || m == PowerMode);
-        ui_->velocity->setVisible(m == ColorMode || m == PwMode);
-        ui_->opacity->setVisible(m == Strain);
-        ui_->rfzoom->setVisible(m == RfMode);
-        ui_->rfStream->setVisible(m == RfMode);
-        ui_->split->setVisible(m == ColorMode || m == PowerMode || m == Strain);
+        ui_.cfigain->setVisible(m == ColorMode || m == PowerMode);
+        ui_.velocity->setVisible(m == ColorMode || m == PwMode);
+        ui_.opacity->setVisible(m == Strain);
+        ui_.rfzoom->setVisible(m == RfMode);
+        ui_.rfStream->setVisible(m == RfMode);
+        ui_.split->setVisible(m == ColorMode || m == PowerMode || m == Strain);
 
         updateVelocity(m);
     }
@@ -915,7 +913,7 @@ void Solum::updateVelocity(CusMode mode)
             auto v = solumGetParam(DopplerVelocity);
             if (v)
             {
-                ui_->velocity->setText(QStringLiteral("+/- %1cm/s").arg(v));
+                ui_.velocity->setText(QStringLiteral("+/- %1cm/s").arg(v));
             }
         });
     }
