@@ -133,6 +133,7 @@ bool Ble::disconnectFromProbe()
         return false;
 
     probe_->disconnectFromDevice();
+    emit connected(false);
     return true;
 }
 
@@ -141,6 +142,7 @@ void Ble::onConnected()
 {
     if (probe_)
     {
+        emit connected(true);
         emit powerReady(false);
         emit wifiReady(false);
         probe_->discoverServices();

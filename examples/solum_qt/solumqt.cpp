@@ -142,8 +142,19 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_
     const auto bleReadyCheck = [this]()
     {
         if(ui_.wifi->isEnabled() && ui_.ring->isEnabled())
+        {
+            addStatus("(BLE) Service discovery finished");
             ui_.bleconnect->ready();
+        }
     };
+
+    connect(&ble_, &Ble::connected, [this](bool connected)
+    {
+        if(connected)
+            addStatus("(BLE) Connected, discovering services...");
+        else
+            addStatus("(BLE) Disconnected");
+    });
 
     // connect ble device list
     connect(&ble_, &Ble::devices, [this](const QStringList& devs)
@@ -286,7 +297,9 @@ void Solum::onBleProbe(int index)
 /// called when a ble connect is initiated
 void Solum::onBleConnect()
 {
-    ble_.connectToProbe(ui_.bleprobes->currentText());
+    const auto& probe = ui_.bleprobes->currentText();
+    addStatus(QStringLiteral("(BLE) Connecting to %1...").arg(probe));
+    ble_.connectToProbe(probe);
 }
 
 /// tries to power on probe

@@ -28,6 +28,7 @@ private slots:
     void onDiscoveryFinished();
 
 signals:
+    void connected(bool);
     void devices(const QStringList&);
     void powerReady(bool);
     void powered(bool);
