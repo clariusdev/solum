@@ -143,10 +143,15 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_
     connect(&ble_, &Ble::devices, [this](const QStringList& devs)
     {
         ui_.bleprobes->clear();
-        for (auto d : devs)
+        for (const auto& d : devs)
+        {
+            addStatus(QStringLiteral("(BLE) Found %1").arg(d));
             ui_.bleprobes->addItem(d);
+        }
         if (ui_.bleprobes->count())
             ui_.bleprobes->setCurrentIndex(0);
+        else
+            addStatus("(BLE) Found no devices");
         ui_.blesearch->ready();
     });
 
@@ -252,6 +257,7 @@ void Solum::onRetrieve()
 /// initiates ble search
 void Solum::onBleSearch()
 {
+    addStatus("(BLE) Searching...");
     ble_.search();
 }
 
