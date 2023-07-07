@@ -21,8 +21,8 @@ set_target_properties(SOLUM_SDK PROPERTIES
 )
 
 qt_add_executable(solum_qt
-    main.cpp solumqt.cpp ble.cpp display.cpp 3d.cpp
-    solumqt.h ble.h display.h 3d.h
+    main.cpp solumqt.cpp ble.cpp display.cpp 3d.cpp jobbutton.cpp
+    solumqt.h ble.h display.h 3d.h jobbutton.h
     solum.qrc
     solumqt.ui
 )
@@ -35,6 +35,8 @@ set_target_properties(solum_qt PROPERTIES
 )
 
 target_precompile_headers(solum_qt PRIVATE pch.h)
+
+target_include_directories(solum_qt PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(solum_qt PRIVATE
     Qt::Core

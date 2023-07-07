@@ -75,7 +75,7 @@
               </layout>
              </item>
              <item>
-              <widget class="QPushButton" name="retrieve">
+              <widget class="JobButton" name="retrieve">
                <property name="text">
                 <string>Retrieve from Cloud</string>
                </property>
@@ -109,7 +109,7 @@
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_5">
           <item>
-           <widget class="QPushButton" name="blesearch">
+           <widget class="JobButton" name="blesearch">
             <property name="maximumSize">
              <size>
               <width>100</width>
@@ -132,7 +132,7 @@
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="bleconnect">
+           <widget class="JobButton" name="bleconnect">
             <property name="enabled">
              <bool>false</bool>
             </property>
@@ -947,6 +947,13 @@
   </widget>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
+ <customwidgets>
+  <customwidget>
+   <class>JobButton</class>
+   <extends>QPushButton</extends>
+   <header location="global">jobbutton.h</header>
+  </customwidget>
+ </customwidgets>
  <tabstops>
   <tabstop>_tabs</tabstop>
   <tabstop>ip</tabstop>

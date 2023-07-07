@@ -10,8 +10,8 @@ LIBPATH = $$PWD/../../lib
 INCLUDEPATH += $$PWD/../../include
 LIBS += -L$$LIBPATH/ -lsolum
 
-SOURCES += main.cpp solumqt.cpp ble.cpp display.cpp 3d.cpp
-HEADERS += solumqt.h ble.h display.h 3d.h
+SOURCES += main.cpp solumqt.cpp ble.cpp display.cpp 3d.cpp jobbutton.cpp
+HEADERS += solumqt.h ble.h display.h 3d.h jobbutton.h
 FORMS += solumqt.ui
 
 RESOURCES += \
