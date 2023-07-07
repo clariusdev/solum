@@ -182,8 +182,7 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_
     // wifi service ready
     connect(&ble_, &Ble::wifiReady, [this, bleReadyCheck](bool en)
     {
-        ui_.wifi->setEnabled(en);
-        ui_.ap->setEnabled(en);
+        ui_.networkConfig->setEnabled(en);
         bleReadyCheck();
     });
 
