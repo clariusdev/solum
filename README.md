@@ -16,16 +16,6 @@ The Solum API allows third party applications to be developed for desktop or mob
 - iOS
 - Android
 
-## Repository
-
-Structure:
-
-- **desktop/src/include**         desktop API headers
-- **desktop/src/example**         desktop example programs
-- **ios/src/Library**             iOS framework headers (for full framework, download iOS binary zip)
-- **ios/src/examples**            iOS example programs
-- **android/src/examples**        Android example programs
-
 ### Example Overview
 
 Two desktop example programs are provided, one written as a console program, the other using Qt and a graphical interface. The console program does not use any Bluetooth connectivity, therefore it is only useful if the IP address and port are already known, or if a Bluetooth script is run through the console (for example, using hcitool or gatttool on Linux).
