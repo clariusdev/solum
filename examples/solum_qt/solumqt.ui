@@ -355,7 +355,10 @@ After clicking the button, wait for the SSID to be published via BLE, then conne
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="_tcp">
+      <widget class="QWidget" name="tcp">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <attribute name="title">
         <string>Connection</string>
        </attribute>
