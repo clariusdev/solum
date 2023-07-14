@@ -309,6 +309,7 @@ private:
     QTimer timer_;                  ///< timer for updating probe status
     QNetworkAccessManager cloud_;   ///< for accessing clarius cloud
     Ble ble_;                       ///< bluetooth module
+    QStringList probesSupported_;   ///< result of solumProbes() API call
     Probes certified_;              ///< list of certified probes
     std::unique_ptr<QSettings> settings_;   ///< persistent settings
 };

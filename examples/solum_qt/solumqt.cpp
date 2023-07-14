@@ -77,6 +77,7 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_
         }
 
         certified_.clear();
+        QStringList probeModels;
         auto json = doc.object();
         if (json.contains("results") && json["results"].isArray())
         {
@@ -91,13 +92,25 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_
                     {
                         auto serial = device["serial"].toString();
                         if (!serial.isEmpty())
+                        {
                             certified_[serial] = probe["crt"].toString();
+
+                            if (device.contains("model"))
+                            {
+                                auto model = device["model"].toString();
+                                if (!model.isEmpty())
+                                    if (probesSupported_.contains(model))
+                                        if (!probeModels.contains(model))
+                                            probeModels.push_back(model);
+                            }
+                        }
                     }
                 }
             }
 
             addStatus(tr("(Cloud) Found %1 valid OEM probes").arg(certified_.size()));
             ui_.tcp->setEnabled(true);
+            loadProbes(probeModels);
         }
     });
 
@@ -373,7 +386,7 @@ bool Solum::event(QEvent *event)
     {
         auto evt = static_cast<event::List*>(event);
         if (evt->probes_)
-            loadProbes(evt->list_);
+            probesSupported_ = evt->list_;
         else
             loadApplications(evt->list_);
         return true;

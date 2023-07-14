@@ -460,7 +460,7 @@ After clicking the button, wait for the SSID to be published via BLE, then conne
         <item row="4" column="0">
          <widget class="QLabel" name="_probeslist">
           <property name="text">
-           <string>Probes</string>
+           <string>Probe model</string>
           </property>
          </widget>
         </item>
