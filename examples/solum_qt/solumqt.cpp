@@ -24,6 +24,7 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_
     });
 
     ui_.status->viewport()->setAutoFillBackground(false);
+    ui_.progress->hide();
     setWindowIcon(QIcon(":/res/logo.png"));
     image_ = new UltrasoundImage(false, this);
     image2_ = new UltrasoundImage(true, this);
@@ -596,6 +597,7 @@ void Solum::onTee(bool connected, const QString& serial, double timeRemaining)
 /// @param[in] progress the current progress
 void Solum::setProgress(int progress)
 {
+    ui_.progress->show();
     ui_.progress->setValue(progress);
 }
 
