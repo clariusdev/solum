@@ -309,6 +309,14 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), imaging_(false), teeConnect
         }
     });
 
+    connect(&igtl_, &SolumIGTL::clientConnected, [this](bool connected)
+    {
+        if(connected)
+            ui_.igtlStatusClient->setText(tr("🟢 Client connected"));
+        else
+            ui_.igtlStatusClient->setText(tr("⌛ Waiting for client connection…"));
+    });
+
     imagingState(ImagingNotReady, false);
 
     // Automatically trigger a BLE search at startup
@@ -1148,6 +1156,7 @@ void Solum::onIGTLServe()
     {
         igtl_.close();
         ui_.igtlStatusServer->setText(tr("🔴 Server is stopped"));
+        ui_.igtlStatusClient->clear();
         ui_.igtlport->setEnabled(true);
         ui_.igtlserve->setText(tr("Serve"));
     }
