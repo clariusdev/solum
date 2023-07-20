@@ -23,8 +23,8 @@ set_target_properties(SOLUM_SDK PROPERTIES
 find_package(OpenIGTLink REQUIRED)
 
 qt_add_executable(solum_qt
-    main.cpp solumqt.cpp ble.cpp display.cpp 3d.cpp jobbutton.cpp
-    solumqt.h ble.h display.h 3d.h image.h jobbutton.h
+    main.cpp solumqt.cpp ble.cpp display.cpp 3d.cpp jobbutton.cpp openigtlink.cpp
+    solumqt.h ble.h display.h 3d.h image.h jobbutton.h openigtlink.h
     solum.qrc
     solumqt.ui
 )

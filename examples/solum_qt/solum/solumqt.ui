@@ -1605,6 +1605,22 @@ After clicking the button, wait for the SSID to be published via BLE, then conne
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>igtlserve</sender>
+   <signal>clicked()</signal>
+   <receiver>Solum</receiver>
+   <slot>onIGTLServe()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>onTcpConnect()</slot>
@@ -1637,5 +1653,6 @@ After clicking the button, wait for the SSID to be published via BLE, then conne
   <slot>onFocus(int)</slot>
   <slot>onSplit(int)</slot>
   <slot>onPrescan(int)</slot>
+  <slot>onIGTLServe()</slot>
  </slots>
 </ui>

@@ -23,6 +23,8 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), imaging_(false), teeConnect
                      .arg(portValidator_->bottom())
                      .arg(portValidator_->top());
 
+    connectPortChanged(ui_.igtlport, ui_.igtlserve);
+
     // UI polish handlers
     connect(ui_.token, &QLineEdit::textChanged, [this](auto& text)
     {
@@ -67,6 +69,9 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), imaging_(false), teeConnect
         settings_->endGroup();
     }
     settings_->endGroup();
+    auto igtlport = settings_->value("OpenIGTLink/port").toString();
+    if (!igtlport.isEmpty())
+        ui_.igtlport->setText(igtlport);
 
     ui_.certtable->setColumnCount(4);
     ui_.certtable->setHorizontalHeaderLabels({tr("Serial number"),
@@ -1121,4 +1126,29 @@ void Solum::connectPortChanged(QLineEdit* portEdit, QPushButton* connectButton)
                 QToolTip::showText(pos, portError_, portEdit);
         }
     });
+}
+
+void Solum::onIGTLServe()
+{
+    const auto port = ui_.igtlport->text().toInt();
+    if (!igtl_.isServing())
+    {
+        settings_->setValue("OpenIGTLink/port", port);
+        if (igtl_.serve(port))
+        {
+            ui_.igtlStatusServer->setText(tr("🟢 Server is running"));
+            ui_.igtlport->setEnabled(false);
+            ui_.igtlserve->setText(tr("Stop"));
+        }
+        else
+            ui_.igtlStatusServer->setText(
+                tr("❌ Socket could not be opened on port %1").arg(port));
+    }
+    else
+    {
+        igtl_.close();
+        ui_.igtlStatusServer->setText(tr("🔴 Server is stopped"));
+        ui_.igtlport->setEnabled(true);
+        ui_.igtlserve->setText(tr("Serve"));
+    }
 }
