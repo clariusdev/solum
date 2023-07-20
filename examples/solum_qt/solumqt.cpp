@@ -17,6 +17,14 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_
     ui_.blesearch->setLabels(tr("Search"), tr("Searching..."));
     ui_.bleconnect->setLabels(tr("Connect"), tr("Connecting..."));
 
+    // Port validation
+    portValidator_ = new QIntValidator(1, std::numeric_limits<uint16_t>::max());
+    portError_ = tr("must be between %1 and %2")
+                     .arg(portValidator_->bottom())
+                     .arg(portValidator_->top());
+
+    connectPortChanged(ui_.port, ui_.connect);
+
     // UI polish handlers
     connect(ui_.token, &QLineEdit::textChanged, [this](auto& text)
     {
@@ -988,4 +996,26 @@ void Solum::updateVelocity(CusMode mode)
 void Solum::onZoom(int zoom)
 {
     signal_->setZoom(zoom);
+}
+
+void Solum::connectPortChanged(QLineEdit* portEdit, QPushButton* connectButton)
+{
+    portEdit->setValidator(portValidator_);
+    connect(portEdit, &QLineEdit::textChanged, [=]()
+    {
+        const auto pos = portEdit->mapToGlobal(QPoint(0, 0));
+        if (portEdit->hasAcceptableInput())
+        {
+            portEdit->setStyleSheet("");
+            connectButton->setEnabled(true);
+            QToolTip::showText(pos, "", portEdit);
+        }
+        else
+        {
+            portEdit->setStyleSheet("QLineEdit { border: 1px solid red }");
+            connectButton->setEnabled(false);
+            if (portEdit->isVisible())
+                QToolTip::showText(pos, portError_, portEdit);
+        }
+    });
 }

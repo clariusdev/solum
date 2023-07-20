@@ -260,6 +260,7 @@ private:
     void addError(const QString &err);
     void getParams();
     void updateVelocity(CusMode mode);
+    void connectPortChanged(QLineEdit* portEdit, QPushButton* connectButton);
 
 public slots:
     void onRetrieve();
@@ -312,4 +313,6 @@ private:
     QStringList probesSupported_;   ///< result of solumProbes() API call
     Probes certified_;              ///< list of certified probes
     std::unique_ptr<QSettings> settings_;   ///< persistent settings
+    QIntValidator* portValidator_;  ///< keeps port fields between 1 and 65535
+    QString portError_;             ///< error message for port validation
 };
