@@ -28,6 +28,11 @@ void SolumIGTL::close()
     server_->CloseSocket();
 }
 
+void SolumIGTL::setNodeName(const QString &name)
+{
+    nodeName_ = name.toStdString();
+}
+
 void SolumIGTL::disconnectClient()
 {
     clientConnectTimer_.stop();

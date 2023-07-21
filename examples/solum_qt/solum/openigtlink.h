@@ -13,6 +13,8 @@ public:
     bool serve(uint16_t port); /// Returns `false` on failure.
     void close();
 
+    void setNodeName(const QString& name);
+
     bool isServing() const;
     bool isClientConnected() const;
 
@@ -26,4 +28,5 @@ private:
     igtl::ServerSocket::Pointer server_;
     igtl::Socket::Pointer client_;
     QTimer clientConnectTimer_;
+    std::string nodeName_;
 };
