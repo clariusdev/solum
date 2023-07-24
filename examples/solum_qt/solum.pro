@@ -5,6 +5,8 @@ CONFIG += c++17 precompile_header
 DEFINES += QT_DEPRECATED_WARNINGS USE_QT_3D
 PRECOMPILED_HEADER = pch.h
 
+CONFIG(release, debug|release): CONFIG += ltcg
+
 # ensure to unpack the appropriate libs from the zip file into this folder
 LIBPATH = $$PWD/../../lib
 INCLUDEPATH += $$PWD/../../include
