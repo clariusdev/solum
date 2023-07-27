@@ -70,6 +70,14 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_
     auto probe = settings_->value("probe").toString();
     if (!probe.isEmpty())
         ui_.probes->setCurrentText(probe);
+    settings_->beginGroup("Probes");
+    for (const auto& probe: settings_->childGroups())
+    {
+        settings_->beginGroup(probe);
+        certified_[probe] = settings_->value(probe).toString();
+        settings_->endGroup();
+    }
+    settings_->endGroup();
 
     // handle the reply from the call to clarius cloud to obtain json probe information
     connect(&cloud_, &QNetworkAccessManager::finished, [this](QNetworkReply* reply)
@@ -89,6 +97,8 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_
         auto json = doc.object();
         if (json.contains("results") && json["results"].isArray())
         {
+            settings_->beginGroup("Probes");
+
             auto probes = json["results"].toArray();
             for (auto i = 0u; i < probes.size(); i++)
             {
@@ -99,9 +109,12 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_
                     if (device.contains("serial"))
                     {
                         auto serial = device["serial"].toString();
+                        settings_->beginGroup(serial);
                         if (!serial.isEmpty())
                         {
-                            certified_[serial] = probe["crt"].toString();
+                            auto crt = probe["crt"].toString();
+                            certified_[serial] = crt;
+                            settings_->setValue("crt", crt);
 
                             if (device.contains("model"))
                             {
@@ -112,9 +125,11 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_
                                             probeModels.push_back(model);
                             }
                         }
+                        settings_->endGroup();
                     }
                 }
             }
+            settings_->endGroup();
 
             addStatus(tr("(Cloud) Found %1 valid OEM probes").arg(certified_.size()));
             ui_.tcp->setEnabled(true);
