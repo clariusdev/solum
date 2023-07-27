@@ -481,22 +481,6 @@ After clicking the button, wait for the SSID to be published via BLE, then conne
           </property>
          </widget>
         </item>
-        <item row="7" column="3">
-         <widget class="QPushButton" name="updateCert">
-          <property name="enabled">
-           <bool>true</bool>
-          </property>
-          <property name="minimumSize">
-           <size>
-            <width>150</width>
-            <height>0</height>
-           </size>
-          </property>
-          <property name="text">
-           <string>Update Cert...</string>
-          </property>
-         </widget>
-        </item>
         <item row="5" column="0">
          <widget class="QLabel" name="_wflist">
           <property name="text">
@@ -1404,22 +1388,6 @@ After clicking the button, wait for the SSID to be published via BLE, then conne
    </hints>
   </connection>
   <connection>
-   <sender>updateCert</sender>
-   <signal>clicked()</signal>
-   <receiver>Solum</receiver>
-   <slot>onUpdateCert()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>341</x>
-     <y>388</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>228</x>
-     <y>273</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
    <sender>blesearch</sender>
    <signal>clicked()</signal>
    <receiver>Solum</receiver>
@@ -1556,7 +1524,6 @@ After clicking the button, wait for the SSID to be published via BLE, then conne
   <slot>onColorGain(int)</slot>
   <slot>onImu(int)</slot>
   <slot>onAutoGain(int)</slot>
-  <slot>onUpdateCert()</slot>
   <slot>onRfStream(int)</slot>
   <slot>onRing()</slot>
   <slot>onRetrieve()</slot>

@@ -275,7 +275,6 @@ public slots:
     void onConnect();
     void onFreeze();
     void onUpdate();
-    void onUpdateCert();
     void onLoad();
     void onProbeSelected(const QString& probe);
     void onMode(int);

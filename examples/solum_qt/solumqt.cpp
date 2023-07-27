@@ -74,7 +74,7 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_
     for (const auto& probe: settings_->childGroups())
     {
         settings_->beginGroup(probe);
-        certified_[probe] = settings_->value(probe).toString();
+        certified_[probe] = settings_->value("crt").toString();
         settings_->endGroup();
     }
     settings_->endGroup();
@@ -750,23 +750,6 @@ void Solum::onUpdate()
             QApplication::postEvent(_me, new event::Progress(progress));
         }, 0) < 0)
         addStatus(tr("Error requesting software update"));
-}
-
-/// called to load a certificate
-void Solum::onUpdateCert()
-{
-    auto cert = QFileDialog::getOpenFileName(this,
-        QStringLiteral("Load Certificate"), QString(), QStringLiteral("Certs (*.pem *.crt);;All Files (*)"));
-    if (cert.isEmpty())
-        return;
-
-    QFile f(cert);
-    if (f.open(QIODevice::ReadOnly | QIODevice::Text))
-    {
-        QTextStream stream(&f);
-        auto text = stream.readAll();
-        solumSetCert(text.toStdString().c_str());
-    }
 }
 
 /// initiates a workflow load
