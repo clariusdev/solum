@@ -248,6 +248,7 @@ private:
     void newPrescanImage(const void* img, int w, int h, int bpp, int sz, CusImageFormat format);
     void newSpectrumImage(const void* img, int l, int s, int bps);
     void newRfImage(const void* rf, int l, int s, int ss);
+    void reflectCertification();
     void setConnected(CusConnection res, int port, const QString& msg);
     void certification(int daysValid);
     void poweringDown(CusPowerDown res, int tm);

@@ -79,6 +79,19 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_
     }
     settings_->endGroup();
 
+    ui_.certtable->setColumnCount(4);
+    ui_.certtable->setHorizontalHeaderLabels({tr("Serial number"),
+                                              tr("Issue date"),
+                                              tr("Expiry date"), tr("Valid")});
+
+    // Avoids the need for calling resizeColumnsToContents(), which breaks in
+    // conjunction with the `StretchLastSection` flag:
+    //
+    //     https://forum.qt.io/topic/129429
+    ui_.certtable->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+
+    reflectCertification();
+
     // handle the reply from the call to clarius cloud to obtain json probe information
     connect(&cloud_, &QNetworkAccessManager::finished, [this](QNetworkReply* reply)
     {
@@ -134,6 +147,7 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_
             addStatus(tr("(Cloud) Found %1 valid OEM probes").arg(certified_.size()));
             ui_.tcp->setEnabled(true);
             loadProbes(probeModels);
+            reflectCertification();
         }
     });
 
@@ -688,6 +702,33 @@ void Solum::newSpectrumImage(const void* img, int l, int s, int bps)
 void Solum::newRfImage(const void* rf, int l, int s, int ss)
 {
     signal_->loadSignal(rf, l, s, ss);
+}
+
+void Solum::reflectCertification()
+{
+    ui_.certtable->setRowCount(int(certified_.size()));
+    int row = 0;
+    for (const auto& probe : certified_)
+    {
+        QSslCertificate cert(probe.second.toLatin1());
+
+        auto issued = cert.effectiveDate().toString(Qt::RFC2822Date);
+        auto expiry = cert.expiryDate().toString(Qt::RFC2822Date);
+        auto now = QDateTime::currentDateTime();
+        auto valid = ((cert.effectiveDate() <= now) && (cert.expiryDate() >= now));
+
+        auto itemSerial = new QTableWidgetItem(probe.first);
+        auto itemIssued = new QTableWidgetItem(issued);
+        auto itemExpiry = new QTableWidgetItem(expiry);
+        auto itemValid = new QTableWidgetItem(valid ? "✅" : "❌");
+        itemValid->setTextAlignment(Qt::AlignCenter);
+
+        ui_.certtable->setItem(row, 0, itemSerial);
+        ui_.certtable->setItem(row, 1, itemIssued);
+        ui_.certtable->setItem(row, 2, itemExpiry);
+        ui_.certtable->setItem(row, 3, itemValid);
+        row++;
+    }
 }
 
 /// called when the connect/disconnect button is clicked
