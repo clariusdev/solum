@@ -74,7 +74,12 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_
     for (const auto& probe: settings_->childGroups())
     {
         settings_->beginGroup(probe);
-        certified_[probe] = settings_->value("crt").toString();
+
+        ProbeData probeData;
+        probeData.crt = settings_->value("crt").toString();
+        probeData.model = settings_->value("model").toString();
+        certified_[probe] = probeData;
+
         settings_->endGroup();
     }
     settings_->endGroup();
@@ -106,7 +111,6 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_
         }
 
         certified_.clear();
-        QStringList probeModels;
         auto json = doc.object();
         if (json.contains("results") && json["results"].isArray())
         {
@@ -115,37 +119,36 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_
             auto probes = json["results"].toArray();
             for (auto i = 0u; i < probes.size(); i++)
             {
+                ProbeData probeData;
+                QString serial;
+
                 auto probe = probes[i].toObject();
                 if (probe.contains("crt") && probe.contains("device") && probe["device"].isObject())
                 {
                     auto device = probe["device"].toObject();
                     if (device.contains("serial"))
                     {
-                        auto serial = device["serial"].toString();
-                        settings_->beginGroup(serial);
-                        if (!serial.isEmpty())
-                        {
-                            auto crt = probe["crt"].toString();
-                            certified_[serial] = crt;
-                            settings_->setValue("crt", crt);
+                        serial = device["serial"].toString();
+                        probeData.crt = probe["crt"].toString();
 
-                            if (device.contains("model"))
-                            {
-                                auto model = device["model"].toString();
-                                if (!model.isEmpty())
-                                    if (probesSupported_.contains(model))
-                                        if (!probeModels.contains(model))
-                                            probeModels.push_back(model);
-                            }
+                        if (device.contains("model"))
+                        {
+                            probeData.model = device["model"].toString();
                         }
-                        settings_->endGroup();
                     }
+                }
+                if (!serial.isEmpty() && !probeData.crt.isEmpty() && !probeData.model.isEmpty())
+                {
+                    settings_->beginGroup(serial);
+                    settings_->setValue("crt", probeData.crt);
+                    settings_->setValue("model", probeData.model);
+                    certified_[serial] = probeData;
+                    settings_->endGroup();
                 }
             }
             settings_->endGroup();
 
             addStatus(tr("(Cloud) Found %1 valid OEM probes").arg(certified_.size()));
-            loadProbes(probeModels);
             reflectCertification();
         }
     });
@@ -276,17 +279,6 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_
 Solum::~Solum()
 {
     timer_.stop();
-}
-
-/// loads a list of probes into the selection box
-/// @param[in] probes the probes list
-void Solum::loadProbes(const QStringList& probes)
-{
-    ui_.probes->clear();
-    for (auto p : probes)
-        ui_.probes->addItem(p);
-    if (ui_.probes->count())
-        ui_.probes->setCurrentIndex(0);
 }
 
 /// loads a list of applications into selection box
@@ -515,7 +507,7 @@ void Solum::setConnected(CusConnection res, int port, const QString& msg)
         // load the certificate if it was already retrieved from the cloud
         QString serial = ui_.bleprobes->currentText();
         if (certified_.count(serial))
-            solumSetCert(certified_[serial].toLatin1());
+            solumSetCert(certified_[serial].crt.toLatin1());
     }
     else if (res == ProbeDisconnected)
     {
@@ -705,12 +697,24 @@ void Solum::newRfImage(const void* rf, int l, int s, int ss)
 
 void Solum::reflectCertification()
 {
+    // Update probes
+    {
+        ui_.probes->clear();
+        for (const auto& probe : certified_)
+        {
+            if (ui_.probes->findText(probe.second.model) == -1)
+                ui_.probes->addItem(probe.second.model);
+        }
+        if (ui_.probes->count())
+            ui_.probes->setCurrentIndex(0);
+    };
+
     ui_.certtable->setRowCount(int(certified_.size()));
     int row = 0;
     bool tcpMakesSense = false;
     for (const auto& probe : certified_)
     {
-        QSslCertificate cert(probe.second.toLatin1());
+        QSslCertificate cert(probe.second.crt.toLatin1());
 
         auto issued = cert.effectiveDate().toString(Qt::RFC2822Date);
         auto expiry = cert.expiryDate().toString(Qt::RFC2822Date);
