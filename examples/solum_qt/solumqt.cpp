@@ -515,7 +515,6 @@ void Solum::setConnected(CusConnection res, int port, const QString& msg)
         connected_ = false;
         addStatus(tr("Disconnected"));
         ui_.connect->setText(tr("Connect"));
-        ui_.cert->clear();
         ui_.probeStatus->clear();
         ui_.freeze->setEnabled(false);
         ui_.update->setEnabled(false);
