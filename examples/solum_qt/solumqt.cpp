@@ -271,6 +271,8 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_
             addStatus(tr("Wi-Fi: %1 (%2) [SSID: %3]").arg(ip).arg(port).arg(ssid));
     });
 
+    imagingState(ImagingNotReady, false);
+
     // Automatically trigger a BLE search at startup
     ui_.blesearch->click();
 }
@@ -593,10 +595,25 @@ void Solum::imagingState(CusImagingState state, bool imaging)
     ui_.tgcbottom->setEnabled((ready && !ag) ? true : false);
     ui_.modes->setEnabled(ready ? true : false);
 
-    addStatus(tr("Image: %1").arg(imaging ? tr("Running") : tr("Frozen")));
+    if (!imaging || !connected_)
+        ui_.imaging->setLabels(tr("Run"), tr("Starting imaging..."));
+    else
+        ui_.imaging->setLabels(tr("Stop"), tr("Stopping imaging..."));
+
+    if (connected_)
+    {
+        if (imaging_ != imaging)
+            ui_.imaging->ready();
+        addStatus(tr("Image: %1").arg(imaging ? tr("Running") : tr("Frozen")));
+    }
+    else
+    {
+        ui_.imaging->ready();
+        ui_.imaging->setEnabled(false);
+    }
+
     if (ready)
     {
-        ui_.imaging->setText(imaging ? tr("Stop") : tr("Run"));
         imaging_ = imaging;
         getParams();
         image_->checkRoi();

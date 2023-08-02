@@ -944,7 +944,7 @@ After clicking the button, wait for the SSID to be published via BLE, then conne
          </layout>
         </item>
         <item>
-         <widget class="QPushButton" name="imaging">
+         <widget class="JobButton" name="imaging">
           <property name="enabled">
            <bool>false</bool>
           </property>
