@@ -425,6 +425,9 @@ After clicking the button, wait for the SSID to be published via BLE, then conne
            </item>
            <item row="1" column="2" colspan="2">
             <widget class="QPushButton" name="tcpconnect">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
              <property name="text">
               <string>Connect</string>
              </property>
@@ -444,18 +447,15 @@ After clicking the button, wait for the SSID to be published via BLE, then conne
             </widget>
            </item>
            <item row="1" column="1">
-            <widget class="QLineEdit" name="ip">
+            <widget class="QLabel" name="ip">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                <horstretch>1</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
              </property>
-             <property name="inputMask">
-              <string>000.000.000.000</string>
-             </property>
              <property name="text">
-              <string>192.168.1.1</string>
+              <string>(waiting for BLE message)</string>
              </property>
             </widget>
            </item>
@@ -507,9 +507,9 @@ After clicking the button, wait for the SSID to be published via BLE, then conne
             </widget>
            </item>
            <item row="3" column="1">
-            <widget class="QLineEdit" name="port">
+            <widget class="QLabel" name="port">
              <property name="text">
-              <string>11000</string>
+              <string>(waiting for BLE message)</string>
              </property>
             </widget>
            </item>
@@ -1044,8 +1044,6 @@ After clicking the button, wait for the SSID to be published via BLE, then conne
  </customwidgets>
  <tabstops>
   <tabstop>_tabs</tabstop>
-  <tabstop>ip</tabstop>
-  <tabstop>port</tabstop>
   <tabstop>probes</tabstop>
   <tabstop>tcpconnect</tabstop>
   <tabstop>workflows</tabstop>
