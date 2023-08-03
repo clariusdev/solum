@@ -434,7 +434,14 @@ After clicking the button, wait for the SSID to be published via BLE, then conne
             </widget>
            </item>
            <item row="4" column="1">
-            <widget class="QComboBox" name="probes"/>
+            <widget class="QLabel" name="tcpprobe">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <property name="text">
+              <string>(waiting for BLE connection)</string>
+             </property>
+            </widget>
            </item>
            <item row="3" column="2" colspan="2">
             <widget class="QPushButton" name="load">
@@ -1044,7 +1051,6 @@ After clicking the button, wait for the SSID to be published via BLE, then conne
  </customwidgets>
  <tabstops>
   <tabstop>_tabs</tabstop>
-  <tabstop>probes</tabstop>
   <tabstop>tcpconnect</tabstop>
   <tabstop>workflows</tabstop>
   <tabstop>load</tabstop>
@@ -1264,22 +1270,6 @@ After clicking the button, wait for the SSID to be published via BLE, then conne
     <hint type="destinationlabel">
      <x>253</x>
      <y>285</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>probes</sender>
-   <signal>currentTextChanged(QString)</signal>
-   <receiver>Solum</receiver>
-   <slot>onProbeSelected(QString)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>161</x>
-     <y>360</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>241</x>
-     <y>217</y>
     </hint>
    </hints>
   </connection>
@@ -1561,7 +1551,6 @@ After clicking the button, wait for the SSID to be published via BLE, then conne
   <slot>onImaging()</slot>
   <slot>onLoad()</slot>
   <slot>onUpdate()</slot>
-  <slot>onProbeSelected(QString)</slot>
   <slot>decDepth()</slot>
   <slot>incDepth()</slot>
   <slot>tgcTop(int)</slot>
