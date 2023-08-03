@@ -278,7 +278,7 @@ public slots:
     void onRing();
     void onWiFi();
     void onAp();
-    void onConnect();
+    void onTcpConnect();
     void onImaging();
     void onUpdate();
     void onLoad();
@@ -302,7 +302,7 @@ public slots:
     void tgcBottom(int);
 
 private:
-    bool connected_;                ///< connection state
+    bool tcpConnected_ = false;     ///< TCP connection state
     bool imaging_;                  ///< imaging state
     bool teeConnected_;             ///< tee connected state
     QString tcpConnectedProbe_;     ///< serial of the probe connected via TCP

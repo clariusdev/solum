@@ -7,7 +7,7 @@ static Solum* _me;
 
 /// default constructor
 /// @param[in] parent the parent object
-Solum::Solum(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_(false), teeConnected_(false)
+Solum::Solum(QWidget *parent) : QMainWindow(parent), imaging_(false), teeConnected_(false)
 {
     _me = this;
     ui_.setupUi(this);
@@ -23,7 +23,7 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_
                      .arg(portValidator_->bottom())
                      .arg(portValidator_->top());
 
-    connectPortChanged(ui_.port, ui_.connect);
+    connectPortChanged(ui_.port, ui_.tcpconnect);
 
     // UI polish handlers
     connect(ui_.token, &QLineEdit::textChanged, [this](auto& text)
@@ -297,7 +297,7 @@ void Solum::loadApplications(const QStringList& apps)
 /// called when the window is closing to clean up the library
 void Solum::closeEvent(QCloseEvent*)
 {
-    if (connected_)
+    if (tcpConnected_)
         solumDisconnect();
 }
 
@@ -500,9 +500,9 @@ void Solum::setConnected(CusConnection res, int port, const QString& msg)
     if (res == ProbeConnected)
     {
         timer_.start(1000);
-        connected_ = true;
+        tcpConnected_ = true;
         addStatus(tr("Connected on port: %1").arg(port));
-        ui_.connect->setText("Disconnect");
+        ui_.tcpconnect->setText(tr("Disconnect"));
         ui_.update->setEnabled(true);
         ui_.load->setEnabled(true);
 
@@ -518,9 +518,9 @@ void Solum::setConnected(CusConnection res, int port, const QString& msg)
     else if (res == ProbeDisconnected)
     {
         timer_.stop();
-        connected_ = false;
+        tcpConnected_ = false;
         addStatus(tr("Disconnected"));
-        ui_.connect->setText(tr("Connect"));
+        ui_.tcpconnect->setText(tr("Connect"));
         ui_.probeStatus->clear();
         ui_.imaging->setEnabled(false);
         ui_.update->setEnabled(false);
@@ -599,12 +599,12 @@ void Solum::imagingState(CusImagingState state, bool imaging)
     ui_.tgcbottom->setEnabled((ready && !ag) ? true : false);
     ui_.modes->setEnabled(ready ? true : false);
 
-    if (!imaging || !connected_)
+    if (!imaging || !tcpConnected_)
         ui_.imaging->setLabels(tr("Run"), tr("Starting imaging..."));
     else
         ui_.imaging->setLabels(tr("Stop"), tr("Stopping imaging..."));
 
-    if (connected_)
+    if (tcpConnected_)
     {
         if (imaging_ != imaging)
             ui_.imaging->ready();
@@ -758,9 +758,9 @@ void Solum::reflectCertification()
 }
 
 /// called when the connect/disconnect button is clicked
-void Solum::onConnect()
+void Solum::onTcpConnect()
 {
-    if (!connected_)
+    if (!tcpConnected_)
     {
         if (solumConnect(ui_.ip->text().toStdString().c_str(), ui_.port->text().toInt()) < 0)
             addStatus(tr("Connection failed"));
@@ -780,7 +780,7 @@ void Solum::onConnect()
 /// handles starting and stopping imaging with the selected workflow
 void Solum::onImaging()
 {
-    if (!connected_)
+    if (!tcpConnected_)
         return;
 
     if (solumRun(imaging_ ? 0 : 1) < 0)
@@ -796,7 +796,7 @@ void Solum::onImaging()
 /// initiates a software update
 void Solum::onUpdate()
 {
-    if (!connected_)
+    if (!tcpConnected_)
         return;
 
     auto filePath = QFileDialog::getOpenFileName(this,
@@ -822,7 +822,7 @@ void Solum::onUpdate()
 /// initiates a workflow load
 void Solum::onLoad()
 {
-    if (!connected_)
+    if (!tcpConnected_)
         return;
 
     // capture the currently selected one, just in case the user changes it

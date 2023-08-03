@@ -415,7 +415,7 @@ After clicking the button, wait for the SSID to be published via BLE, then conne
          </widget>
         </item>
         <item row="1" column="2" colspan="2">
-         <widget class="QPushButton" name="connect">
+         <widget class="QPushButton" name="tcpconnect">
           <property name="text">
            <string>Connect</string>
           </property>
@@ -1035,7 +1035,7 @@ After clicking the button, wait for the SSID to be published via BLE, then conne
   <tabstop>ip</tabstop>
   <tabstop>port</tabstop>
   <tabstop>probes</tabstop>
-  <tabstop>connect</tabstop>
+  <tabstop>tcpconnect</tabstop>
   <tabstop>workflows</tabstop>
   <tabstop>load</tabstop>
   <tabstop>imaging</tabstop>
@@ -1418,10 +1418,10 @@ After clicking the button, wait for the SSID to be published via BLE, then conne
    </hints>
   </connection>
   <connection>
-   <sender>connect</sender>
+   <sender>tcpconnect</sender>
    <signal>clicked()</signal>
    <receiver>Solum</receiver>
-   <slot>onConnect()</slot>
+   <slot>onTcpConnect()</slot>
    <hints>
     <hint type="sourcelabel">
      <x>478</x>
@@ -1547,7 +1547,7 @@ After clicking the button, wait for the SSID to be published via BLE, then conne
   </connection>
  </connections>
  <slots>
-  <slot>onConnect()</slot>
+  <slot>onTcpConnect()</slot>
   <slot>onImaging()</slot>
   <slot>onLoad()</slot>
   <slot>onUpdate()</slot>
