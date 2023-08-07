@@ -97,6 +97,9 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), imaging_(false), teeConnect
             return;
         }
 
+        const size_t previouslyCertifiedCount = certified_.size();
+        size_t newlyCertifiedCount = 0;
+
         certified_.clear();
         auto json = doc.object();
         if (json.contains("results") && json["results"].isArray())
@@ -127,7 +130,11 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), imaging_(false), teeConnect
                 if (!serial.isEmpty() && !probeData.crt.isEmpty() && !probeData.model.isEmpty())
                 {
                     settings_->beginGroup(serial);
-                    settings_->setValue("crt", probeData.crt);
+                    if (settings_->value("crt") != probeData.crt)
+                    {
+                        settings_->setValue("crt", probeData.crt);
+                        newlyCertifiedCount++;
+                    }
                     settings_->setValue("model", probeData.model);
                     certified_[serial] = probeData;
                     settings_->endGroup();
@@ -135,7 +142,21 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), imaging_(false), teeConnect
             }
             settings_->endGroup();
 
-            addStatus(tr("(Cloud) Found %1 valid OEM probes").arg(certified_.size()));
+            if (previouslyCertifiedCount == 0)
+            {
+                if (newlyCertifiedCount == 0)
+                    addStatus(tr("(Cloud) Found no valid OEM probes"));
+                else
+                   addStatus(tr("(Cloud) Found %1 valid OEM probes").arg(certified_.size()));
+            }
+            else
+            {
+                if (newlyCertifiedCount == 0)
+                    addStatus(tr("(Cloud) Stored certificates are recent enough, not renewed"));
+                else
+                    addStatus(tr("(Cloud) Renewed certificates for %1 probes").arg(newlyCertifiedCount));
+            }
+
             reflectCertification();
         }
     });
