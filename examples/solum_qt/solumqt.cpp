@@ -161,6 +161,11 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), imaging_(false), teeConnect
         }
     });
 
+    connect(ui_.bleprobes, &QComboBox::currentTextChanged, [this](const auto& probe)
+    {
+        ui_.bleconnect->setEnabled(probe != this->bleConnectedProbe_);
+    });
+
     QObject::connect(reset, &QPushButton::clicked, [this]()
     {
         render_->reset();
@@ -205,6 +210,9 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), imaging_(false), teeConnect
         {
             addStatus("(BLE) Service discovery finished");
             ui_.bleconnect->ready();
+
+            ui_.bleconnect->setEnabled(probe != ui_.bleprobes->currentText());
+
             ui_.tcpbox->setTitle(tr("Connection to %1").arg(probe));
             ui_.tcpbox->setEnabled(true);
             bleConnectedProbe_ = probe;
