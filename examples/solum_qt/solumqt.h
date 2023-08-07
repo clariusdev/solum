@@ -255,6 +255,7 @@ private:
     void newRfImage(const void* rf, int l, int s, int ss);
     void reflectCertification();
     void reflectProbeModelAndWorkflows();
+    void reflectMode(CusMode m);
     void setConnected(CusConnection res, int port, const QString& msg);
     void certification(int daysValid);
     void poweringDown(CusPowerDown res, int tm);

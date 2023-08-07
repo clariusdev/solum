@@ -49,12 +49,7 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), imaging_(false), teeConnect
     ui_.render->addWidget(reset);
     render_->init(QStringLiteral("scanner.obj"));
     render_->show();
-    ui_.cfigain->setVisible(false);
-    ui_.velocity->setVisible(false);
-    ui_.opacity->setVisible(false);
-    ui_.rfzoom->setVisible(false);
-    ui_.rfStream->setVisible(false);
-    ui_.split->setVisible(false);
+    reflectMode(BMode);
     ui_._tabs->setTabEnabled(ui_._tabs->indexOf(ui_._3d), false);
 
     settings_ = std::make_unique<QSettings>(QStringLiteral("settings.ini"), QSettings::IniFormat);
@@ -906,6 +901,20 @@ void Solum::reflectProbeModelAndWorkflows()
     }
 }
 
+/// shows or hides parameter widgets depending on the given mode
+/// @param[in] m an imaging mode
+void Solum::reflectMode(CusMode m)
+{
+    spectrum_->setVisible(m == MMode || m == PwMode);
+    signal_->setVisible(m == RfMode);
+    ui_.cfigain->setVisible(m == ColorMode || m == PowerMode);
+    ui_.velocity->setVisible(m == ColorMode || m == PwMode);
+    ui_.opacity->setVisible(m == Strain);
+    ui_.rfzoom->setVisible(m == RfMode);
+    ui_.rfStream->setVisible(m == RfMode);
+    ui_.split->setVisible(m == ColorMode || m == PowerMode || m == Strain);
+}
+
 /// increases the depth
 void Solum::incDepth()
 {
@@ -1074,15 +1083,7 @@ void Solum::onMode(int mode)
         addStatus(tr("Error setting imaging mode"));
     else
     {
-        spectrum_->setVisible(m == MMode || m == PwMode);
-        signal_->setVisible(m == RfMode);
-        ui_.cfigain->setVisible(m == ColorMode || m == PowerMode);
-        ui_.velocity->setVisible(m == ColorMode || m == PwMode);
-        ui_.opacity->setVisible(m == Strain);
-        ui_.rfzoom->setVisible(m == RfMode);
-        ui_.rfStream->setVisible(m == RfMode);
-        ui_.split->setVisible(m == ColorMode || m == PowerMode || m == Strain);
-
+        reflectMode(m);
         updateVelocity(m);
     }
 }
