@@ -628,10 +628,7 @@ void Solum::imagingState(CusImagingState state, bool imaging)
     ui_.prescan->setEnabled(ready ? true : false);
     ui_.split->setEnabled(ready ? true : false);
     ui_.imu->setEnabled(ready ? true : false);
-    bool ag = ui_.autogain->isChecked();
-    ui_.tgctop->setEnabled((ready && !ag) ? true : false);
-    ui_.tgcmid->setEnabled((ready && !ag) ? true : false);
-    ui_.tgcbottom->setEnabled((ready && !ag) ? true : false);
+    ui_.tgc->setEnabled(ready && !ui_.autogain->isChecked());
     ui_.modes->setEnabled(ready ? true : false);
 
     if (!imaging || !tcpConnected_)

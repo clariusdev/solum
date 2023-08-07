@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>584</width>
-    <height>705</height>
+    <height>857</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -579,89 +579,6 @@ After clicking the button, wait for the SSID to be published via BLE, then conne
          </layout>
         </item>
         <item>
-         <layout class="QHBoxLayout" name="horizontalLayout">
-          <item>
-           <layout class="QVBoxLayout" name="verticalLayout_4">
-            <item>
-             <widget class="QSlider" name="tgctop">
-              <property name="enabled">
-               <bool>false</bool>
-              </property>
-              <property name="maximumSize">
-               <size>
-                <width>16777215</width>
-                <height>16777215</height>
-               </size>
-              </property>
-              <property name="minimum">
-               <number>-20</number>
-              </property>
-              <property name="maximum">
-               <number>20</number>
-              </property>
-              <property name="pageStep">
-               <number>5</number>
-              </property>
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QSlider" name="tgcmid">
-              <property name="enabled">
-               <bool>false</bool>
-              </property>
-              <property name="maximumSize">
-               <size>
-                <width>16777215</width>
-                <height>16777215</height>
-               </size>
-              </property>
-              <property name="minimum">
-               <number>-20</number>
-              </property>
-              <property name="maximum">
-               <number>20</number>
-              </property>
-              <property name="pageStep">
-               <number>5</number>
-              </property>
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QSlider" name="tgcbottom">
-              <property name="enabled">
-               <bool>false</bool>
-              </property>
-              <property name="maximumSize">
-               <size>
-                <width>16777215</width>
-                <height>16777215</height>
-               </size>
-              </property>
-              <property name="minimum">
-               <number>-20</number>
-              </property>
-              <property name="maximum">
-               <number>20</number>
-              </property>
-              <property name="pageStep">
-               <number>5</number>
-              </property>
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </item>
-         </layout>
-        </item>
-        <item>
          <layout class="QHBoxLayout" name="horizontalLayout_9">
           <item>
            <widget class="QCheckBox" name="prescan">
@@ -1000,6 +917,111 @@ After clicking the button, wait for the SSID to be published via BLE, then conne
          </layout>
         </item>
         <item>
+         <widget class="QGroupBox" name="tgc">
+          <property name="title">
+           <string>Time Gain Compensation</string>
+          </property>
+          <layout class="QFormLayout" name="_tgc_layout">
+           <item row="0" column="1">
+            <widget class="QSlider" name="tgctop">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>16777215</width>
+               <height>16777215</height>
+              </size>
+             </property>
+             <property name="minimum">
+              <number>-20</number>
+             </property>
+             <property name="maximum">
+              <number>20</number>
+             </property>
+             <property name="pageStep">
+              <number>5</number>
+             </property>
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QSlider" name="tgcmid">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>16777215</width>
+               <height>16777215</height>
+              </size>
+             </property>
+             <property name="minimum">
+              <number>-20</number>
+             </property>
+             <property name="maximum">
+              <number>20</number>
+             </property>
+             <property name="pageStep">
+              <number>5</number>
+             </property>
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QSlider" name="tgcbottom">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>16777215</width>
+               <height>16777215</height>
+              </size>
+             </property>
+             <property name="minimum">
+              <number>-20</number>
+             </property>
+             <property name="maximum">
+              <number>20</number>
+             </property>
+             <property name="pageStep">
+              <number>5</number>
+             </property>
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="0">
+            <widget class="QLabel" name="_tgctop_label">
+             <property name="text">
+              <string>Top</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="_tgcmid_label">
+             <property name="text">
+              <string>Middle</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="_tgcbottom_label">
+             <property name="text">
+              <string>Bottom</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
          <widget class="JobButton" name="imaging">
           <property name="enabled">
            <bool>false</bool>
@@ -1017,19 +1039,6 @@ After clicking the button, wait for the SSID to be published via BLE, then conne
            <bool>false</bool>
           </property>
          </widget>
-        </item>
-        <item>
-         <spacer name="_prmsspacer">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>20</width>
-            <height>40</height>
-           </size>
-          </property>
-         </spacer>
         </item>
        </layout>
       </widget>
@@ -1524,38 +1533,6 @@ After clicking the button, wait for the SSID to be published via BLE, then conne
     <hint type="destinationlabel">
      <x>271</x>
      <y>318</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>split</sender>
-   <signal>stateChanged(int)</signal>
-   <receiver>Solum</receiver>
-   <slot>onSplit(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>333</x>
-     <y>430</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>291</x>
-     <y>328</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>prescan</sender>
-   <signal>stateChanged(int)</signal>
-   <receiver>Solum</receiver>
-   <slot>onPrescan(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>100</x>
-     <y>443</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>291</x>
-     <y>328</y>
     </hint>
    </hints>
   </connection>
