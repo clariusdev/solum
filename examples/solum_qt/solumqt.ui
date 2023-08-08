@@ -949,14 +949,20 @@
  <layoutdefault spacing="6" margin="11"/>
  <tabstops>
   <tabstop>_tabs</tabstop>
-  <tabstop>update</tabstop>
   <tabstop>ip</tabstop>
+  <tabstop>port</tabstop>
+  <tabstop>probes</tabstop>
+  <tabstop>connect</tabstop>
+  <tabstop>workflows</tabstop>
+  <tabstop>load</tabstop>
+  <tabstop>freeze</tabstop>
+  <tabstop>update</tabstop>
+  <tabstop>modes</tabstop>
   <tabstop>decdepth</tabstop>
   <tabstop>incdepth</tabstop>
   <tabstop>tgctop</tabstop>
   <tabstop>tgcmid</tabstop>
   <tabstop>tgcbottom</tabstop>
-  <tabstop>modes</tabstop>
  </tabstops>
  <resources/>
  <connections>
