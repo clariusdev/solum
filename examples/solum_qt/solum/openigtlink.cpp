@@ -10,6 +10,18 @@ SolumIGTL::SolumIGTL()
         {
             emit clientConnected(true);
             clientConnectTimer_.stop();
+            fpsSignalTimer_.start(1000);
+        }
+    });
+
+    QObject::connect(&fpsSignalTimer_, &QTimer::timeout, [this]()
+    {
+        if (!imageTimer_.isValid())
+            emit msSinceLastFrame(0);
+        else
+        {
+            const auto elapsed = imageTimer_.elapsed();
+            emit msSinceLastFrame((elapsed >= 1000) ? elapsed : msSinceLastFrame_);
         }
     });
 }
@@ -68,11 +80,18 @@ void SolumIGTL::sendImage(const SolumImage& img, double micronsPerPixel)
     msg_->Pack();
     if (client_->Send(msg_->GetPackPointer(), msg_->GetPackSize()) == 0)
         reconnectClient();
+
+    if (!imageTimer_.isValid())
+        imageTimer_.start();
+    else
+        msSinceLastFrame_ = imageTimer_.restart();
 }
 
 void SolumIGTL::disconnectClient()
 {
     clientConnectTimer_.stop();
+    fpsSignalTimer_.stop();
+    imageTimer_.invalidate();
     if (client_)
         client_->CloseSocket();
     emit clientConnected(false);

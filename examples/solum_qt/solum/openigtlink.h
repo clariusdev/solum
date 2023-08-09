@@ -23,6 +23,7 @@ public:
 
 signals:
     void clientConnected(bool);
+    void msSinceLastFrame(qint64);
 
 private:
     void disconnectClient();
@@ -35,4 +36,12 @@ private:
 
     // Sharing an allocation for all images of the same size.
     igtl::ImageMessage::Pointer msg_;
+
+    // Periodically sends a msSinceLastFrame() signal.
+    QTimer fpsSignalTimer_;
+
+    // FPS timer
+    QElapsedTimer imageTimer_;
+
+    qint64 msSinceLastFrame_;
 };

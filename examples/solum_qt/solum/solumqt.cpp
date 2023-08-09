@@ -323,6 +323,13 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), imaging_(false), teeConnect
             ui_.igtlStatusClient->setText(tr("🟢 Client connected"));
         else
             ui_.igtlStatusClient->setText(tr("⌛ Waiting for client connection…"));
+        ui_.igtlStatusFPS->clear();
+    });
+
+    connect(&igtl_, &SolumIGTL::msSinceLastFrame, [this](auto ms)
+    {
+        const auto fps = ((ms == 0) ? 0 : (1000.0 / ms));
+        ui_.igtlStatusFPS->setText(tr("🎥 %1 fps").arg(fps, 0, 'f', 1));
     });
 
     imagingState(ImagingNotReady, false);
@@ -1167,6 +1174,7 @@ void Solum::onIGTLServe()
         igtl_.close();
         ui_.igtlStatusServer->setText(tr("🔴 Server is stopped"));
         ui_.igtlStatusClient->clear();
+        ui_.igtlStatusFPS->clear();
         ui_.igtlport->setEnabled(true);
         ui_.igtlserve->setText(tr("Serve"));
     }
