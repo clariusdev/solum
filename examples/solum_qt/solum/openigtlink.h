@@ -23,7 +23,7 @@ public:
 
 signals:
     void clientConnected(bool);
-    void msSinceLastFrame(qint64);
+    void msSinceLastFrame(double);
 
 private:
     void disconnectClient();
@@ -43,5 +43,5 @@ private:
     // FPS timer
     QElapsedTimer imageTimer_;
 
-    qint64 msSinceLastFrame_;
+    double msSinceLastFrame_;
 };

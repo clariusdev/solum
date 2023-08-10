@@ -10,6 +10,7 @@ SolumIGTL::SolumIGTL()
         {
             emit clientConnected(true);
             clientConnectTimer_.stop();
+            msSinceLastFrame_ = 0;
             fpsSignalTimer_.start(1000);
         }
     });
@@ -84,7 +85,12 @@ void SolumIGTL::sendImage(const SolumImage& img, double micronsPerPixel)
     if (!imageTimer_.isValid())
         imageTimer_.start();
     else
-        msSinceLastFrame_ = imageTimer_.restart();
+    {
+        constexpr double SMOOTHING = 0.75;
+        static_assert(SMOOTHING < 1.0);
+        msSinceLastFrame_ = ((msSinceLastFrame_ * SMOOTHING) +
+                             (imageTimer_.restart() * (1.0 - SMOOTHING)));
+    }
 }
 
 void SolumIGTL::disconnectClient()
