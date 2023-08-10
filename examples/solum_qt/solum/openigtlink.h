@@ -16,6 +16,7 @@ public:
     void close();
 
     void setNodeName(const QString& name);
+    void setFlip(bool flip);
     void sendImage(const SolumImage& img, double micronsPerPixel);
 
     bool isServing() const;
@@ -33,6 +34,7 @@ private:
     igtl::Socket::Pointer client_;
     QTimer clientConnectTimer_;
     std::string nodeName_;
+    bool flip_ = false;
 
     // Sharing an allocation for all images of the same size.
     igtl::ImageMessage::Pointer msg_;

@@ -80,6 +80,7 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), imaging_(false), teeConnect
         ui_.igtlport->setText(igtlport);
     auto igtlnode = settings_->value("OpenIGTLink/node").toString();
     ui_.igtlnode->setText(igtlnode.isEmpty() ? "Ultrasound" : igtlnode);
+    igtl_.setFlip(settings_->value("OpenIGTLink/flip").toBool());
 
     ui_.certtable->setColumnCount(4);
     ui_.certtable->setHorizontalHeaderLabels({tr("Serial number"),
@@ -1178,4 +1179,11 @@ void Solum::onIGTLServe()
         ui_.igtlport->setEnabled(true);
         ui_.igtlserve->setText(tr("Serve"));
     }
+}
+
+void Solum::onIGTLFlip(int check)
+{
+    const auto value = (check == Qt::Checked);
+    igtl_.setFlip(value);
+    settings_->setValue("OpenIGTLink/flip", value);
 }

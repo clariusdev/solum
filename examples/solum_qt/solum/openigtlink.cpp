@@ -47,6 +47,11 @@ void SolumIGTL::setNodeName(const QString &name)
     nodeName_ = name.toStdString();
 }
 
+void SolumIGTL::setFlip(bool flip)
+{
+    flip_ = flip;
+}
+
 void SolumIGTL::sendImage(const SolumImage& img, double micronsPerPixel)
 {
     if (!isClientConnected())
@@ -74,9 +79,25 @@ void SolumIGTL::sendImage(const SolumImage& img, double micronsPerPixel)
     const auto spacing = (micronsPerPixel / 1000.0);
     msg_->SetSpacing(spacing, spacing, 1.0f);
 
-    // Even C++23 does not have output ranges anyway...
-    // (https://thephd.dev/output-ranges)
-    memcpy(msg_->GetScalarPointer(), img.img_.data(), img.img_.size_bytes());
+    if (flip_)
+    {
+        // Copy the image upside down
+        const auto stride = (img.width_ * (img.bpp_ / 8));
+        auto* dst_row = reinterpret_cast<std::byte *>(msg_->GetScalarPointer());
+        auto* src_row = (img.img_.data() + img.img_.size_bytes() - stride);
+        for (int y = 0; y < img.height_; y++)
+        {
+            memcpy(dst_row, src_row, stride);
+            dst_row += stride;
+            src_row -= stride;
+        }
+    }
+    else
+    {
+        // Even C++23 does not have output ranges anyway...
+        // (https://thephd.dev/output-ranges)
+        memcpy(msg_->GetScalarPointer(), img.img_.data(), img.img_.size_bytes());
+    }
 
     msg_->Pack();
     if (client_->Send(msg_->GetPackPointer(), msg_->GetPackSize()) == 0)

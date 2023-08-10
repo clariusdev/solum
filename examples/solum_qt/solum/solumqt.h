@@ -310,6 +310,7 @@ public slots:
     void tgcMid(int);
     void tgcBottom(int);
     void onIGTLServe();
+    void onIGTLFlip(int check);
 
 private:
     QString bleConnectedProbe_;     ///< serial of the probe connected via BLE

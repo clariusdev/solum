@@ -1099,8 +1099,15 @@ After clicking the button, wait for the SSID to be published via BLE, then conne
           </property>
          </widget>
         </item>
-        <item row="1" column="1" colspan="2">
+        <item row="1" column="1">
          <widget class="QLineEdit" name="igtlnode"/>
+        </item>
+        <item row="1" column="2">
+         <widget class="QCheckBox" name="igtlflip">
+          <property name="text">
+           <string>Flip vertically</string>
+          </property>
+         </widget>
         </item>
         <item row="2" column="0" colspan="3">
          <layout class="QGridLayout">
@@ -1657,6 +1664,22 @@ After clicking the button, wait for the SSID to be published via BLE, then conne
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>igtlflip</sender>
+   <signal>stateChanged(int)</signal>
+   <receiver>Solum</receiver>
+   <slot>onIGTLFlip(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>onTcpConnect()</slot>
@@ -1690,5 +1713,6 @@ After clicking the button, wait for the SSID to be published via BLE, then conne
   <slot>onSplit(int)</slot>
   <slot>onPrescan(int)</slot>
   <slot>onIGTLServe()</slot>
+  <slot>onIGTLFlip(int)</slot>
  </slots>
 </ui>
