@@ -629,7 +629,14 @@ void Solum::imagingState(CusImagingState state, bool imaging)
     ui_.split->setEnabled(ready ? true : false);
     ui_.imu->setEnabled(ready ? true : false);
     ui_.tgc->setEnabled(ready && !ui_.autogain->isChecked());
-    ui_.modes->setEnabled(ready ? true : false);
+
+    ui_.modes->setEnabled(imaging ? true : false);
+    if (!imaging)
+    {
+        ui_.modes->blockSignals(true);
+        ui_.modes->setCurrentText(QStringLiteral("B"));
+        ui_.modes->blockSignals(false);
+    }
 
     if (!imaging || !tcpConnected_)
         ui_.imaging->setLabels(tr("Run"), tr("Starting imaging..."));
