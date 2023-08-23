@@ -265,6 +265,7 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), imaging_(false), teeConnect
         auto ip = getField(QStringLiteral("ip4:"));
         auto port = getField(QStringLiteral("ctl:"));
         auto ssid = getField(QStringLiteral("ssid:"));
+        auto pw = getField(QStringLiteral("pw:"));
         if (!ip.isEmpty() && !port.isEmpty())
         {
             ui_.ip->setEnabled(true);
@@ -272,7 +273,10 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), imaging_(false), teeConnect
             ui_.port->setEnabled(true);
             ui_.port->setText(port);
             ui_.tcpconnect->setEnabled(true);
-            addStatus(tr("Wi-Fi: %1 (%2) [SSID: %3]").arg(ip).arg(port).arg(ssid));
+            if (!pw.isEmpty())
+                addStatus(tr("Wi-Fi: %1 (%2) [SSID: %3, Password: %4]").arg(ip).arg(port).arg(ssid).arg(pw));
+            else
+                addStatus(tr("Wi-Fi: %1 (%2) [SSID: %3]").arg(ip).arg(port).arg(ssid));
         }
     });
 
