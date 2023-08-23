@@ -1,6 +1,6 @@
 #pragma once
 
-#include <solum/solum_def.h>
+#include "image.h"
 
 /// ultrasound image display
 class UltrasoundImage : public QGraphicsView
@@ -9,7 +9,7 @@ class UltrasoundImage : public QGraphicsView
 public:
     explicit UltrasoundImage(bool overlay, QWidget*);
 
-    void loadImage(const void* img, int w, int h, int bpp, CusImageFormat format, int sz);
+    void loadImage(const SolumImage& img);
     void setDepth(double d) { depth_ = d; }
     void checkRoi();
     void checkGate();
@@ -87,7 +87,7 @@ class Prescan : public QGraphicsView
 public:
     explicit Prescan(QWidget*);
 
-    void loadImage(const void* img, int w, int h, int bpp, CusImageFormat format, int sz);
+    void loadImage(const SolumImage& img);
 
 protected:
     virtual void drawForeground(QPainter*, const QRectF&) override;

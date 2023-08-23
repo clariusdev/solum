@@ -2,7 +2,7 @@
 
 #include "ble.h"
 #include "ui_solumqt.h"
-#include <solum/solum_def.h>
+#include "image.h"
 
 class UltrasoundImage;
 class Spectrum;
@@ -98,25 +98,15 @@ namespace event
     public:
         /// default constructor
         /// @param[in] evt the event type
-        /// @param[in] data the image data
-        /// @param[in] w the image width
-        /// @param[in] h the image height
-        /// @param[in] bpp the image bits per pixel
-        /// @param[in] format the image format
-        /// @param[in] sz total size of the image
+        /// @param[in] img the image
         /// @param[in] overlay flag if the image came from a separated overlay
         /// @param[in] imu latest imu data if sent
-        Image(QEvent::Type evt, const void* data, int w, int h, int bpp, CusImageFormat format, int sz, bool overlay, const QQuaternion& imu) : QEvent(evt),
-            data_(data), width_(w), height_(h), bpp_(bpp), format_(format), size_(sz), overlay_(overlay), imu_(imu) { }
+        Image(QEvent::Type evt, const SolumImage& img, bool overlay, const QQuaternion& imu) :
+            QEvent(evt), img_(img), overlay_(overlay), imu_(imu) { }
 
-        const void* data_;      ///< pointer to the image data
-        int width_;             ///< width of the image
-        int height_;            ///< height of the image
-        int bpp_ ;              ///< bits per pixel
-        CusImageFormat format_; ///< image format
-        int size_;              ///< total size of image
+        SolumImage img_;
         bool overlay_;          ///< flag if the image came from a separated overlay
-        QQuaternion imu_;       ///< latest imu position
+        QQuaternion imu_;   ///< latest imu position
     };
 
     /// wrapper for new spectrum events that can be posted from the api callbacks
@@ -142,14 +132,15 @@ namespace event
     {
     public:
         /// default constructor
-        /// @param[in] data the rf data
-        /// @param[in] l # of rf lines
-        /// @param[in] s # of samples per line
-        /// @param[in] bps bits per sample
-        /// @param[in] sz total size of the image
+        /// @param[in] img the rf image
         /// @param[in] lateral lateral spacing between lines
         /// @param[in] axial sample size
-        RfImage(const void* data, int l, int s, int bps, int sz, double lateral, double axial) : Image(RF_EVENT, data, l, s, bps, Uncompressed, sz, false, QQuaternion()), lateral_(lateral), axial_(axial) { }
+        RfImage(SolumImage img, double lateral, double axial) :
+            Image(RF_EVENT, img, false, QQuaternion()),
+            lateral_(lateral),
+            axial_(axial)
+        {
+        }
 
         double lateral_;    ///< spacing between each line
         double axial_;      ///< sample size

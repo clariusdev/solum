@@ -6,7 +6,7 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Qt6 REQUIRED COMPONENTS Core Gui 3DExtras Bluetooth Widgets)
@@ -22,7 +22,7 @@ set_target_properties(SOLUM_SDK PROPERTIES
 
 qt_add_executable(solum_qt
     main.cpp solumqt.cpp ble.cpp display.cpp 3d.cpp jobbutton.cpp
-    solumqt.h ble.h display.h 3d.h jobbutton.h
+    solumqt.h ble.h display.h 3d.h image.h jobbutton.h
     solum.qrc
     solumqt.ui
 )

@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
         // new image callback
         [](const void* img, const CusProcessedImageInfo* nfo, int npos, const CusPosInfo* pos)
         {
-            int sz = nfo->imageSize;
+            size_t sz = nfo->imageSize;
             // we need to perform a deep copy of the image data since we have to post the event (yes this happens a lot with this api)
             if (_image.size() < static_cast<size_t>(sz))
                 _image.resize(sz);
@@ -85,20 +85,35 @@ int main(int argc, char *argv[])
             if (npos && pos)
                 imu = QQuaternion(static_cast<float>(pos[0].qw), static_cast<float>(pos[0].qx), static_cast<float>(pos[0].qy), static_cast<float>(pos[0].qz));
 
-            QApplication::postEvent(_solum.get(), new event::Image(IMAGE_EVENT, _image.data(), nfo->width, nfo->height, nfo->bitsPerPixel, nfo->format, sz, nfo->overlay, imu));
+            SolumImage solumImage = {
+                .img_ = { reinterpret_cast<uint8_t *>(_image.data()), sz },
+                .width_ = nfo->width,
+                .height_ = nfo->height,
+                .bpp_ = nfo->bitsPerPixel,
+                .format_ = nfo->format,
+            };
+
+            QApplication::postEvent(_solum.get(), new event::Image(IMAGE_EVENT, solumImage, nfo->overlay, imu));
         },
         // new raw data callback
         [](const void* data, const CusRawImageInfo* nfo, int, const CusPosInfo*)
         {
+            SolumImage solumImage = {
+                .width_ = nfo->lines,
+                .height_ = nfo->samples,
+                .bpp_ = nfo->bitsPerSample,
+                .format_ = nfo->jpeg ? Jpeg : Uncompressed8Bit,
+            };
+
             // we need to perform a deep copy of the image data since we have to post the event (yes this happens a lot with this api)
-            int sz = nfo->lines * nfo->samples * (nfo->bitsPerSample / 8);
+            size_t sz = nfo->lines * nfo->samples * (nfo->bitsPerSample / 8);
             if (nfo->rf)
             {
                 if (_rfData.size() < static_cast<size_t>(sz))
                     _rfData.resize(sz);
                 memcpy(_rfData.data(), data, sz);
-                QApplication::postEvent(_solum.get(), new event::RfImage(_rfData.data(), nfo->lines, nfo->samples, nfo->bitsPerSample, sz,
-                                                                            nfo->lateralSize, nfo->axialSize));
+                solumImage.img_ = { reinterpret_cast<uint8_t *>(_rfData.data()), sz },
+                QApplication::postEvent(_solum.get(), new event::RfImage(solumImage, nfo->lateralSize, nfo->axialSize));
             }
             else
             {
@@ -108,8 +123,8 @@ int main(int argc, char *argv[])
                 if (_prescanImage.size() < static_cast<size_t>(sz))
                     _prescanImage.resize(sz);
                 memcpy(_prescanImage.data(), data, sz);
-                QApplication::postEvent(_solum.get(), new event::Image(PRESCAN_EVENT, _prescanImage.data(), nfo->lines, nfo->samples,
-                                                                       nfo->bitsPerSample, nfo->jpeg ? Jpeg : Uncompressed8Bit, sz, false, QQuaternion()));
+                solumImage.img_ = { reinterpret_cast<uint8_t *>(_prescanImage.data()), sz },
+                QApplication::postEvent(_solum.get(), new event::Image(PRESCAN_EVENT, solumImage, false, QQuaternion()));
             }
         },
         // new spectrum callback

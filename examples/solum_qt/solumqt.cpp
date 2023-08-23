@@ -704,9 +704,9 @@ void Solum::setProgress(int progress)
 void Solum::newProcessedImage(const event::Image& evt)
 {
     if (evt.overlay_)
-        image2_->loadImage(evt.data_, evt.width_, evt.height_, evt.bpp_, evt.format_, evt.size_);
+        image2_->loadImage(evt.img_);
     else
-        image_->loadImage(evt.data_, evt.width_, evt.height_, evt.bpp_, evt.format_, evt.size_);
+        image_->loadImage(evt.img_);
 
     if (!evt.imu_.isNull())
         render_->update(evt.imu_);
@@ -716,7 +716,7 @@ void Solum::newProcessedImage(const event::Image& evt)
 /// @param[in] evt the pre-scan image event
 void Solum::newPrescanImage(const event::Image& evt)
 {
-    prescan_->loadImage(evt.data_, evt.width_, evt.height_, evt.bpp_, evt.format_, evt.size_);
+    prescan_->loadImage(evt.img_);
 }
 
 /// called when a new spectrum image has been sent
@@ -730,7 +730,7 @@ void Solum::newSpectrumImage(const event::SpectrumImage& evt)
 /// @param[in] evt the RF image event
 void Solum::newRfImage(const event::RfImage& evt)
 {
-    signal_->loadSignal(evt.data_, evt.width_, evt.height_, evt.bpp_ / 8);
+    signal_->loadSignal(evt.img_.img_.data(), evt.img_.width_, evt.img_.height_, evt.img_.bpp_ / 8);
 }
 
 void Solum::reflectCertification()

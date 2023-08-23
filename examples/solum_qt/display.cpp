@@ -19,34 +19,29 @@ UltrasoundImage::UltrasoundImage(bool overlay, QWidget* parent) : QGraphicsView(
 }
 
 /// loads a new image from raw data
-/// @param[in] img the new image data
-/// @param[in] w the image width
-/// @param[in] h the image height
-/// @param[in] bpp bits per pixel
-/// @param[in] format the image format
-/// @param[in] sz size of image in bytes
-void UltrasoundImage::loadImage(const void* img, int w, int h, int bpp, CusImageFormat format, int sz)
+/// @param[in] imgNew the new image
+void UltrasoundImage::loadImage(const SolumImage& imgNew)
 {
     // check for size match
-    if (image_.width() != w || image_.height() != h)
+    if (image_.width() != imgNew.width_ || image_.height() != imgNew.height_)
         return;
 
     // ensure the qimage format matches
-    if (format == Uncompressed8Bit && image_.format() != QImage::Format_Grayscale8)
+    if (imgNew.format_ == Uncompressed8Bit && image_.format() != QImage::Format_Grayscale8)
         image_.convertTo(QImage::Format_Grayscale8);
-    else if (format != Uncompressed8Bit && image_.format() != QImage::Format_ARGB32)
+    else if (imgNew.format_ != Uncompressed8Bit && image_.format() != QImage::Format_ARGB32)
         image_.convertTo(QImage::Format_ARGB32);
 
     // set the image data
     lock_.lock();
     // check that the size matches the dimensions (uncompressed)
-    if (sz >= (w * h * (bpp / 8)))
-        memcpy(image_.bits(), img, w * h * (bpp / 8));
+    if (imgNew.img_.size_bytes() == size_t(imgNew.width_ * imgNew.height_ * (imgNew.bpp_ / 8)))
+        memcpy(image_.bits(), imgNew.img_.data(), imgNew.img_.size_bytes());
     // try to load jpeg
-    else if (format == Jpeg)
-        image_.loadFromData(static_cast<const uchar*>(img), sz, "JPG");
-    else if (format == Png)
-        image_.loadFromData(static_cast<const uchar*>(img), sz, "PNG");
+    else if (imgNew.format_ == Jpeg)
+        image_.loadFromData(imgNew.img_.data(), imgNew.img_.size_bytes(), "JPG");
+    else if (imgNew.format_ == Png)
+        image_.loadFromData(imgNew.img_.data(), imgNew.img_.size_bytes(), "PNG");
     lock_.unlock();
 
     // redraw
@@ -447,21 +442,21 @@ Prescan::Prescan(QWidget* parent) : QGraphicsView(parent)
 /// @param[in] w width of image (aka # of spectrum lines)
 /// @param[in] h height of image (aka # of spectrum samples)
 /// @param[in] bpp bits per pixel (aka bits per sample)
-void Prescan::loadImage(const void* img, int w, int h, int bpp, CusImageFormat format, int sz)
+void Prescan::loadImage(const SolumImage& img)
 {
     lock_.lock();
 
     // check for size match
-    if (image_.width() != h || image_.height() != w)
+    if (image_.width() != img.height_ || image_.height() != img.width_)
     {
-        image_ = QImage(h, w, QImage::Format_Grayscale8);
+        image_ = QImage(img.height_, img.width_, QImage::Format_Grayscale8);
         image_.fill(Qt::black);
     }
 
-    if (format == Jpeg)
-        image_.loadFromData(static_cast<const uchar*>(img), sz, "JPG");
+    if (img.format_ == Jpeg)
+        image_.loadFromData(img.img_.data(), img.img_.size_bytes(), "JPG");
     else
-        memcpy(image_.bits(), img, w * h * (bpp / 8));
+        memcpy(image_.bits(), img.img_.data(), img.img_.size_bytes());
 
     lock_.unlock();
 
