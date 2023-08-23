@@ -93,7 +93,9 @@ int main(int argc, char *argv[])
                 .format_ = nfo->format,
             };
 
-            QApplication::postEvent(_solum.get(), new event::ProcessedImage(IMAGE_EVENT, solumImage, nfo->overlay, imu));
+            QApplication::postEvent(_solum.get(), new event::ProcessedImage(
+                IMAGE_EVENT, solumImage, nfo->overlay, imu, nfo->micronsPerPixel, nfo->originX, nfo->originY
+            ));
         },
         // new raw data callback
         [](const void* data, const CusRawImageInfo* nfo, int, const CusPosInfo*)

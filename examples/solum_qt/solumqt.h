@@ -134,10 +134,13 @@ namespace event
        /// @param[in] img the image data
        /// @param[in] overlay flag if the image came from a separated overlay
        /// @param[in] imu latest imu data if sent
-       ProcessedImage(QEvent::Type evt, const SolumImage& img, bool overlay, const QQuaternion& imu) :
-            Image(evt, img, overlay), imu_(imu) { }
+       ProcessedImage(QEvent::Type evt, const SolumImage& img, bool overlay, const QQuaternion& imu, double mpp, double originX, double originY) :
+            Image(evt, img, overlay), imu_(imu), micronsPerPixel_(mpp), originX_(originX), originY_(originY) { }
 
-       QQuaternion imu_;   ///< latest imu position
+       QQuaternion imu_;        ///< latest imu position
+       double micronsPerPixel_; ///< Microns per pixel (always 1:1 aspect ratio axially/laterally)
+       double originX_;         ///< Image origin in microns in the horizontal axis
+       double originY_;         ///< Image origin in microns in the vertical axis
     };
 
     /// wrapper for new rf events that can be posted from the api callbacks
