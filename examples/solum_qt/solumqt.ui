@@ -694,7 +694,7 @@ After clicking the button, wait for the SSID to be published via BLE, then conne
                <enum>QFrame::StyledPanel</enum>
               </property>
               <property name="text">
-               <string>Max: 0 cm</string>
+               <string>Range: 0 - 0 cm</string>
               </property>
               <property name="alignment">
                <set>Qt::AlignCenter</set>

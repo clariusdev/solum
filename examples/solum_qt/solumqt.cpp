@@ -882,7 +882,9 @@ void Solum::onLoad()
             CusRange range;
             if (solumGetRange(ImageDepth, &range) == 0)
             {
-                ui_.maxdepth->setText(QStringLiteral("Max: %1cm").arg(range.max));
+                ui_.maxdepth->setText(
+                    tr("Range: %1 - %2cm").arg(range.min).arg(range.max)
+                );
                 activeWorkflow_ = workflow;
             }
         });
