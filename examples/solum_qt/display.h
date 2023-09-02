@@ -30,6 +30,7 @@ private:
     QVector<QLineF> gate_;  ///< gate lines to draw
     QImage image_;          ///< the image buffer
     QMutex lock_;           ///< locking mechanism
+    QMutex saveLock_;       ///< separate lock for the save dialog
 };
 
 /// spectrum display

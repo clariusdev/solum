@@ -16,12 +16,35 @@ UltrasoundImage::UltrasoundImage(bool overlay, QWidget* parent) : QGraphicsView(
     QSizePolicy p(QSizePolicy::Preferred, QSizePolicy::Preferred);
     p.setHeightForWidth(true);
     setSizePolicy(p);
+
+    auto* snapshot = new QToolButton(this);
+    snapshot->setText("💾");
+    snapshot->setToolTip("Saves the current ultrasound image to a PNG file.");
+    snapshot->setStyleSheet("QToolButton {"
+        "border: none;" // also hides the background?
+        "font-size: 16px;"
+    "}");
+    QObject::connect(snapshot, &QToolButton::clicked, [this]()
+    {
+        QMutexLocker locker(&saveLock_);
+        QString fileName = QFileDialog::getSaveFileName(
+            this, tr("Save Image File"), QString(), tr("Images (*.png)"));
+        if (!fileName.isEmpty()) {
+            image_.save(fileName);
+        }
+    });
 }
 
 /// loads a new image from raw data
 /// @param[in] imgNew the new image
 void UltrasoundImage::loadImage(const SolumImage& imgNew)
 {
+    // If we're in the process of saving the image, we throw this one away to
+    // make sure that the image saved is the same that the user saw when
+    // clicking the 💾 button.
+    if (!saveLock_.try_lock())
+        return;
+
     // check for size match
     if (image_.width() != imgNew.width_ || image_.height() != imgNew.height_)
         return;
@@ -43,6 +66,7 @@ void UltrasoundImage::loadImage(const SolumImage& imgNew)
     else if (imgNew.format_ == Png)
         image_.loadFromData(imgNew.img_.data(), imgNew.img_.size_bytes(), "PNG");
     lock_.unlock();
+    saveLock_.unlock();
 
     // redraw
     scene()->invalidate();
