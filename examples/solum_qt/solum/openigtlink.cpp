@@ -65,7 +65,8 @@ void SolumIGTL::sendImage(const SolumImage& img, double micronsPerPixel)
     {
         msg_->SetDimensions(img.width_, img.height_, 1);
         msg_->SetOrigin(0, 0, 0);
-        msg_->SetScalarType(igtl::ImageMessage::TYPE_UINT32);
+        msg_->SetScalarType(igtl::ImageMessage::TYPE_UINT8);
+        msg_->SetNumComponents(4);
         msg_->SetSubVolume(img.width_, img.height_, 1, 0, 0, 0); // determines the buffer size!
         msg_->SetDeviceName(nodeName_);
         msg_->AllocateScalars();
