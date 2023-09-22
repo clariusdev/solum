@@ -257,7 +257,9 @@ void processEventLoop(std::atomic_bool& quit)
         }
         else if (cmd == "U" || cmd == "u")
         {
-            if (solumSoftwareUpdate(swUpdateFn, progressFn, 0) < 0)
+            PRINT << "enter firmware path: ";
+            std::getline(std::cin, buf1);
+            if (solumSoftwareUpdate(buf1.c_str(), swUpdateFn, progressFn, 0) < 0)
                 ERROR << "error requesting software update";
         }
         else if (cmd == "G" || cmd == "g")

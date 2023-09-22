@@ -17,6 +17,7 @@ import me.clarius.sdk.solum.example.bluetooth.ProbeWifi;
 public class BluetoothViewModel extends ViewModel {
     private final ObservableList<Probe> probes = new ObservableArrayList<>();
     private final MutableLiveData<ProbeWifi> probeWifi = new MutableLiveData<>();
+    private final MutableLiveData<String> probeSerial = new MutableLiveData<>();
 
     private static int findIndex(List<Probe> devices, String deviceName) {
         return IntStream.range(0, devices.size()).filter(i -> devices.get(i).getDeviceName().equals(deviceName)).findFirst().orElse(-1);
@@ -49,13 +50,19 @@ public class BluetoothViewModel extends ViewModel {
 
     public Bundle makeProbeInfoBundle() {
         ProbeWifi wifi = probeWifi.getValue();
-        if (null == wifi) return new Bundle();
+        String serial = probeSerial.getValue();
+        if (null == wifi || null == serial) return new Bundle();
         Bundle fields = new Bundle();
         fields.putString("wifi_ssid", wifi.ssid);
         fields.putString("wifi_passphrase", wifi.passphrase);
         fields.putString("ip_address", wifi.ip);
         fields.putInt("tcp_port", wifi.port);
         fields.putString("mac_address", wifi.mac);
+        fields.putString("serial", serial.substring(4));
         return fields;
+    }
+
+    public void updateProbeSerial(String deviceName) {
+        probeSerial.postValue(deviceName);
     }
 }

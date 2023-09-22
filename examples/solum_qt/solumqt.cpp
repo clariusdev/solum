@@ -10,17 +10,22 @@ static Solum* _me;
 
 /// default constructor
 /// @param[in] parent the parent object
-Solum::Solum(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_(false), ui_(new Ui::Solum)
+Solum::Solum(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_(false), teeConnected_(false), ui_(new Ui::Solum)
 {
     _me = this;
     ui_->setupUi(this);
     setWindowIcon(QIcon(":/res/logo.png"));
-    image_ = new UltrasoundImage(this);
+    image_ = new UltrasoundImage(false, this);
+    image2_ = new UltrasoundImage(true, this);
+    image2_->setVisible(false);
     spectrum_ = new Spectrum(this);
     signal_ = new RfSignal(this);
+    prescan_ = new Prescan(this);
     ui_->image->addWidget(image_);
+    ui_->image->addWidget(prescan_);
     ui_->image->addWidget(spectrum_);
     ui_->image->addWidget(signal_);
+    ui_->image2->addWidget(image2_);
     render_ = new ProbeRender(QGuiApplication::primaryScreen());
     ui_->render->addWidget(QWidget::createWindowContainer(render_));
     auto reset = new QPushButton(QStringLiteral("Reset"), this);
@@ -32,6 +37,7 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_
     ui_->opacity->setVisible(false);
     ui_->rfzoom->setVisible(false);
     ui_->rfStream->setVisible(false);
+    ui_->split->setVisible(false);
     ui_->_tabs->setTabEnabled(IMU_TAB, false);
 
     settings_ = std::make_unique<QSettings>(QStringLiteral("settings.ini"), QSettings::IniFormat);
@@ -111,8 +117,12 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_
         CusStatusInfo st;
         if (solumStatusInfo(&st) == 0)
         {
-            ui_->probeStatus->setText(QStringLiteral("Battery: %1%, Temp: %2%, FR: %3 Hz")
-                .arg(st.battery).arg(st.temperature).arg(QString::number(st.frameRate, 'f', 0)));
+            QString teeTime;
+            if (teeConnected_)
+                teeTime = QStringLiteral(", TEE: %1%").arg(st.teeTimeRemaining);
+
+            ui_->probeStatus->setText(QStringLiteral("Battery: %1%, Temp: %2%, FR: %3 Hz%4")
+                   .arg(st.battery).arg(st.temperature).arg(QString::number(st.frameRate, 'f', 0)).arg(teeTime));
         }
     });
 
@@ -324,13 +334,13 @@ bool Solum::event(QEvent *event)
     else if (event->type() == IMAGE_EVENT)
     {
         auto evt = static_cast<event::Image*>(event);
-        newProcessedImage(evt->data_, evt->width_, evt->height_, evt->bpp_, evt->size_, evt->imu_);
+        newProcessedImage(evt->data_, evt->width_, evt->height_, evt->bpp_, evt->format_, evt->size_, evt->overlay_, evt->imu_);
         return true;
     }
     else if (event->type() == PRESCAN_EVENT)
     {
         auto evt = static_cast<event::Image*>(event);
-        newPrescanImage(evt->data_, evt->width_, evt->height_, evt->bpp_, evt->size_);
+        newPrescanImage(evt->data_, evt->width_, evt->height_, evt->bpp_, evt->size_, evt->format_);
         return true;
     }
     else if (event->type() == SPECTRUM_EVENT)
@@ -365,6 +375,12 @@ bool Solum::event(QEvent *event)
     else if (event->type() == ERROR_EVENT)
     {
         setError((static_cast<event::Error*>(event))->error_);
+        return true;
+    }
+    else if (event->type() == TEE_EVENT)
+    {
+        auto evt = static_cast<event::Tee*>(event);
+        onTee(evt->connected_, evt->serial_, evt->timeRemaining_);
         return true;
     }
 
@@ -473,6 +489,8 @@ void Solum::imagingState(CusImagingState state, bool imaging)
     ui_->opacity->setEnabled(ready ? true : false);
     ui_->rfzoom->setEnabled(ready ? true : false);
     ui_->rfStream->setEnabled(ready ? true : false);
+    ui_->prescan->setEnabled(ready ? true : false);
+    ui_->split->setEnabled(ready ? true : false);
     ui_->imu->setEnabled(ready ? true : false);
     bool ag = ui_->autogain->isChecked();
     ui_->tgctop->setEnabled((ready && !ag) ? true : false);
@@ -498,7 +516,28 @@ void Solum::imagingState(CusImagingState state, bool imaging)
 /// @param[in] clicks # of clicks used
 void Solum::onButton(CusButton btn, int clicks)
 {
-    ui_->status->showMessage(QStringLiteral("Button %1 Pressed, %2 Clicks").arg((btn == ButtonDown) ? QStringLiteral("Down") : QStringLiteral("Up")).arg(clicks));
+    QString text;
+    switch (btn)
+    {
+        case ButtonDown: text = QStringLiteral("Down"); break;
+        case ButtonUp: text = QStringLiteral("Up"); break;
+        case ButtonHandle: text = QStringLiteral("Handle"); break;
+    }
+
+    ui_->status->showMessage(QStringLiteral("Button %1 Pressed, %2 Clicks").arg(text).arg(clicks));
+}
+
+/// called when there is a tee connect or disconnect
+/// @param[in] connected flag if the probe is connected or not
+/// @param[in] serial the serial number if the probe is connected
+/// @param[in] timeRemaining the time remaining in percent if the probe is connected
+void Solum::onTee(bool connected, const QString& serial, double timeRemaining)
+{
+    teeConnected_ = connected;
+    if (connected)
+        ui_->status->showMessage(QStringLiteral("TEE Connected: %1 @ %2% Remaining").arg(serial).arg(timeRemaining));
+    else
+        ui_->status->showMessage(QStringLiteral("TEE Disconnected"));
 }
 
 /// called when the download progress changes
@@ -513,11 +552,16 @@ void Solum::setProgress(int progress)
 /// @param[in] w width of the image
 /// @param[in] h height of the image
 /// @param[in] bpp the bits per pixel
+/// @param[in] format the image format
 /// @param[in] sz size of the image in bytes
 /// @param[in] imu the imu data if valid
-void Solum::newProcessedImage(const void* img, int w, int h, int bpp, int sz, const QQuaternion& imu)
+void Solum::newProcessedImage(const void* img, int w, int h, int bpp, CusImageFormat format, int sz, bool overlay, const QQuaternion& imu)
 {
-    image_->loadImage(img, w, h, bpp, sz);
+    if (overlay)
+        image2_->loadImage(img, w, h, bpp, format, sz);
+    else
+        image_->loadImage(img, w, h, bpp, format, sz);
+
     if (!imu.isNull())
         render_->update(imu);
 }
@@ -528,12 +572,10 @@ void Solum::newProcessedImage(const void* img, int w, int h, int bpp, int sz, co
 /// @param[in] h height of the image
 /// @param[in] bpp the bits per pixel
 /// @param[in] sz size of the image in bytes
-void Solum::newPrescanImage(const void* img, int w, int h, int bpp, int sz)
+/// @param[in] format the format of the prescan image
+void Solum::newPrescanImage(const void* img, int w, int h, int bpp, int sz, CusImageFormat format)
 {
-    if (sz == (w * h * (bpp / 8)))
-        prescan_ = QImage(reinterpret_cast<const uchar*>(img), w, h, QImage::Format_ARGB32);
-    else
-        prescan_.loadFromData(static_cast<const uchar*>(img), sz, "JPG");
+    prescan_->loadImage(img, w, h, bpp, format, sz);
 }
 
 /// called when a new spectrum image has been sent
@@ -598,7 +640,13 @@ void Solum::onUpdate()
     if (!connected_)
         return;
 
+    auto filePath = QFileDialog::getOpenFileName(this,
+        QStringLiteral("Choose Firmware Package"), QString(), QStringLiteral("Zip Files (*.zip)"));
+    if (filePath.isEmpty())
+        return;
+
     if (solumSoftwareUpdate(
+        filePath.toStdString().c_str(),
         // software update result
         [](CusSwUpdate res)
         {
@@ -642,7 +690,7 @@ void Solum::onLoad()
     {
         // wait a second for the application load to propagate internally before fetching the range
         // ideally the api would provide a callback for when the application is fully loaded (ofi)
-        QTimer::singleShot(1000, [=] ()
+        QTimer::singleShot(1000, [=, this] ()
         {
             CusRange range;
             if (solumGetRange(ImageDepth, &range) == 0)
@@ -752,6 +800,23 @@ void Solum::onRfStream(int state)
     solumSetParam(RfStreaming, (state == Qt::Checked) ? 1 : 0);
 }
 
+/// called when separate overlays is changed
+/// @param[in] state checkbox state
+void Solum::onSplit(int state)
+{
+    bool en = (state == Qt::Checked);
+    solumSeparateOverlays(en ? 1 : 0);
+    image2_->setVisible(en);
+}
+
+/// called when separate overlays is changed
+/// @param[in] state checkbox state
+void Solum::onPrescan(int state)
+{
+    bool en = (state == Qt::Checked);
+    prescan_->setVisible(en);
+}
+
 /// sets the tgc top
 /// @param[in] v the tgc value
 void Solum::tgcTop(int v)
@@ -825,6 +890,7 @@ void Solum::onMode(int mode)
         ui_->opacity->setVisible(m == Strain);
         ui_->rfzoom->setVisible(m == RfMode);
         ui_->rfStream->setVisible(m == RfMode);
+        ui_->split->setVisible(m == ColorMode || m == PowerMode || m == Strain);
 
         updateVelocity(m);
     }
@@ -838,7 +904,7 @@ void Solum::updateVelocity(CusMode mode)
     // wait a second for the mode load to propagate internally before fetching the velociy
     if (mode == ColorMode || mode == PwMode)
     {
-        QTimer::singleShot(1000, [=] ()
+        QTimer::singleShot(1000, [=, this] ()
         {
             auto v = solumGetParam(DopplerVelocity);
             if (v)

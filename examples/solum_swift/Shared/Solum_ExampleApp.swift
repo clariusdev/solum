@@ -20,6 +20,10 @@ extension Notification.Name {
     static let scannerCloud = Notification.Name("scannerCloud")
     /// Notification that the scanner details should be should populated, user data: "scanner" as Scanner struct
     static let scannerDetails = Notification.Name("scannerDetails")
+    /// Notification that the firmware download should be started, user data: "firmwareVersion" as String
+    static let firmwareVersion = Notification.Name("firmwareVersion")
+    /// Notification that the firmware path should be updated, user data: "firmwarePath" as String
+    static let firmwarePath = Notification.Name("firmwarePath")
 }
 
 @main

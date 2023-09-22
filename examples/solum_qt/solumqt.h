@@ -11,6 +11,7 @@ namespace Ui
 class UltrasoundImage;
 class Spectrum;
 class RfSignal;
+class Prescan;
 class ProbeRender;
 
 #define CONNECT_EVENT   static_cast<QEvent::Type>(QEvent::User + 1)
@@ -26,6 +27,7 @@ class ProbeRender;
 #define BUTTON_EVENT    static_cast<QEvent::Type>(QEvent::User + 11)
 #define ERROR_EVENT     static_cast<QEvent::Type>(QEvent::User + 12)
 #define PROGRESS_EVENT  static_cast<QEvent::Type>(QEvent::User + 13)
+#define TEE_EVENT       static_cast<QEvent::Type>(QEvent::User + 14)
 
 namespace event
 {
@@ -104,17 +106,21 @@ namespace event
         /// @param[in] w the image width
         /// @param[in] h the image height
         /// @param[in] bpp the image bits per pixel
+        /// @param[in] format the image format
         /// @param[in] sz total size of the image
+        /// @param[in] overlay flag if the image came from a separated overlay
         /// @param[in] imu latest imu data if sent
-        Image(QEvent::Type evt, const void* data, int w, int h, int bpp, int sz, const QQuaternion& imu) : QEvent(evt),
-            data_(data), width_(w), height_(h), bpp_(bpp), size_(sz), imu_(imu) { }
+        Image(QEvent::Type evt, const void* data, int w, int h, int bpp, CusImageFormat format, int sz, bool overlay, const QQuaternion& imu) : QEvent(evt),
+            data_(data), width_(w), height_(h), bpp_(bpp), format_(format), size_(sz), overlay_(overlay), imu_(imu) { }
 
-        const void* data_;  ///< pointer to the image data
-        int width_;         ///< width of the image
-        int height_;        ///< height of the image
-        int bpp_ ;          ///< bits per pixel
-        int size_;          ///< total size of image
-        QQuaternion imu_;   ///< latest imu position
+        const void* data_;      ///< pointer to the image data
+        int width_;             ///< width of the image
+        int height_;            ///< height of the image
+        int bpp_ ;              ///< bits per pixel
+        CusImageFormat format_; ///< image format
+        int size_;              ///< total size of image
+        bool overlay_;          ///< flag if the image came from a separated overlay
+        QQuaternion imu_;       ///< latest imu position
     };
 
     /// wrapper for new spectrum events that can be posted from the api callbacks
@@ -147,7 +153,7 @@ namespace event
         /// @param[in] sz total size of the image
         /// @param[in] lateral lateral spacing between lines
         /// @param[in] axial sample size
-        RfImage(const void* data, int l, int s, int bps, int sz, double lateral, double axial) : Image(RF_EVENT, data, l, s, bps, sz, QQuaternion()), lateral_(lateral), axial_(axial) { }
+        RfImage(const void* data, int l, int s, int bps, int sz, double lateral, double axial) : Image(RF_EVENT, data, l, s, bps, Uncompressed, sz, false, QQuaternion()), lateral_(lateral), axial_(axial) { }
 
         double lateral_;    ///< spacing between each line
         double axial_;      ///< sample size
@@ -177,6 +183,28 @@ namespace event
 
         CusButton button_;  ///< button pressed
         int clicks_;        ///< # of clicks
+    };
+
+    /// wrapper for button press events that can be posted from the api callbacks
+    class Tee : public QEvent
+    {
+    public:
+        /// default constructor
+        /// @param[in] connected the connected flag
+        /// @param[in] serial the serial number
+        /// @param[in] timeRemaining the time remaining in percent
+        /// @param[in] id the patient id
+        /// @param[in] name the patient name
+        /// @param[in] exam the exam id
+        Tee(bool connected, const QString& serial, double timeRemaining, const QString& id, const QString& name, const QString& exam) :
+            QEvent(TEE_EVENT), connected_(connected), serial_(serial), timeRemaining_(timeRemaining), id_(id), name_(name), exam_(exam) { }
+
+        bool connected_;        ///< connected flag
+        QString serial_;        ///< serial number
+        double timeRemaining_;  ///< time remaining in percent
+        QString id_;            ///< patient id
+        QString name_;          ///< patient name
+        QString exam_;          ///< exam id
     };
 
     /// wrapper for error events that can be posted from the api callbacks
@@ -220,8 +248,8 @@ protected:
 private:
     void loadProbes(const QStringList& probes);
     void loadApplications(const QStringList& probes);
-    void newProcessedImage(const void* img, int w, int h, int bpp, int sz, const QQuaternion& imu);
-    void newPrescanImage(const void* img, int w, int h, int bpp, int sz);
+    void newProcessedImage(const void* img, int w, int h, int bpp, CusImageFormat format, int sz, bool overlay, const QQuaternion& imu);
+    void newPrescanImage(const void* img, int w, int h, int bpp, int sz, CusImageFormat format);
     void newSpectrumImage(const void* img, int l, int s, int bps);
     void newRfImage(const void* rf, int l, int s, int ss);
     void setConnected(CusConnection res, int port, const QString& msg);
@@ -230,6 +258,7 @@ private:
     void softwareUpdate(CusSwUpdate res);
     void imagingState(CusImagingState state, bool imaging);
     void onButton(CusButton btn, int clicks);
+    void onTee(bool connected, const QString& serial, double timeRemaining);
     void setProgress(int progress);
     void setError(const QString& err);
     void getParams();
@@ -263,6 +292,8 @@ public slots:
     void onAutoFocus(int);
     void onImu(int);
     void onRfStream(int);
+    void onPrescan(int);
+    void onSplit(int);
     void tgcTop(int);
     void tgcMid(int);
     void tgcBottom(int);
@@ -270,12 +301,14 @@ public slots:
 private:
     bool connected_;                ///< connection state
     bool imaging_;                  ///< imaging state
+    bool teeConnected_;             ///< tee connected state
     Ui::Solum *ui_;                 ///< ui controls, etc.
     UltrasoundImage* image_;        ///< image display
+    UltrasoundImage* image2_;       ///< secondary image display
     Spectrum* spectrum_;            ///< spectrum display
     ProbeRender* render_;           ///< probe renderer
     RfSignal* signal_;              ///< rf signal display
-    QImage prescan_;                ///< pre-scan converted image
+    Prescan* prescan_;              ///< prescan display
     QTimer timer_;                  ///< timer for updating probe status
     QNetworkAccessManager cloud_;   ///< for accessing clarius cloud
     Ble ble_;                       ///< bluetooth module

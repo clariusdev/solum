@@ -35,6 +35,13 @@ extern "C"
     /// @note should be called prior to exiting the application
     SOLUM_EXPORT int solumDestroy();
 
+    /// sets a callback for the tee connectivity function
+    /// @param[in] tee the callback function
+    /// @return success of the call
+    /// @retval 0 the function was successful
+    /// @retval -1 the function was not successful
+    SOLUM_EXPORT int solumSetTeeFn(CusTeeConnectFn tee);
+
     /// retrieves the firmware version for a given platform
     /// @param[in] platform the platform to retrieve the firmware version for
     /// @param[out] version holds the firmware version for the given platform
@@ -73,6 +80,7 @@ extern "C"
     SOLUM_EXPORT int solumSetCert(const char* cert);
 
     /// performs a software update once connected
+    /// @param[in] path path to the firmware update file
     /// @param[in] fn the callback function that reports the status
     /// @param[in] progress software update progress callback
     /// @param[in] hwVer optional hardware version to set if the library cannot determine version on initial tcp connection
@@ -80,7 +88,7 @@ extern "C"
     /// @return success of the call
     /// @retval 0 the software is being sent
     /// @retval -1 the software could not be sent
-    SOLUM_EXPORT int solumSoftwareUpdate(CusSwUpdateFn fn, CusProgressFn progress, int hwVer);
+    SOLUM_EXPORT int solumSoftwareUpdate(const char* path, CusSwUpdateFn fn, CusProgressFn progress, int hwVer);
 
     /// retrieves the available probe models the api supports
     /// @param[in] fn the callback function that reports the list
@@ -225,7 +233,7 @@ extern "C"
     /// @retval -1 gate could not be retrieved
     SOLUM_EXPORT int solumGetGate(CusGateLines* lines);
 
-    /// adjuss the gate based on the input provided
+    /// adjusts the gate based on the input provided
     /// @param[in] x the horizontal pixel position
     /// @param[in] y the vertical pixel position
     /// @return success of the call
@@ -329,4 +337,13 @@ extern "C"
     /// @return the parameter value, for boolean variables, the value will be 0 (disabled) or 1 (enabled)
     /// @retval -1 if the parameter value retrieval could not be made
     SOLUM_EXPORT double solumGetLowLevelParam(const char* prm);
+
+    /// set the tee exam info for a connected probe
+    /// @param[in] id the patient id
+    /// @param[in] name the patient name
+    /// @param[in] exam the exam id
+    /// @return success of the call
+    /// @retval 0 the function was successful
+    /// @retval -1 the function was not successful
+    SOLUM_EXPORT int solumSetTeeExamInfo(const char* id, const char* name, const char* exam);
 }

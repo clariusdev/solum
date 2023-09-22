@@ -1,13 +1,15 @@
 #pragma once
 
+#include <sdk/solum_def.h>
+
 /// ultrasound image display
 class UltrasoundImage : public QGraphicsView
 {
     Q_OBJECT
 public:
-    explicit UltrasoundImage(QWidget*);
+    explicit UltrasoundImage(bool overlay, QWidget*);
 
-    void loadImage(const void* img, int w, int h, int bpp, int sz);
+    void loadImage(const void* img, int w, int h, int bpp, CusImageFormat format, int sz);
     void setDepth(double d) { depth_ = d; }
     void checkRoi();
     void checkGate();
@@ -23,6 +25,7 @@ protected:
 
 private:
     double depth_;          ///< depth display value
+    bool overlay_;          ///< flag if this is an overlay display
     QPolygonF roi_;         ///< region of interest points to draw
     QVector<QLineF> gate_;  ///< gate lines to draw
     QImage image_;          ///< the image buffer
@@ -75,4 +78,26 @@ private:
     QVector<int16_t> signal_;   ///< the rf signal
     qreal zoom_;                ///< zoom level
     QMutex lock_;               ///< locking mechanism
+};
+
+/// spectrum display
+class Prescan : public QGraphicsView
+{
+    Q_OBJECT
+public:
+    explicit Prescan(QWidget*);
+
+    void loadImage(const void* img, int w, int h, int bpp, CusImageFormat format, int sz);
+
+protected:
+    virtual void drawForeground(QPainter*, const QRectF&) override;
+    virtual void drawBackground(QPainter*, const QRectF&) override;
+
+    virtual void resizeEvent(QResizeEvent*) override;
+    virtual int heightForWidth(int w) const override;
+    virtual QSize sizeHint() const override;
+
+private:
+    QImage image_;  ///< the spectrum buffer
+    QMutex lock_;   ///< locking mechanism
 };

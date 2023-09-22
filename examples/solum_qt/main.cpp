@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
             if (npos && pos)
                 imu = QQuaternion(static_cast<float>(pos[0].qw), static_cast<float>(pos[0].qx), static_cast<float>(pos[0].qy), static_cast<float>(pos[0].qz));
 
-            QApplication::postEvent(_solum.get(), new event::Image(IMAGE_EVENT, _image.data(), nfo->width, nfo->height, nfo->bitsPerPixel, sz, imu));
+            QApplication::postEvent(_solum.get(), new event::Image(IMAGE_EVENT, _image.data(), nfo->width, nfo->height, nfo->bitsPerPixel, nfo->format, sz, nfo->overlay, imu));
         },
         // new raw data callback
         [](const void* data, const CusRawImageInfo* nfo, int, const CusPosInfo*)
@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
                     _prescanImage.resize(sz);
                 memcpy(_prescanImage.data(), data, sz);
                 QApplication::postEvent(_solum.get(), new event::Image(PRESCAN_EVENT, _prescanImage.data(), nfo->lines, nfo->samples,
-                                                                          nfo->bitsPerSample, sz, QQuaternion()));
+                                                                       nfo->bitsPerSample, nfo->jpeg ? Jpeg : Uncompressed8Bit, sz, false, QQuaternion()));
             }
         },
         // new spectrum callback
@@ -110,6 +110,14 @@ int main(int argc, char *argv[])
         qDebug() << "error initializing listener";
         return -1;
     }
+
+    solumSetTeeFn(
+        [](bool connected, const char* serial, double timeRemaining, const char* id, const char* name, const char* exam)
+        {
+            // post event here, as the gui (statusbar) will be updated directly, and it needs to come from the application thread
+            QApplication::postEvent(_solum.get(), new event::Tee(connected, QString::fromLatin1(serial), timeRemaining,
+                QString::fromLatin1(id), QString::fromLatin1(name), QString::fromLatin1(exam)));
+        });
 
     _solum->show();
     const int result = a.exec();

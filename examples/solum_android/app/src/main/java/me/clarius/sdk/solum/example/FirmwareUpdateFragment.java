@@ -26,6 +26,7 @@ public class FirmwareUpdateFragment extends Fragment {
     private ViewModel viewModel;
     private FragmentFirmwareUpdateBinding binding;
     private ArrayAdapter<PlatformItem> platformListAdapter;
+
     public FirmwareUpdateFragment() {
         platformList = Stream.of(Platform.values())
                 .map(PlatformItem::fromPlatform)
@@ -44,37 +45,51 @@ public class FirmwareUpdateFragment extends Fragment {
         viewModel = new ViewModelProvider(requireActivity()).get(ViewModel.class);
         platformListAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item);
         platformListAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        platformListAdapter.add(new PlatformItem(Optional.empty(), "Auto-select firmware"));
         platformListAdapter.addAll(platformList);
         binding.platformList.setAdapter(platformListAdapter);
         binding.platformList.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 PlatformItem platformItem = platformListAdapter.getItem(position);
-                viewModel.setPlatformVersion(platformItem.platform);
+                viewModel.setSelectedPlatformVersion(platformItem.platform);
             }
 
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
             }
         });
+        viewModel.getSelectedPlatformVersion().observe(getViewLifecycleOwner(), platform -> {
+            if (!(((PlatformItem) binding.platformList.getSelectedItem()).platform.equals(platform))) { // if the given platform is not equal to the currently selected platform
+                binding.platformList.setSelection(platformListAdapter.getPosition(PlatformItem.fromPlatform(platform)));
+            }
+        });
     }
 
     private static class PlatformItem {
-        final Optional<Platform> platform;
+        final Platform platform;
         final String description;
 
-        PlatformItem(Optional<Platform> platform, String description) {
+        PlatformItem(Platform platform, String description) {
             this.platform = platform;
             this.description = description;
         }
 
         static PlatformItem fromPlatform(Platform platform) {
-            return new PlatformItem(Optional.of(platform), String.format("%s firmware", platform.name()));
+            return new PlatformItem(platform, String.format("%s firmware", platform.name()));
         }
 
         public String toString() {
             return description;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            PlatformItem that = (PlatformItem) o;
+
+            return this.platform.equals(that.platform);
         }
     }
 }
