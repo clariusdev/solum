@@ -241,17 +241,17 @@ void Ble::onDiscoveryFinished()
     // - these single shot timers are a silly workaround for windows, see: https://bugreports.qt.io/browse/QTBUG-78488
     // - note the ias should also be discovered before other services as it is seen on some platforms that it may
     //   not be discovered properly if coming after other services
-    QTimer::singleShot(0, [=] ()
+    QTimer::singleShot(0, [=, this] ()
     {
         if (ias_)
             ias_->discoverDetails();
     });
-    QTimer::singleShot(0, [=] ()
+    QTimer::singleShot(0, [=, this] ()
     {
         if (power_)
             power_->discoverDetails();
     });
-    QTimer::singleShot(0, [=] ()
+    QTimer::singleShot(0, [=, this] ()
     {
         if (wifi_)
             wifi_->discoverDetails();

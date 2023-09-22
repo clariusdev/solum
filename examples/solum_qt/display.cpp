@@ -3,7 +3,7 @@
 
 /// default constructor
 /// @param[in] parent the parent object
-UltrasoundImage::UltrasoundImage(QWidget* parent) : QGraphicsView(parent), depth_(0)
+UltrasoundImage::UltrasoundImage(bool overlay, QWidget* parent) : QGraphicsView(parent), depth_(0), overlay_(overlay)
 {
     QGraphicsScene* sc = new QGraphicsScene(this);
     setScene(sc);
@@ -23,21 +23,30 @@ UltrasoundImage::UltrasoundImage(QWidget* parent) : QGraphicsView(parent), depth
 /// @param[in] w the image width
 /// @param[in] h the image height
 /// @param[in] bpp bits per pixel
+/// @param[in] format the image format
 /// @param[in] sz size of image in bytes
-void UltrasoundImage::loadImage(const void* img, int w, int h, int bpp, int sz)
+void UltrasoundImage::loadImage(const void* img, int w, int h, int bpp, CusImageFormat format, int sz)
 {
     // check for size match
     if (image_.width() != w || image_.height() != h)
         return;
 
+    // ensure the qimage format matches
+    if (format == Uncompressed8Bit && image_.format() != QImage::Format_Grayscale8)
+        image_.convertTo(QImage::Format_Grayscale8);
+    else if (format != Uncompressed8Bit && image_.format() != QImage::Format_ARGB32)
+        image_.convertTo(QImage::Format_ARGB32);
+
     // set the image data
     lock_.lock();
     // check that the size matches the dimensions (uncompressed)
-    if (sz == (w * h * (bpp / 8)))
+    if (sz >= (w * h * (bpp / 8)))
         memcpy(image_.bits(), img, w * h * (bpp / 8));
     // try to load jpeg
-    else
+    else if (format == Jpeg)
         image_.loadFromData(static_cast<const uchar*>(img), sz, "JPG");
+    else if (format == Png)
+        image_.loadFromData(static_cast<const uchar*>(img), sz, "PNG");
     lock_.unlock();
 
     // redraw
@@ -92,7 +101,8 @@ void UltrasoundImage::resizeEvent(QResizeEvent* e)
     auto w = e->size().width(), h = e->size().height();
 
     setSceneRect(0, 0, w, h);
-    solumSetOutputSize(w, h);
+    if (!overlay_)
+        solumSetOutputSize(w, h);
 
     lock_.lock();
     image_ = QImage(w, h, QImage::Format_ARGB32);
@@ -100,11 +110,14 @@ void UltrasoundImage::resizeEvent(QResizeEvent* e)
     lock_.unlock();
 
     // update the roi in the case of a resize
-    QTimer::singleShot(250, [this]()
+    if (!overlay_)
     {
-        checkRoi();
-        checkGate();
-    });
+        QTimer::singleShot(250, [this]()
+        {
+            checkRoi();
+            checkGate();
+        });
+    }
 
     QGraphicsView::resizeEvent(e);
 }
@@ -178,6 +191,9 @@ void UltrasoundImage::drawForeground(QPainter* painter, const QRectF& r)
 /// @param[in] e the mouse event
 void UltrasoundImage::mouseReleaseEvent(QMouseEvent* e)
 {
+    if (overlay_)
+        return;
+
     // if the call to move succeeds, it means an imaging mode supporting an roi is running
     auto pos = e->position();
     auto m = solumGetMode();
@@ -407,4 +423,101 @@ void RfSignal::drawForeground(QPainter* painter, const QRectF& r)
         }
         lock_.unlock();
     }
+}
+
+/// default constructor
+/// @param[in] parent the parent object
+Prescan::Prescan(QWidget* parent) : QGraphicsView(parent)
+{
+    QGraphicsScene* sc = new QGraphicsScene(this);
+    setScene(sc);
+    setVisible(false);
+
+    // initialize to some arbitrary size
+    setSceneRect(0, 0, 400, 100);
+    image_ = QImage(400, 100, QImage::Format_ARGB32);
+
+    QSizePolicy p(QSizePolicy::Preferred, QSizePolicy::Preferred);
+    p.setHeightForWidth(true);
+    setSizePolicy(p);
+}
+
+/// loads a new image from raw data
+/// @param[in] img the new prescan data
+/// @param[in] w width of image (aka # of spectrum lines)
+/// @param[in] h height of image (aka # of spectrum samples)
+/// @param[in] bpp bits per pixel (aka bits per sample)
+void Prescan::loadImage(const void* img, int w, int h, int bpp, CusImageFormat format, int sz)
+{
+    lock_.lock();
+
+    // check for size match
+    if (image_.width() != h || image_.height() != w)
+    {
+        image_ = QImage(h, w, QImage::Format_Grayscale8);
+        image_.fill(Qt::black);
+    }
+
+    if (format == Jpeg)
+        image_.loadFromData(static_cast<const uchar*>(img), sz, "JPG");
+    else
+        memcpy(image_.bits(), img, w * h * (bpp / 8));
+
+    lock_.unlock();
+
+    // redraw
+    scene()->invalidate();
+}
+
+/// handles resizing of the image view
+/// @param[in] e the event to parse
+void Prescan::resizeEvent(QResizeEvent* e)
+{
+    auto w = e->size().width(), h = e->size().height();
+
+    setSceneRect(0, 0, w, h);
+    lock_.lock();
+    image_.fill(Qt::black);
+    lock_.unlock();
+
+    QGraphicsView::resizeEvent(e);
+}
+
+/// calculates the ratio of the test image to determine the proper height ratio for width
+/// @param[in] w the width of the widget
+/// @return the appropriate height
+int Prescan::heightForWidth(int w) const
+{
+    // keep 2:1 aspect ratio
+    double ratio = 1.0 / 2.0;
+    return static_cast<int>(w * ratio);
+}
+
+/// size hint to keep the test image ratio
+/// @return the size hint
+QSize Prescan::sizeHint() const
+{
+    auto w = width();
+    return QSize(w, heightForWidth(w));
+}
+
+/// creates a black background
+/// @param[in] painter the drawing context
+/// @param[in] r the rectangle to fill (the entire view)
+void Prescan::drawBackground(QPainter* painter, const QRectF& r)
+{
+    painter->fillRect(r, QBrush(Qt::black));
+    QGraphicsView::drawBackground(painter, r);
+}
+
+/// draws the target image
+/// @param[in] painter the drawing context
+void Prescan::drawForeground(QPainter* painter, const QRectF& r)
+{
+    lock_.lock();
+    if (!image_.isNull())
+    {
+        painter->drawImage(r, image_);
+    }
+    lock_.unlock();
 }

@@ -16,6 +16,10 @@ import java.util.Optional;
 public class Secrets {
     private static final String TAG = "Secrets";
 
+    public static Optional<String> maybeOemApiKey() {
+        return Optional.ofNullable((String) getFieldValue("clarius_oem_api_key"));
+    }
+
     public static Optional<String> maybeCert() {
         return Optional.ofNullable((String) getFieldValue("clarius_cert"));
     }

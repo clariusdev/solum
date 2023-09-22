@@ -36,6 +36,11 @@ struct ContentView: View {
                     Button(action: cloud.refreshScanners) {
                         Label("Download Scanner Info", systemImage: "icloud.and.arrow.down")
                     }
+                    Button(action: {() -> Void in
+                        solum.getFirmwareVersion(platformType: PlatformType(rawValue: solum.scannerType))
+                    }) {
+                        Label("Download Matching Firmware", systemImage: "icloud.and.arrow.down")
+                    }
                 }.padding()
                 GroupBox(label: Label("Bluetooth", systemImage: "antenna.radiowaves.left.and.right").font(.title3)) {
                     Toggle(isOn: $bluetooth.scanActive) {

@@ -54,3 +54,11 @@ typedef void (*CusRawFn)(int res);
 /// error callback function
 /// @param[in] msg the error message with associated error that occurred
 typedef void (*CusErrorFn)(const char* msg);
+/// tee connection callback function
+/// @param[in] connected flag associated with the tee having a disposable probe connection
+/// @param[in] serial if a probe is connected, the serial number of the probe
+/// @param[in] timeRemaining if a probe is connected, the time remaining in percentage
+/// @param[in] id patient id if burned in to the probe
+/// @param[in] name patient name if burned in to the probe
+/// @param[in] exam exam id if burned in to the probe
+typedef void (*CusTeeConnectFn)(bool connected, const char* serial, double timeRemaining, const char* id, const char* name, const char* exam);

@@ -80,8 +80,9 @@ public class BluetoothFragment extends Fragment implements PermissionHelper.Resu
     };
     private final GattService.Listener gattServiceListener = new GattService.Listener() {
         @Override
-        public void connected(String deviceNameIgnored) {
+        public void connected(String deviceName) {
             handler.post(() -> probeConnected.set(true));
+            handler.post(() -> bluetoothViewModel.updateProbeSerial(deviceName));
         }
 
         @Override

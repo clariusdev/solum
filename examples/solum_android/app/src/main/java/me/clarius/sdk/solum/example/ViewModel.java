@@ -14,7 +14,18 @@ public class ViewModel extends androidx.lifecycle.ViewModel {
     private final MutableLiveData<List<String>> probes = new MutableLiveData<>();
     private final MutableLiveData<String> selectedApplication = new MutableLiveData<>();
     private final MutableLiveData<String> selectedProbe = new MutableLiveData<>();
-    private final MutableLiveData<Optional<Platform>> platformVersion = new MutableLiveData<>();
+    private final MutableLiveData<Platform> selectedPlatformVersion = new MutableLiveData<>();
+    private final MutableLiveData<String> firmwarePath = new MutableLiveData<>();
+
+    public void setSelectedPlatformFromSerial(String serial) {
+        if (serial.contains("HD3")) {
+            selectedPlatformVersion.postValue(Platform.HD3);
+        } else if (serial.contains("HD")) {
+            selectedPlatformVersion.postValue(Platform.HD);
+        } else {
+            selectedPlatformVersion.postValue(Platform.V1);
+        }
+    }
 
     public MutableLiveData<List<String>> getApplications() {
         return applications;
@@ -32,8 +43,20 @@ public class ViewModel extends androidx.lifecycle.ViewModel {
         return selectedProbe;
     }
 
-    public MutableLiveData<Optional<Platform>> getPlatformVersion() {
-        return platformVersion;
+    public MutableLiveData<Platform> getSelectedPlatformVersion() {
+        return selectedPlatformVersion;
+    }
+
+    public void setSelectedPlatformVersion(Platform platform) {
+        selectedPlatformVersion.postValue(platform);
+    }
+
+    public MutableLiveData<String> getFirmwarePath() {
+        return firmwarePath;
+    }
+
+    public void setFirmwarePath(final String filePath) {
+        firmwarePath.postValue(filePath);
     }
 
     public void refreshApplications(Solum solum, String probe) {
@@ -51,9 +74,5 @@ public class ViewModel extends androidx.lifecycle.ViewModel {
 
     public void selectApplication(final String application) {
         selectedApplication.postValue(application);
-    }
-
-    public void setPlatformVersion(Optional<Platform> platform) {
-        platformVersion.postValue(platform);
     }
 }

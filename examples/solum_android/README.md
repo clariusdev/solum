@@ -26,8 +26,7 @@ TODO
 
 Certificates
 ----
-
-The certificates are not downloaded automatically (TBD), for now, the certificates are imported from a property in file `secrets.properties`:
+To manually download the certificates:
 
 1. Download the certificate from cloud:
 
@@ -38,3 +37,13 @@ The certificates are not downloaded automatically (TBD), for now, the certificat
 3. Add a property `clariusProbeCertificate="<your cert>"` (escape newline characters in the string: `"\n"` -> `"\\n"`)
 
 4. This property will be added to the Java class `BuildConfig` by plugin secrets-gradle-plugin
+
+To automatically download the certificates:
+
+1. Create file `secret.properties`
+
+2. Add a property `clarius_oem_api_key="<your OEM-API-Key>"`
+
+3. This property will be added to the Java class `BuildConfig` by plugin secrets-gradle-plugin
+
+4. The certificates will be automatically downloaded when the app is launched and saved to [SharedPreferences](https://developer.android.com/training/data-storage/shared-preferences)

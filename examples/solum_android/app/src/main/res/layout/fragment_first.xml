@@ -26,6 +26,12 @@
             android:layout_height="wrap_content"
             android:text="@string/power_down" />
 
+        <Button
+            android:id="@+id/button_download_certificates"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/button_download_certificates" />
+
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/wifi_ssid_layout"
             android:layout_width="match_parent"
@@ -144,18 +150,28 @@
                 android:layout_height="wrap_content"
                 tools:layout="@layout/fragment_firmware_update"
                 app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toStartOf="@+id/button_sw_update"
+                app:layout_constraintEnd_toStartOf="@+id/button_download_firmware"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
             <Button
-                android:id="@+id/button_sw_update"
+                android:id="@+id/button_download_firmware"
                 android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/fw_download"
+                app:layout_constraintBottom_toTopOf="@+id/button_sw_update"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <Button
+                android:id="@+id/button_sw_update"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:text="@string/sw_update"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+                app:layout_constraintStart_toEndOf="@+id/firmware_update_fragment"
+                app:layout_constraintTop_toBottomOf="@+id/button_download_firmware" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 

@@ -12,6 +12,7 @@
     <string name="tcp_port">TCP Port</string>
     <string name="toggle_run">Toggle run</string>
     <string name="sw_update">SW Update</string>
+    <string name="fw_download">FW Download</string>
     <string name="ultrasound_image">Ultrasound Image</string>
     <string name="ask_state">Ask State</string>
     <string name="power_down">Power Down</string>
@@ -50,8 +51,9 @@
     <string name="charging_status">Charging</string>
     <string name="power_off">Power Off</string>
     <string name="no_ble">Bluetooth LE not available</string>
-    <string name="firmware_update_warning">WARNING: updating a probe with the incorrect firmware could brick it. Try "auto-select" first, if this fails, try specifying a platform.</string>
+    <string name="firmware_update_warning">WARNING: updating a probe with the incorrect firmware could brick it.</string>
     <string name="platform_list_description">List of available Clarius hardware platforms</string>
     <string name="factory_reset">Factory Reset</string>
     <string name="optimize_wifi">Optimize Wifi</string>
+    <string name="button_download_certificates">Download Certificates</string>
 </resources>

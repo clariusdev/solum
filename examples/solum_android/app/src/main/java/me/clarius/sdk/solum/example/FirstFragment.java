@@ -26,8 +26,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import me.clarius.sdk.Button;
+import me.clarius.sdk.Config;
 import me.clarius.sdk.Connection;
 import me.clarius.sdk.ImagingState;
+import me.clarius.sdk.LogLevel;
 import me.clarius.sdk.Mode;
 import me.clarius.sdk.Param;
 import me.clarius.sdk.Platform;
@@ -105,13 +107,23 @@ public class FirstFragment extends Fragment {
             Log.d(TAG, "Button '" + button + "' pressed, count: " + count);
         }
     };
+    private CertificatesManager certificatesManager;
+    private FirmwareManager firmwareManager;
+    private String currentProbeSerial;
+    private String oemKey;
+
+    private static Optional<Long> maybeLong(CharSequence from) throws RuntimeException {
+        if (null == from || 0 == from.length()) return Optional.empty();
+        return Optional.of(Long.parseLong(String.valueOf(from)));
+    }
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         getParentFragmentManager().setFragmentResultListener("probe_info", this, (requestKey, result) -> {
             Log.d(TAG, "Received bluetooth info");
-            addWifiInfoFromBluetooth(result);
+            parseInfoFromBluetooth(result);
+
         });
     }
 
@@ -126,11 +138,6 @@ public class FirstFragment extends Fragment {
         return requireContext().getDir("cert", Context.MODE_PRIVATE).toString();
     }
 
-    private String getCertificate() {
-        // TODO: get from cloud at https://cloud.clarius.com/api/public/v0/devices/oem/
-        return Secrets.maybeCert().orElse("research");
-    }
-
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -141,19 +148,50 @@ public class FirstFragment extends Fragment {
                 showMessage("Joined Wi-Fi " + ssid);
                 binding.networkId.setText(String.valueOf(networkID));
             }
+
             public void onFailure(final String ssid) {
                 showError("Failed to join Wi-Fi " + ssid);
+            }
+        });
+        certificatesManager = new CertificatesManager(requireActivity(), new CertificatesManager.Listener() {
+            @Override
+            public void certsDownloaded() {
+                showMessage("Certificates downloaded successfully");
+            }
+
+            @Override
+            public void error(String message) {
+                showError(message);
+            }
+        });
+
+        firmwareManager = new FirmwareManager(requireActivity(), new FirmwareManager.Listener() {
+            @Override
+            public void firmwareDownloaded(String firmwarePath) {
+                showMessage("Firmware downloaded successfully");
+                viewModel.setFirmwarePath(firmwarePath);
+            }
+
+            @Override
+            public void error(String message) {
+                showError(message);
             }
         });
 
         SolumViewModel solumViewModel = new ViewModelProvider(this).get(SolumViewModel.class);
         solumViewModel.getProcessedImage().observe(getViewLifecycleOwner(), binding.imageView::setImageBitmap);
 
-        solum = new Solum(requireContext().getApplicationInfo().nativeLibraryDir, solumListener);
+        Config config = new Config(LogLevel.Info);
+
+        solum = new Solum(requireContext().getApplicationInfo().nativeLibraryDir, config, solumListener);
         solum.initialize(getCertDir(), connected -> {
             Log.d(TAG, "Initialization result: " + connected);
             if (connected) {
-                solum.setCertificate(getCertificate());
+                try {
+                    solum.setCertificate(certificatesManager.getCertificate(currentProbeSerial));
+                } catch (RuntimeException e) {
+                    showError(e.getMessage());
+                }
                 solum.getFirmwareVersion(Platform.HD, maybeVersion -> showMessage("Retrieved FW version: " + maybeVersion.orElse("???")));
                 viewModel.refreshProbes(solum);
             }
@@ -182,21 +220,49 @@ public class FirstFragment extends Fragment {
 
         binding.buttonWifiAutoJoin.setOnClickListener(v -> doWifiAutoJoin());
 
+
         Secrets.maybeSSID().ifPresent(s -> binding.wifiSsid.setText(s));
         Secrets.maybePassphrase().ifPresent(s -> binding.wifiPassphrase.setText(s));
         Secrets.maybeMacAddress().ifPresent(s -> binding.macAddress.setText(s));
+        Optional<String> maybeOemKey = Secrets.maybeOemApiKey();
+        if (maybeOemKey.isPresent()) {
+            oemKey = maybeOemKey.get();
+            binding.buttonDownloadFirmware.setOnClickListener(v -> downloadFirmware());
+            binding.buttonDownloadCertificates.setOnClickListener(view1 -> certificatesManager.downloadCertificates(oemKey));
+        } else {
+            View.OnClickListener listener = v -> showError("No OEM-API-Key provided; cannot download the certificates or firmware");
+            binding.buttonDownloadFirmware.setOnClickListener(listener);
+            binding.buttonDownloadCertificates.setOnClickListener(listener);
+        }
     }
 
     private void doSwUpdate() {
-        Optional<Platform> maybePlatform = viewModel.getPlatformVersion().getValue();
-        Log.d(TAG, "Attempting SW update for platform: " + maybePlatform.map(Platform::name).orElse("auto-select"));
-        solum.updateSoftware(
-                result -> showMessage("SW update result: " + result),
-                (progress, total) -> {
-                    binding.swUpdateProgressBar.setMax(total);
-                    binding.swUpdateProgressBar.setProgress(progress);
-                },
-                maybePlatform);
+        Optional<Platform> maybePlatform = Optional.ofNullable(viewModel.getSelectedPlatformVersion().getValue());
+        if (!maybePlatform.isPresent()) {
+            showError("No platform provided; cannot download the firmware");
+            return;
+        }
+        String firmwarePath = viewModel.getFirmwarePath().getValue();
+        solum.updateSoftware(firmwarePath, result -> showMessage("SW update result: " + result), (progress, total) -> {
+            binding.swUpdateProgressBar.setMax(total);
+            binding.swUpdateProgressBar.setProgress(progress);
+        }, maybePlatform);
+    }
+
+    private void downloadFirmware() {
+        Platform maybePlatform = viewModel.getSelectedPlatformVersion().getValue();
+        if (maybePlatform == null) {
+            showError("No platform provided; cannot download the firmware");
+            return;
+        }
+        solum.getFirmwareVersion(maybePlatform, result -> {
+            if (!result.isPresent()) {
+                showError("No firmware version found; cannot download the firmware");
+                return;
+            }
+            firmwareManager.downloadFW(oemKey, result.get());
+        });
+
     }
 
     private void doRequestRawData() {
@@ -256,11 +322,6 @@ public class FirstFragment extends Fragment {
         solum.connect(ipAddress, tcpPort, maybeNetworkId);
     }
 
-    private static Optional<Long> maybeLong(CharSequence from) throws RuntimeException {
-        if (null == from || 0 == from.length()) return Optional.empty();
-        return Optional.of(Long.parseLong(String.valueOf(from)));
-    }
-
     private void doLoadApplication() {
         String currentProbe = viewModel.getSelectedProbe().getValue();
         if (currentProbe == null || currentProbe.isEmpty()) {
@@ -290,19 +351,15 @@ public class FirstFragment extends Fragment {
 
     private void doFactoryReset() {
         solum.resetProbe(ProbeReset.ResetFactory, success -> {
-            if (success)
-                showMessage("Factory reset successful");
-            else
-                showError("Factory reset failed");
+            if (success) showMessage("Factory reset successful");
+            else showError("Factory reset failed");
         });
     }
 
     private void doOptimizeWifi() {
         solum.optimizeWifi(WifiOpt.WifiOptSearch, success -> {
-            if (success)
-                showMessage("Wifi optimization successful");
-            else
-                showError("Wifi optimization failed");
+            if (success) showMessage("Wifi optimization successful");
+            else showError("Wifi optimization failed");
         });
     }
 
@@ -337,7 +394,7 @@ public class FirstFragment extends Fragment {
         mainHandler.post(() -> Toast.makeText(requireContext(), text, Toast.LENGTH_SHORT).show());
     }
 
-    private void addWifiInfoFromBluetooth(Bundle fields) {
+    private void parseInfoFromBluetooth(Bundle fields) {
         if (fields.containsKey("wifi_ssid"))
             binding.wifiSsid.setText(fields.getString("wifi_ssid"));
         if (fields.containsKey("wifi_passphrase"))
@@ -348,6 +405,10 @@ public class FirstFragment extends Fragment {
             binding.tcpPort.setText(String.valueOf(fields.getInt("tcp_port")));
         if (fields.containsKey("mac_address"))
             binding.macAddress.setText(String.valueOf(fields.getString("mac_address")));
+        if (fields.containsKey("serial")) {
+            currentProbeSerial = String.valueOf(fields.getString("serial"));
+            viewModel.setSelectedPlatformFromSerial(currentProbeSerial);
+        }
     }
 
     private class RawDataCallback {

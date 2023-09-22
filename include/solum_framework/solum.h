@@ -86,6 +86,20 @@ typedef void (^CusStatusFn)(const CusStatusInfo* _Nullable status);
 /// probe info callback function
 /// @param[in] info the probe info
 typedef void (^CusProbeInfoFn)(const CusProbeInfo* _Nullable info);
+/// low level param callback function
+/// @param[in] value the parameter value, or nil if the value cannot be retrieved
+typedef void (^CusLowLevelParamFn)(NSNumber* _Nullable value);
+/// gate lines callback function
+/// @param[in] lines the gate lines for the current mode, or nil if the gate lines cannot be retrieved
+typedef void (^CusGateFn)(const CusGateLines* _Nullable lines);
+/// tee connection callback function
+/// @param[in] connected flag associated with the tee having a disposable probe connection
+/// @param[in] serial if a probe is connected, the serial number of the probe
+/// @param[in] timeRemaining if a probe is connected, the time remaining in percentage
+/// @param[in] id patient id if burned in to the probe
+/// @param[in] name patient name if burned in to the probe
+/// @param[in] exam exam id if burned in to the probe
+typedef void (^CusTeeConnectFn)(BOOL connected, NSString * _Nonnull serial, double timeRemaining, NSString * _Nonnull id, const NSString * _Nonnull name, const NSString * _Nonnull exam);
 
 //! @brief Solum interface
 __attribute__((visibility("default"))) @interface Solum : NSObject
@@ -104,7 +118,7 @@ __attribute__((visibility("default"))) @interface Solum : NSObject
 /// @param[in] address the ip address of the probe
 /// @param[in] port the probe's tcp port to connect to
 - (void)connect:(NSString * _Nonnull)address
-            port:(unsigned int)port;
+        port:(unsigned int)port;
 
 /// disconnects from an existing connection
 - (void)disconnect;
@@ -117,7 +131,7 @@ __attribute__((visibility("default"))) @interface Solum : NSObject
 /// @param[in] platform the platform to retrieve the firmware version for
 /// @param[in] callback callback to receive the firmware version
 - (void) getFirmwareVersion:(CusPlatform) platform
-                callback:(CusFirmwareFn _Nonnull)callback;
+        callback:(CusFirmwareFn _Nonnull)callback;
 
 /// sets the certificate for the probe to be connected with
 /// @param[in] cert the certificate provided by clarius
@@ -129,10 +143,12 @@ __attribute__((visibility("default"))) @interface Solum : NSObject
 /// It is possible the auto-detection fails with error "undetermined hardware version", preventing the update.
 /// In that case try to force the update by specifying the platform.
 ///
-/// @param[in] fn the callback function that reports the status
+/// @param[in] filePath path to the firmware update file
+/// @param[in] callback the callback function that reports the status
 /// @param[in] progress software update progress callback
-- (void)softwareUpdate:(CusSwUpdateFn _Nonnull)fn
-            progress:(CusProgressFn _Nullable)progress;
+- (void)softwareUpdate:(NSString * _Nonnull)filePath
+        callback:(CusSwUpdateFn _Nonnull)callback
+        progress:(CusProgressFn _Nullable)progress;
 
 /// force a software update for the given platform
 ///
@@ -149,12 +165,14 @@ __attribute__((visibility("default"))) @interface Solum : NSObject
 /// 1. Attempt an update without specifying a platform first (let Solum select the appropriate firmware)
 /// 2. Only if the update fails, try specifying a platform
 ///
-/// @param[in] fn the callback function that reports the status
+/// @param[in] filePath path to the firmware update file
+/// @param[in] callback the callback function that reports the status
 /// @param[in] progress software update progress callback
 /// @param[in] platform upload the firmware for this platform
-- (void)softwareUpdate:(CusSwUpdateFn _Nonnull)fn
-            progress:(CusProgressFn _Nullable)progress
-            platform:(CusPlatform)platform;
+- (void)softwareUpdate:(NSString * _Nonnull)filePath
+        callback:(CusSwUpdateFn _Nonnull)callback
+        progress:(CusProgressFn _Nullable)progress
+        platform:(CusPlatform)platform;
 
 /// retrieves the available probe models the api supports
 /// @return the list of probe models
@@ -169,7 +187,7 @@ __attribute__((visibility("default"))) @interface Solum : NSObject
 /// @param[in] application the application to load
 /// @param[in] probe the probe model to load
 - (void)loadApplication: (NSString * _Nonnull)application
-                probe:(NSString * _Nonnull)probe;
+        probe:(NSString * _Nonnull)probe;
 
 /// sets the dimensions of the output display for scan conversion
 /// @param[in] width the number of horizontal pixels in the output
@@ -177,7 +195,7 @@ __attribute__((visibility("default"))) @interface Solum : NSObject
 /// @note the output will always result in a 1:1 pixel ratio, depending on geometry of scanning array, and parameters
 ///       the frame will have various sizes of black borders around the image
 - (void)setOutputWidth:(int)width
-            withHeight:(int)height;
+        withHeight:(int)height;
 
 /// sets a flag to separate overlays into separate images, for example if color/power Doppler or strain
 /// imaging is enabled, two callbacks will be generated, one with the grayscale frame, and the other with the overlay
@@ -207,19 +225,19 @@ __attribute__((visibility("default"))) @interface Solum : NSObject
 /// @param[in] param the parameter to set
 /// @param[in] value the value to set the parameter to
 - (void)setParam:(CusParam)param
-            value:(double)value;
+        value:(double)value;
 
 /// retrieves an imaging parameter value
 /// @param[in] callback callback to receive the value (nil if the parameter value retrieval could not be made)
 /// @param[in] param the parameter to retrieve the value for
 - (void)getParam:(CusParamFn _Nonnull)callback
-                param:(CusParam)param;
+        param:(CusParam)param;
 
 /// retrieves the range for a specific parameter
 /// @param[in] callback callback to receive the range
 /// @param[in] param the parameter to retrieve the range for
 - (void)getRange:(CusRangeFn _Nonnull)callback
-                  param:(CusParam)param;
+        param:(CusParam)param;
 
 /// sets the TGC
 /// @param[in] tgc the values to use for the TGC
@@ -240,8 +258,8 @@ __attribute__((visibility("default"))) @interface Solum : NSObject
 /// @param[in] x the pixel x position
 /// @param[in] y the pixel y position
 - (void)adjustRoi:(CusRoiFunction)fn
-            x:(double)x
-            y:(double)y;
+        x:(double)x
+        y:(double)y;
 
 /// maximizes the ROI
 - (void)maximizeRoi;
@@ -268,8 +286,8 @@ __attribute__((visibility("default"))) @interface Solum : NSObject
 /// @param[in] res result callback function, will return size of buffer required upon success, 0 if no raw data was buffered, or -1 if request could not be made,
 /// @note the probe must be frozen and in a raw data buffering mode in order for the call to succeed
 - (void)requestRawData:(CusRawFn _Nonnull)res
-                start:(long long int)start
-                end:(long long int)end;
+        start:(long long int)start
+        end:(long long int)end;
 
 /// retrieves raw data from a previous request
 /// @param[in] res result callback function, will return size of buffer required upon success, 0 if no raw data was buffered, or -1 if request could not be made,
@@ -291,6 +309,53 @@ __attribute__((visibility("default"))) @interface Solum : NSObject
 /// @param[in] callback callback to receive the call result
 - (void)resetProbe:(CusProbeReset)probeReset
         callback:(CusBooleanFn _Nonnull)callback;
+
+- (void)getGate:(CusGateFn _Nonnull)callback;
+
+/// adjusts the gate based on the input provided
+/// @param[in] x the horizontal pixel position
+/// @param[in] y the vertical pixel position
+- (void)adjustGate:(double)x
+        y:(double)y;
+
+/// sets a low level parameter to a specific value to gain access to lower level device control
+/// @param[in] prm the parameter to change
+/// @param[in] val the value to set the parameter to
+/// @note see external documentation for supported parameters
+- (void)setLowLevelParam:(NSString * _Nonnull)prm
+        val:(double)val;
+
+/// enables or disables a low level parameter to gain access to lower device control
+/// @param[in] prm the parameter to change
+/// @param[in] en the enable flag, 0 to disable, 1 to enable
+/// @note see external documentation for supported parameters
+- (void)enableLowLevelParam:(NSString * _Nonnull)prm
+        val:(BOOL)en;
+
+/// sets a pulse shape parameter to a specific value to gain access to lower level device control
+/// @param[in] prm the parameter to change
+/// @param[in] shape the shape to set the pulse as
+/// @note see external documentation for supported parameters
+- (void)setLowLevelPulse:(NSString * _Nonnull)prm
+        shape:(NSString * _Nonnull)shape;
+
+/// retrieves a low level parameter value
+/// @param[in] prm the parameter to retrieve the value for
+/// @param[in] callback callback to receive the call result
+- (void)getLowLevelParam:(NSString * _Nonnull)prm
+        callback:(CusLowLevelParamFn _Nonnull)callback;
+
+/// sets a callback for the tee connectivity function
+/// @param[in] tee the callback function
+- (void)setTeeFn:(CusTeeConnectFn _Nonnull)tee;
+
+/// set the tee exam info for a connected probe
+/// @param[in] idStr the patient id
+/// @param[in] name the patient name
+/// @param[in] exam the exam id
+- (void)setTeeExamInfo:(NSString * _Nonnull)idStr
+        name:(NSString * _Nonnull)name
+        exam:(NSString * _Nonnull)exam;
 
 - (void)setConnectCallback:(CusConnectFn _Nullable)connectCallback;
 - (void)setCertCallback:(CusCertFn _Nullable)certCallback;

@@ -12,6 +12,21 @@ enum ParameterType: UInt32, CaseIterable {
     case imageDepth = 0, gain, autoGain
 }
 
+enum PlatformType: UInt32 {
+    case V1 = 0, HD, HD3
+
+    init(rawValue: String) {
+        print(rawValue)
+        if rawValue.contains("HD3") {
+            self = .HD3
+        } else if rawValue.contains("HD") {
+            self = .HD
+        } else {
+            self = .V1
+        }
+    }
+}
+
 /// Class to wrap the Solum framework for Swift
 class SolumModel: ObservableObject {
 
@@ -50,13 +65,15 @@ class SolumModel: ObservableObject {
     @Published var port: UInt32 = 0
     /// Certificate to allow scanner use (provide before connecting)
     @Published var certificate: String = ""
+    /// Path to the firmware update file
+    @Published var firmwarePath: String = ""
     /// True if the scanner reported that a firmware update is required
     @Published var updateRequired: Bool = false
     /// Update send progress from 0.0 to 1.0
     @Published var updateProgress: Double = 0.0
     /// Send the firmware update to the current connect scanner
     func updateSoftware() {
-        solum.softwareUpdate({ (result: CusSwUpdate) -> Void in
+        solum.softwareUpdate(firmwarePath, callback: { (result: CusSwUpdate) -> Void in
             print("Software update result: \(result)")
         }) { (progress: Int32) -> Void in
             self.updateProgress = Double(progress) / 100.0
@@ -115,6 +132,17 @@ class SolumModel: ObservableObject {
     /// Stop imaging
     func stopImaging() {
         solum.run(false)
+    }
+    /// Get the version of the firmware
+    func getFirmwareVersion(platformType: PlatformType) {
+        solum.getFirmwareVersion(CusPlatform(platformType.rawValue)) {(version: String?) -> Void in
+            guard let version else {
+                print("Unable to retrieve the firmware version")
+                return
+            }
+            let userInfo = ["firmwareVersion": version]
+            NotificationCenter.default.post(name: .firmwareVersion, object: nil, userInfo: userInfo)
+        }
     }
     /// Solum framework instance
     private let solum = Solum()
@@ -188,6 +216,21 @@ class SolumModel: ObservableObject {
             if self.scannerTypes.contains(scanner.model) {
                 self.scannerType = scanner.model
             }
+        }
+        // Listen for notifications from the cloud model about the firmware path
+        NotificationCenter.default.addObserver(forName: .firmwarePath, object: nil, queue: nil) { [weak self] notification in
+            guard let self = self else {
+                return
+            }
+            guard let userInfo = notification.userInfo else {
+                return
+            }
+            guard let firmwarePath = userInfo["firmwarePath"] as? String else {
+                return
+            }
+            DispatchQueue.main.async(execute: { [self] in
+                self.firmwarePath = firmwarePath
+            })
         }
    }
 }
