@@ -690,7 +690,7 @@ void Solum::onLoad()
     {
         // wait a second for the application load to propagate internally before fetching the range
         // ideally the api would provide a callback for when the application is fully loaded (ofi)
-        QTimer::singleShot(1000, [=, this] ()
+        QTimer::singleShot(1000, this, [this] ()
         {
             CusRange range;
             if (solumGetRange(ImageDepth, &range) == 0)
@@ -904,7 +904,7 @@ void Solum::updateVelocity(CusMode mode)
     // wait a second for the mode load to propagate internally before fetching the velociy
     if (mode == ColorMode || mode == PwMode)
     {
-        QTimer::singleShot(1000, [=, this] ()
+        QTimer::singleShot(1000, this, [this] ()
         {
             auto v = solumGetParam(DopplerVelocity);
             if (v)

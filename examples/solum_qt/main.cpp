@@ -9,6 +9,22 @@ static std::vector<char> _prescanImage;
 static std::vector<char> _spectrum;
 static std::vector<char> _rfData;
 
+void print_firmware_version()
+{
+    char buffer [64];
+    auto get_version = [&buffer](CusPlatform platform) -> QString
+    {
+        if (CUS_SUCCESS != solumFwVersion(platform, buffer, std::size(buffer)))
+            return QStringLiteral("error");
+        buffer [std::size(buffer)-1] = '\0';
+        return QString::fromLatin1(buffer);
+    };
+    qDebug() << '\n';
+    qDebug() << "V1 firmware version:" << get_version(CusPlatform::V1);
+    qDebug() << "HD firmware version:" << get_version(CusPlatform::HD);
+    qDebug() << "HD3 firmware version:" << get_version(CusPlatform::HD3);
+}
+
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
@@ -118,6 +134,8 @@ int main(int argc, char *argv[])
             QApplication::postEvent(_solum.get(), new event::Tee(connected, QString::fromLatin1(serial), timeRemaining,
                 QString::fromLatin1(id), QString::fromLatin1(name), QString::fromLatin1(exam)));
         });
+
+    print_firmware_version();
 
     _solum->show();
     const int result = a.exec();
