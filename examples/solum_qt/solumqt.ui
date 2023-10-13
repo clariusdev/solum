@@ -788,8 +788,43 @@ After clicking the button, wait for the SSID to be published via BLE, then conne
          </layout>
         </item>
         <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_7">
-          <item>
+         <layout class="QGridLayout" name="_dial_layout">
+          <item row="0" column="1" alignment="Qt::AlignHCenter">
+           <widget class="QLabel" name="gain_label">
+            <property name="text">
+             <string>Gain</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="2" alignment="Qt::AlignHCenter">
+           <widget class="QLabel" name="focus_label">
+            <property name="text">
+             <string>Focus</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="3" alignment="Qt::AlignHCenter">
+           <widget class="QLabel" name="cfigain_label">
+            <property name="text">
+             <string>CFI Gain</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="4" alignment="Qt::AlignHCenter">
+           <widget class="QLabel" name="opacity_label">
+            <property name="text">
+             <string>Opacity</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="5" alignment="Qt::AlignHCenter">
+           <widget class="QLabel" name="rf_label">
+            <property name="text">
+             <string>RF</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1" alignment="Qt::AlignHCenter">
            <widget class="QDial" name="gain">
             <property name="enabled">
              <bool>false</bool>
@@ -820,7 +855,7 @@ After clicking the button, wait for the SSID to be published via BLE, then conne
             </property>
            </widget>
           </item>
-          <item>
+          <item row="2" column="2" alignment="Qt::AlignHCenter">
            <widget class="QDial" name="focus">
             <property name="enabled">
              <bool>false</bool>
@@ -854,7 +889,7 @@ After clicking the button, wait for the SSID to be published via BLE, then conne
             </property>
            </widget>
           </item>
-          <item>
+          <item row="2" column="3" alignment="Qt::AlignHCenter">
            <widget class="QDial" name="cfigain">
             <property name="maximumSize">
              <size>
@@ -882,7 +917,7 @@ After clicking the button, wait for the SSID to be published via BLE, then conne
             </property>
            </widget>
           </item>
-          <item>
+          <item row="2" column="4" alignment="Qt::AlignHCenter">
            <widget class="QDial" name="opacity">
             <property name="minimumSize">
              <size>
@@ -916,7 +951,7 @@ After clicking the button, wait for the SSID to be published via BLE, then conne
             </property>
            </widget>
           </item>
-          <item>
+          <item row="2" column="5" alignment="Qt::AlignHCenter">
            <widget class="QDial" name="rfzoom">
             <property name="maximumSize">
              <size>
@@ -947,7 +982,7 @@ After clicking the button, wait for the SSID to be published via BLE, then conne
             </property>
            </widget>
           </item>
-          <item>
+          <item row="2" column="7">
            <spacer name="horizontalSpacer_2">
             <property name="orientation">
              <enum>Qt::Horizontal</enum>

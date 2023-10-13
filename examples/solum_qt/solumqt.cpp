@@ -908,9 +908,12 @@ void Solum::reflectMode(CusMode m)
     spectrum_->setVisible(m == MMode || m == PwMode);
     signal_->setVisible(m == RfMode);
     ui_.cfigain->setVisible(m == ColorMode || m == PowerMode);
+    ui_.cfigain_label->setVisible(m == ColorMode || m == PowerMode);
     ui_.velocity->setVisible(m == ColorMode || m == PwMode);
     ui_.opacity->setVisible(m == Strain);
+    ui_.opacity_label->setVisible(m == Strain);
     ui_.rfzoom->setVisible(m == RfMode);
+    ui_.rf_label->setVisible(m == RfMode);
     ui_.rfStream->setVisible(m == RfMode);
     ui_.split->setVisible(m == ColorMode || m == PowerMode || m == Strain);
 }
