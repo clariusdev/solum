@@ -459,7 +459,7 @@ bool Solum::event(QEvent *event)
     }
     else if (event->type() == IMAGE_EVENT)
     {
-        newProcessedImage(*dynamic_cast<event::Image*>(event));
+        newProcessedImage(*dynamic_cast<event::ProcessedImage*>(event));
         return true;
     }
     else if (event->type() == PRESCAN_EVENT)
@@ -701,7 +701,7 @@ void Solum::setProgress(int progress)
 
 /// called when a new image has been sent
 /// @param[in] evt the processed image event
-void Solum::newProcessedImage(const event::Image& evt)
+void Solum::newProcessedImage(const event::ProcessedImage& evt)
 {
     if (evt.overlay_)
         image2_->loadImage(evt.img_);

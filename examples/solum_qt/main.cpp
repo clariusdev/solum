@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
                 .format_ = nfo->format,
             };
 
-            QApplication::postEvent(_solum.get(), new event::Image(IMAGE_EVENT, solumImage, nfo->overlay, imu));
+            QApplication::postEvent(_solum.get(), new event::ProcessedImage(IMAGE_EVENT, solumImage, nfo->overlay, imu));
         },
         // new raw data callback
         [](const void* data, const CusRawImageInfo* nfo, int, const CusPosInfo*)
@@ -124,7 +124,7 @@ int main(int argc, char *argv[])
                     _prescanImage.resize(sz);
                 memcpy(_prescanImage.data(), data, sz);
                 solumImage.img_ = { reinterpret_cast<uint8_t *>(_prescanImage.data()), sz },
-                QApplication::postEvent(_solum.get(), new event::Image(PRESCAN_EVENT, solumImage, false, QQuaternion()));
+                QApplication::postEvent(_solum.get(), new event::Image(PRESCAN_EVENT, solumImage, false));
             }
         },
         // new spectrum callback

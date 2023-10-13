@@ -100,13 +100,11 @@ namespace event
         /// @param[in] evt the event type
         /// @param[in] img the image
         /// @param[in] overlay flag if the image came from a separated overlay
-        /// @param[in] imu latest imu data if sent
-        Image(QEvent::Type evt, const SolumImage& img, bool overlay, const QQuaternion& imu) :
-            QEvent(evt), img_(img), overlay_(overlay), imu_(imu) { }
+        Image(QEvent::Type evt, const SolumImage& img, bool overlay) :
+            QEvent(evt), img_(img), overlay_(overlay) { }
 
         SolumImage img_;
-        bool overlay_;          ///< flag if the image came from a separated overlay
-        QQuaternion imu_;   ///< latest imu position
+        bool overlay_;  ///< flag if the image came from a separated overlay
     };
 
     /// wrapper for new spectrum events that can be posted from the api callbacks
@@ -127,6 +125,21 @@ namespace event
         int bps_ ;          ///< bits per sample
     };
 
+    /// wrapper for new processed image events that can be posted from the api callbacks
+    class ProcessedImage : public Image
+    {
+    public:
+       /// default constructor
+       /// @param[in] evt the event type
+       /// @param[in] img the image data
+       /// @param[in] overlay flag if the image came from a separated overlay
+       /// @param[in] imu latest imu data if sent
+       ProcessedImage(QEvent::Type evt, const SolumImage& img, bool overlay, const QQuaternion& imu) :
+            Image(evt, img, overlay), imu_(imu) { }
+
+       QQuaternion imu_;   ///< latest imu position
+    };
+
     /// wrapper for new rf events that can be posted from the api callbacks
     class RfImage : public Image
     {
@@ -136,7 +149,7 @@ namespace event
         /// @param[in] lateral lateral spacing between lines
         /// @param[in] axial sample size
         RfImage(SolumImage img, double lateral, double axial) :
-            Image(RF_EVENT, img, false, QQuaternion()),
+            Image(RF_EVENT, img, false),
             lateral_(lateral),
             axial_(axial)
         {
@@ -240,7 +253,7 @@ protected:
 
 private:
     void loadApplications(const QStringList& probes);
-    void newProcessedImage(const event::Image& evt);
+    void newProcessedImage(const event::ProcessedImage& evt);
     void newPrescanImage(const event::Image& evt);
     void newSpectrumImage(const event::SpectrumImage& evt);
     void newRfImage(const event::RfImage& evt);
