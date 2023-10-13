@@ -516,7 +516,7 @@ void Solum::setConnected(CusConnection res, int port, const QString& msg)
         addStatus(tr("Disconnected"));
         ui_.connect->setText(tr("Connect"));
         ui_.probeStatus->clear();
-        ui_.freeze->setEnabled(false);
+        ui_.imaging->setEnabled(false);
         ui_.update->setEnabled(false);
         ui_.load->setEnabled(false);
         // disable controls upon disconnect
@@ -573,7 +573,7 @@ void Solum::softwareUpdate(CusSwUpdate res)
 void Solum::imagingState(CusImagingState state, bool imaging)
 {
     bool ready = (state != ImagingNotReady);
-    ui_.freeze->setEnabled(ready ? true : false);
+    ui_.imaging->setEnabled(ready ? true : false);
     ui_.autogain->setEnabled(ready ? true : false);
     ui_.autofocus->setEnabled(ready ? true : false);
     ui_.decdepth->setEnabled(ready ? true : false);
@@ -596,7 +596,7 @@ void Solum::imagingState(CusImagingState state, bool imaging)
     addStatus(tr("Image: %1").arg(imaging ? tr("Running") : tr("Frozen")));
     if (ready)
     {
-        ui_.freeze->setText(imaging ? QStringLiteral("Stop") : QStringLiteral("Run"));
+        ui_.imaging->setText(imaging ? tr("Stop") : tr("Run"));
         imaging_ = imaging;
         getParams();
         image_->checkRoi();
@@ -756,8 +756,8 @@ void Solum::onConnect()
     }
 }
 
-/// called when the freeze button is clicked
-void Solum::onFreeze()
+/// handles starting and stopping imaging with the selected workflow
+void Solum::onImaging()
 {
     if (!connected_)
         return;

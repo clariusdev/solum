@@ -279,7 +279,7 @@ public slots:
     void onWiFi();
     void onAp();
     void onConnect();
-    void onFreeze();
+    void onImaging();
     void onUpdate();
     void onLoad();
     void onProbeSelected(const QString& probe);
