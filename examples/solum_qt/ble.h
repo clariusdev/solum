@@ -30,12 +30,15 @@ private slots:
 signals:
     void connected(bool);
     void devices(const QStringList&);
-    void powerReady(bool);
+    void powerReady(bool, const QString&);
     void powered(bool);
-    void wifiReady(bool);
+    void wifiReady(bool, const QString&);
     void wifiInfo(const QString&);
 
 private:
+    ///< probe_->remoteName() might be prefixed with "CUS-", this one isn't.
+    QString name_;
+
     DiscoveredDevices probes_;
     QBluetoothDeviceDiscoveryAgent search_;
     std::unique_ptr<QLowEnergyController> probe_;

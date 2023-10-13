@@ -302,6 +302,7 @@ public slots:
     void tgcBottom(int);
 
 private:
+    QString bleConnectedProbe_;     ///< serial of the probe connected via BLE
     bool tcpConnected_ = false;     ///< TCP connection state
     bool imaging_;                  ///< imaging state
     bool teeConnected_;             ///< tee connected state

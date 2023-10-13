@@ -191,21 +191,34 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), imaging_(false), teeConnect
         }
     });
 
-    const auto bleReadyCheck = [this]()
+    const auto bleReadyCheck = [this](const QString& probe)
     {
         if(ui_.wifi->isEnabled() && ui_.ring->isEnabled())
         {
             addStatus("(BLE) Service discovery finished");
             ui_.bleconnect->ready();
+            ui_.tcpbox->setTitle(tr("Connection to %1").arg(probe));
+            ui_.tcpbox->setEnabled(true);
+            bleConnectedProbe_ = probe;
+        }
+        else
+        {
+            ui_.tcpbox->setTitle(tr("(connect to a probe via BLE first)"));
+            ui_.tcpbox->setEnabled(false);
         }
     };
 
-    connect(&ble_, &Ble::connected, [this](bool connected)
+    connect(&ble_, &Ble::connected, [this, bleReadyCheck](bool connected)
     {
         if(connected)
             addStatus("(BLE) Connected, discovering services...");
         else
+        {
             addStatus("(BLE) Disconnected");
+            bleConnectedProbe_.clear();
+            ui_.ring->setEnabled(false);
+            bleReadyCheck("");
+        }
     });
 
     // connect ble device list
@@ -225,19 +238,19 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), imaging_(false), teeConnect
     });
 
     // power service ready
-    connect(&ble_, &Ble::powerReady, [this, bleReadyCheck](bool en)
+    connect(&ble_, &Ble::powerReady, [this, bleReadyCheck](bool en, const QString& probe)
     {
         ui_.poweron->setEnabled(en);
         ui_.poweroff->setEnabled(en);
         ui_.ring->setEnabled(en);
-        bleReadyCheck();
+        bleReadyCheck(probe);
     });
 
     // wifi service ready
-    connect(&ble_, &Ble::wifiReady, [this, bleReadyCheck](bool en)
+    connect(&ble_, &Ble::wifiReady, [this, bleReadyCheck](bool en, const QString& probe)
     {
         ui_.networkConfig->setEnabled(en);
-        bleReadyCheck();
+        bleReadyCheck(probe);
     });
 
     // power status sent
@@ -507,13 +520,12 @@ void Solum::setConnected(CusConnection res, int port, const QString& msg)
         ui_.load->setEnabled(true);
 
         // load the certificate if it was already retrieved from the cloud
-        QString serial = ui_.bleprobes->currentText();
-        if (certified_.count(serial))
-            solumSetCert(certified_[serial].crt.toLatin1());
+        if (certified_.count(bleConnectedProbe_))
+            solumSetCert(certified_[bleConnectedProbe_].crt.toLatin1());
 
-        if (tcpConnectedProbe_ != serial)
+        if (tcpConnectedProbe_ != bleConnectedProbe_)
             activeProbeAndWorkflow_ = {};
-        tcpConnectedProbe_ = serial;
+        tcpConnectedProbe_ = bleConnectedProbe_;
     }
     else if (res == ProbeDisconnected)
     {

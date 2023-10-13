@@ -107,8 +107,10 @@ bool Ble::connectToProbe(const QString& name)
     if (probe_ && probe_->state() != QLowEnergyController::UnconnectedState)
         return false;
 
-    emit powerReady(false);
-    emit wifiReady(false);
+    name_ = name;
+
+    emit powerReady(false, name_);
+    emit wifiReady(false, name_);
 
     probe_.reset(QLowEnergyController::createCentral(dev, this));
     QObject::connect(probe_.get(), &QLowEnergyController::connected, this, &Ble::onConnected);
@@ -116,8 +118,8 @@ bool Ble::connectToProbe(const QString& name)
     {
         // ensure we stop pinging on a disconnect
         ping_.stop();
-        emit powerReady(false);
-        emit wifiReady(false);
+        emit powerReady(false, name_);
+        emit wifiReady(false, name_);
     });
     QObject::connect(probe_.get(), &QLowEnergyController::serviceDiscovered, this, &Ble::onService);
     QObject::connect(probe_.get(), &QLowEnergyController::discoveryFinished, this, &Ble::onDiscoveryFinished);
@@ -143,8 +145,8 @@ void Ble::onConnected()
     if (probe_)
     {
         emit connected(true);
-        emit powerReady(false);
-        emit wifiReady(false);
+        emit powerReady(false, name_);
+        emit wifiReady(false, name_);
         probe_->discoverServices();
     }
 }
@@ -176,7 +178,7 @@ void Ble::onService(const QBluetoothUuid& u)
             });
             if (s == QLowEnergyService::RemoteServiceDiscovered)
             {
-                emit powerReady(true);
+                emit powerReady(true, name_);
 
                 auto ch = power_->characteristic(powerPublishedUuid());
                 if (ch.isValid())
@@ -212,7 +214,7 @@ void Ble::onService(const QBluetoothUuid& u)
             });
             if (s == QLowEnergyService::RemoteServiceDiscovered)
             {
-                emit wifiReady(true);
+                emit wifiReady(true, name_);
 
                 auto ch = wifi_->characteristic(wifiPublishedUuid());
                 if (ch.isValid())
