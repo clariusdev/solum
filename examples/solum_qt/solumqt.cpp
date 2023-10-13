@@ -510,6 +510,10 @@ void Solum::setConnected(CusConnection res, int port, const QString& msg)
         QString serial = ui_.bleprobes->currentText();
         if (certified_.count(serial))
             solumSetCert(certified_[serial].crt.toLatin1());
+
+        if (tcpConnectedProbe_ != serial)
+            activeProbeAndWorkflow_ = {};
+        tcpConnectedProbe_ = serial;
     }
     else if (res == ProbeDisconnected)
     {
@@ -821,19 +825,27 @@ void Solum::onLoad()
     if (!connected_)
         return;
 
-    if (solumLoadApplication(ui_.probes->currentText().toStdString().c_str(), ui_.workflows->currentText().toStdString().c_str()) < 0)
+    // capture the currently selected one, just in case the user changes it
+    // before the timer
+    const auto probeAndWorkflow = std::make_pair(
+        ui_.probes->currentText().toStdString(),
+        ui_.workflows->currentText().toStdString()
+    );
+
+    if (solumLoadApplication(probeAndWorkflow.first.c_str(), probeAndWorkflow.second.c_str()) < 0)
         addStatus(tr("Error requesting application load"));
     // update depth range on a successful load
     else
     {
         // wait a second for the application load to propagate internally before fetching the range
         // ideally the api would provide a callback for when the application is fully loaded (ofi)
-        QTimer::singleShot(1000, this, [this] ()
+        QTimer::singleShot(1000, this, [this, probeAndWorkflow] ()
         {
             CusRange range;
             if (solumGetRange(ImageDepth, &range) == 0)
             {
                 ui_.maxdepth->setText(QStringLiteral("Max: %1cm").arg(range.max));
+                activeProbeAndWorkflow_ = probeAndWorkflow;
             }
         });
     }

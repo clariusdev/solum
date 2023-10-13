@@ -305,6 +305,7 @@ private:
     bool connected_;                ///< connection state
     bool imaging_;                  ///< imaging state
     bool teeConnected_;             ///< tee connected state
+    QString tcpConnectedProbe_;     ///< serial of the probe connected via TCP
     Ui::Solum ui_;                  ///< ui controls, etc.
     UltrasoundImage* image_;        ///< image display
     UltrasoundImage* image2_;       ///< secondary image display
@@ -320,4 +321,7 @@ private:
     std::unique_ptr<QSettings> settings_;   ///< persistent settings
     QIntValidator* portValidator_;  ///< keeps port fields between 1 and 65535
     QString portError_;             ///< error message for port validation
+
+    ///< preserves parameters across imaging runs
+    std::pair<std::string, std::string> activeProbeAndWorkflow_;
 };
