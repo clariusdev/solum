@@ -79,7 +79,7 @@
         <item>
          <widget class="QGroupBox" name="groupBox_4">
           <property name="title">
-           <string>Authentication</string>
+           <string>Fetch and renew</string>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_12">
            <item>
