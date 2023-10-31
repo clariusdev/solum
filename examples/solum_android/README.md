@@ -18,12 +18,6 @@ Important Notes
 
 - On Android < 33, allow some delay between successive writes to the Bluetooth GATT.
 
-TODO
-----
-
-* Provide a multi-ABI package
-* Download certificates
-
 Certificates
 ----
 To manually download the certificates:
