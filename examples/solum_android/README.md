@@ -1,7 +1,7 @@
 Solum Example
 ====
 
-1. Copy the `aar` package into the `libs` subfolder
+1. Copy the `aar` package (found in the repository's release section) into the `libs` subfolder
 2. Re-sync Gradle
 3. Build
 
