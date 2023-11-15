@@ -234,7 +234,7 @@ To subscribe to the Power Published characteristic, one can write 0100 to the ch
 To power on or off the device, the _Power Request_ characteristic can be written to. Writing 0x00 to the characteristic will power the device off, and writing 0x01 will power the device on.
 
 ## Wi-Fi Information Service
-The __WIS__ is a custom service built by Clarius to read and manage the Wi-Fi network once the probe is powered up and ready. A probe is typically in a ready state when the LED has stopped flashing and is solid blue.
+The __WIS__ is a custom service built by Clarius to read and manage the Wi-Fi network once the probe is powered up and ready. A probe is typically in a ready state when the LED has stopped flashing and is solid blue. The service data is published and written to in [YAML](https://yaml.org).
 
 ### Wi-Fi Published Characteristic
 Once ready, the current Wi-Fi network information will be published through the _Wi-Fi Published_ characteristic, and can be read at any point after a BLE connection, as well as subscribed to, and thus a notification will take place when the information has changed. If the service reads "N/A", it typically means the probe has not finished booting to a ready state.
