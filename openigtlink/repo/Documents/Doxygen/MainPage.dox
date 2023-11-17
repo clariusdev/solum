@@ -1,0 +1,38 @@
+/**
+ *
+ * \mainpage  The OpenIGTLink Library
+ *
+ * \section intro Introduction
+ *
+ * The OpenIGTLink protocol is a simple but extensible network communication protocol
+ * to exchange various types of data among software and devices for image-guided therapy
+ * (IGT) e.g. surgical navigation software, tracking device, robotic device, imaging scanner.
+ * The protocol can handle images, tool positions, transforms, commands, device status,
+ * monitoring command, and other user-defined data types.
+ * It is designed to work in the application layer of the TCP/IP stack. 
+ *
+ * The goal of the OpenIGTLink protocol is to make system integration for IGT application easier
+ * and faster. To achieve this objective, we set the following rules:
+ *
+ *  \arg \c Open. The protocol and the OpenIGTLink library is provided free of charge for
+ *  any purpose including commercial use. This would encourage engineers and researchers
+ *  to participate the community and help making the protocol more universal, compatible and
+ *  reliable. 
+ *
+ *  \arg \c Simple. The protocol only defines a limited number of simple memory layouts
+ *  for messaging and does not require interface software to handle the all types of messages.
+ *  Such simple specification allows implementing OpenIGTLink interface for wide variety of
+ *  computer systems ranging from embedded systems to high-performance computers.
+ *
+ *  \arg \c  Extensible. The protocol has a mechanism to define a user-defined message
+ *  type. 
+ *
+ * \section homepage More Information
+ *
+ * The Home Page of the OpenIGTLink is 
+ *
+ * http://openigtlink.org/
+ *
+ *
+ */
+

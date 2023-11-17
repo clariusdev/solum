@@ -1,0 +1,12 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/ingydotnet/git-subrepo#readme
+;
+[subrepo]
+	remote = https://github.com/openigtlink/OpenIGTLink
+	branch = master
+	commit = c512727425c2b7a594fabb9cd1fbfac512bf376e
+	parent = 2d0901c16500ebe9fe208af805173ffc5cd50976
+	method = merge
+	cmdver = 0.4.6
