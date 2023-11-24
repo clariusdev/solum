@@ -60,7 +60,11 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), imaging_(false), teeConnect
     reflectMode(BMode);
     ui_._tabs->setTabEnabled(ui_._tabs->indexOf(ui_._3d), false);
 
-    settings_ = std::make_unique<QSettings>(QStringLiteral("settings.ini"), QSettings::IniFormat);
+    // settings.ini file needs to be at a location the application can write to.
+    // Writing directly into the application directory (using 'settings.ini') does not work on some systems (e.g. macos).
+    QString p = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
+    settings_ = std::make_unique<QSettings>(p + "/settings.ini", QSettings::IniFormat);
+
     ui_.token->setText(settings_->value("token").toString());
     settings_->beginGroup("Probes");
     for (const auto& probe: settings_->childGroups())
