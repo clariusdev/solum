@@ -296,6 +296,7 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), imaging_(false), teeConnect
             if (f.size())
             {
                 ret = f[0];
+                ret = ret.replace("\"", QString{});
                 ret.replace(field + QStringLiteral(" "), QString{});
             }
             return ret;
