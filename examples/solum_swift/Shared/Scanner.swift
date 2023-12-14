@@ -50,7 +50,7 @@ struct Scanner: Identifiable {
     var listenPolicy: ListenPolicy
     /// Charging status
     var chargingStatus: ChargingStatus
-    /// Scanner cerificate, if available
+    /// Scanner certificate, if available
     var certificate: String?
     /// ID provided for use in collections
     var id: String { serial }

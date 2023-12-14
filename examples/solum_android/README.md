@@ -1,7 +1,7 @@
 Solum Example
 ====
 
-1. Copy the `aar` package (found in the repository's release section) into the `libs` subfolder
+1. Copy the `aar` package (found in the repository's release section) into the libs subfolder
 2. Re-sync Gradle
 3. Build
 
@@ -18,26 +18,13 @@ Important Notes
 
 - On Android < 33, allow some delay between successive writes to the Bluetooth GATT.
 
-Certificates
+OEM API Key
 ----
-To manually download the certificates:
 
-1. Download the certificate from cloud:
+The OEM API key is used to authenticate against the Clarius Cloud REST API for example when downloading probe certificates and firmware.
 
-        curl -H "Authorization: OEM-API-Key <your key>" "https://cloud.clarius.com/api/public/v0/devices/oem/" | jq
+Obtain the OEM API key from the Clarius Cloud settings and paste it in the `secrets.gradle` file:
 
-2. Create file `secret.properties`
+    clarius_oem_api_key=<your key>
 
-3. Add a property `clariusProbeCertificate="<your cert>"` (escape newline characters in the string: `"\n"` -> `"\\n"`)
-
-4. This property will be added to the Java class `BuildConfig` by plugin secrets-gradle-plugin
-
-To automatically download the certificates:
-
-1. Create file `secret.properties`
-
-2. Add a property `clarius_oem_api_key="<your OEM-API-Key>"`
-
-3. This property will be added to the Java class `BuildConfig` by plugin secrets-gradle-plugin
-
-4. The certificates will be automatically downloaded when the app is launched and saved to [SharedPreferences](https://developer.android.com/training/data-storage/shared-preferences)
+This property will be added to the Java class `BuildConfig` by plugin secrets-gradle-plugin and used in the code.

@@ -14,6 +14,7 @@ extern "C"
     /// @param[in] newProcessedImage new processed image callback (scan-converted image)
     /// @param[in] newRawImage new raw image callback - (pre scan-converted image)
     /// @param[in] newSpectralImage new processed spectral image callback
+    /// @param[in] newImuData new imu data callback
     /// @param[in] imaging imaging state callback
     /// @param[in] btn button press callback
     /// @param[in] err error message callback
@@ -26,7 +27,8 @@ extern "C"
     SOLUM_EXPORT int solumInit(int argc, char** argv, const char* dir,
         CusConnectFn connect, CusCertFn cert, CusPowerDownFn power,
         CusNewProcessedImageFn newProcessedImage, CusNewRawImageFn newRawImage,
-        CusNewSpectralImageFn newSpectralImage, CusImagingFn imaging, CusButtonFn btn, CusErrorFn err,
+        CusNewSpectralImageFn newSpectralImage, CusNewImuDataFn newImuData,
+        CusImagingFn imaging, CusButtonFn btn, CusErrorFn err,
         int width, int height);
 
     /// cleans up memory allocated by the solum module

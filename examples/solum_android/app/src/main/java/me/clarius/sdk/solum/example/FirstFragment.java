@@ -98,6 +98,10 @@ public class FirstFragment extends Fragment {
         }
 
         @Override
+        public void newImuDataFn(PosInfo[] pos) {
+        }
+
+        @Override
         public void poweringDown(PowerDown reason, int seconds) {
             Log.d(TAG, "Powering down in " + seconds + " seconds (reason: " + reason + ")");
         }

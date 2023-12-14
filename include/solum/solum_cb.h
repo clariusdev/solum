@@ -62,3 +62,6 @@ typedef void (*CusErrorFn)(const char* msg);
 /// @param[in] name patient name if burned in to the probe
 /// @param[in] exam exam id if burned in to the probe
 typedef void (*CusTeeConnectFn)(bool connected, const char* serial, double timeRemaining, const char* id, const char* name, const char* exam);
+/// new imu data callback function
+/// @param[in] pos the positional information data tagged with the image
+typedef void (*CusNewImuDataFn)(const CusPosInfo* pos);

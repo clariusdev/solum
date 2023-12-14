@@ -17,7 +17,7 @@ struct DeviceResult: Codable {
 
 /// Scanner struct that matches JSON format from Clarius cloud
 struct ScannerResult: Codable {
-    /// Scanner cerificate, if available
+    /// Scanner certificate, if available
     var crt: String?
     /// Device additional details
     var device: DeviceResult
@@ -43,7 +43,7 @@ struct ScannerCloud {
     var serial: String
     /// Scanner model ID
     var model: String
-    /// Scanner cerificate, if available
+    /// Scanner certificate, if available
     var certificate: String?
 }
 

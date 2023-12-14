@@ -443,7 +443,7 @@ int init(int& argc, char** argv)
     std::string keydir = "/tmp/";
 
     // check command line options
-    while ((o = getopt(argc, argv, "k:a:p:")) != -1)
+    while ((o = getopt(argc, argv, "lk:a:p:")) != -1)
     {
         switch (o)
         {
@@ -452,6 +452,9 @@ int init(int& argc, char** argv)
         // ip address
         case 'a': ip_ = optarg; break;
         // port
+        case 'l':
+            PRINT << "enabling solum logging";
+            break;
         case 'p':
             try { port_ = std::stoi(optarg); }
             catch (std::exception&) { PRINT << port_; }
@@ -474,7 +477,7 @@ int init(int& argc, char** argv)
 
     // initialize with callbacks
     if (solumInit(argc, argv, keydir.c_str(), connectFn, certFn, powerDownFn, newProcessedImageFn,
-                   newRawImageFn, nullptr, imagingFn, buttonFn, errorFn, width, height) < 0)
+                   newRawImageFn, nullptr, nullptr, imagingFn, buttonFn, errorFn, width, height) < 0)
     {
         ERROR << "could not initialize solum module" << std::endl;
         return ERRCODE;
