@@ -64,7 +64,7 @@ public class CertificatesManager {
 
     public void downloadCertificates(@NonNull String oemKey) {
         cronetEngine.newUrlRequestBuilder("https://cloud.clarius.com/api/public/v0/devices/oem/", new CertificatesDownloadedCallback(),
-                        Executors.newSingleThreadExecutor()).addHeader("Authorization", "Authorization: OEM-API-Key " + oemKey)
+                        Executors.newSingleThreadExecutor()).addHeader("Authorization", "OEM-API-Key " + oemKey)
                 .build()
                 .start();
     }

@@ -38,7 +38,7 @@ public class FirmwareManager {
 
     public void downloadFW(@NonNull String oemKey, @NonNull String firmwareVersion) throws RuntimeException {
         cronetEngine.newUrlRequestBuilder(String.format("https://cloud.clarius.com/api/public/v0/devices/oem/firmware/%s/", firmwareVersion), new DownloadLinkReceivedCallback(),
-                        executor).addHeader("Authorization", "Authorization: OEM-API-Key " + oemKey)
+                        executor).addHeader("Authorization", "OEM-API-Key " + oemKey)
                 .build()
                 .start();
         fileName = String.format("firmware_v%s.zip", firmwareVersion);

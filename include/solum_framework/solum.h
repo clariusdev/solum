@@ -41,6 +41,9 @@ typedef void (^CusNewProcessedImageFn)(NSData * _Nonnull img, const CusProcessed
 /// @param[in] img pointer to the new grayscale image information
 /// @param[in] nfo image information associated with the image data
 typedef void (^CusNewSpectralImageFn)(NSData * _Nonnull img, const CusSpectralImageInfo * _Nonnull nfo);
+/// new imu data callback function
+/// @param[in] pos the positional information data tagged with the image
+typedef void (^CusNewImuDataFn)(const CusPosInfo * _Nonnull pos);
 /// imaging callback function
 /// @param[in] state the imaging ready state
 /// @param[in] imaging 1 = running , 0 = stopped
@@ -363,6 +366,7 @@ __attribute__((visibility("default"))) @interface Solum : NSObject
 - (void)setNewRawImageCallback:(CusNewRawImageFn _Nullable)newRawImageCallback;
 - (void)setNewProcessedImageCallback:(CusNewProcessedImageFn _Nullable)newProcessedImageCallback;
 - (void)setNewSpectralImageCallback:(CusNewSpectralImageFn _Nullable)newSpectralImageCallback;
+- (void)setNewImuDataCallback:(CusNewImuDataFn _Nullable)newImuDataCallback;
 - (void)setImagingCallback:(CusImagingFn _Nullable)imagingCallback;
 - (void)setButtonCallback:(CusButtonFn _Nullable)buttonCallback;
 - (void)setErrorCallback:(CusErrorFn _Nullable)errorCallback;
