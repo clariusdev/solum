@@ -14,7 +14,7 @@ void print_firmware_version()
     char buffer [64];
     auto get_version = [&buffer](CusPlatform platform) -> QString
     {
-        if (CUS_SUCCESS != solumFwVersion(platform, buffer, std::size(buffer)))
+        if (CUS_SUCCESS != solumFwVersion(platform, buffer, static_cast<int>(std::size(buffer))))
             return QStringLiteral("error");
         buffer [std::size(buffer)-1] = '\0';
         return QString::fromLatin1(buffer);

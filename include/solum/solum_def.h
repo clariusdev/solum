@@ -1,7 +1,7 @@
 #pragma once
 
 // SDK: solum
-// Version: 11.1.0
+// Version: 11.2.0
 
 #define CUS_MAXTGC  10
 #define CUS_SUCCESS 0
@@ -366,6 +366,7 @@ typedef struct _CusProbeSettings
     int sounds;         ///< Flag allowing the probe to make beeping sounds
     int wakeOnShake;    ///< Flag allowing the probe to start imaging when it is picked up while frozen
     int bandwidthOptimization; ///< Flag allowing the system to adjust bandwidth parameters automatically when lag or dropped frames are determined
+    int forceLogSend;   ///< Flag allowing the probe to send logs while imaging
     CusButtonSetting up; ///< Button up setting
     CusButtonSetting down; ///< Button down setting
     CusButtonSetting handle; ///< Button handle setting
