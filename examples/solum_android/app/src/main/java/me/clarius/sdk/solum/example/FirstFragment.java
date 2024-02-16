@@ -272,8 +272,9 @@ public class FirstFragment extends Fragment {
     private void doRequestRawData() {
         final int start = 0;
         final int end = 0;
+        final boolean lzo = true;
         RawDataCallback callback = new RawDataCallback();
-        solum.requestRawData(start, end, callback::requestResult);
+        solum.requestRawData(start, end, lzo, callback::requestResult);
     }
 
     private void toggleBuffering() {
