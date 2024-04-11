@@ -241,7 +241,7 @@ Once ready, the current Wi-Fi network information will be published through the 
 
 To subscribe to the Wi-Fi Published characteristic, one can write 0100 to the characteristic's Client Characteristic Configuration Descriptor (CCCD), allowing the probe to send out notifications to the connected program.
 
-The format of the read back text from the characteristic is as follows:
+The read back text from the characteristic is in YAML format (note that strings may or may not have quotes).
 
 If the probe is still booting up and the Wi-Fi network is not yet ready:
 ```
