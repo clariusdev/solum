@@ -357,6 +357,7 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), imaging_(false), teeConnect
         return;
     case Qt::PermissionStatus::Granted:
         // Automatically trigger a BLE search at startup
+        ui_.blesearch->setEnabled(true);
         ui_.blesearch->click();
         break; // Proceed
     }
