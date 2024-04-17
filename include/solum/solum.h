@@ -14,6 +14,7 @@ extern "C"
     /// @param[in] newProcessedImage new processed image callback (scan-converted image)
     /// @param[in] newRawImage new raw image callback - (pre scan-converted image)
     /// @param[in] newSpectralImage new processed spectral image callback
+    /// @param[in] newImuData new imu data callback
     /// @param[in] imaging imaging state callback
     /// @param[in] btn button press callback
     /// @param[in] err error message callback
@@ -26,7 +27,8 @@ extern "C"
     SOLUM_EXPORT int solumInit(int argc, char** argv, const char* dir,
         CusConnectFn connect, CusCertFn cert, CusPowerDownFn power,
         CusNewProcessedImageFn newProcessedImage, CusNewRawImageFn newRawImage,
-        CusNewSpectralImageFn newSpectralImage, CusImagingFn imaging, CusButtonFn btn, CusErrorFn err,
+        CusNewSpectralImageFn newSpectralImage, CusNewImuDataFn newImuData,
+        CusImagingFn imaging, CusButtonFn btn, CusErrorFn err,
         int width, int height);
 
     /// cleans up memory allocated by the solum module
@@ -284,26 +286,35 @@ extern "C"
     /// @retval -1 the reset could not be performed
     SOLUM_EXPORT int solumResetProbe(CusProbeReset reset);
 
+    /// makes a request to return the availability of all the raw data currently buffered on the probe
+    /// @param[in] fn result callback function that will return all the timestamps of the data blocks that are buffered
+    /// @return success of the call
+    /// @retval 0 the request was successfully made
+    /// @retval -1 the request could not be made
+    /// @note the probe must be frozen with raw data buffering enabled prior to calling the function
+    SOLUM_EXPORT int solumRawDataAvailability(CusRawAvailabilityFn fn);
+
     /// makes a request for raw data from the probe
     /// @param[in] start the first frame to request, as determined by timestamp in nanoseconds, set to 0 along with end to requests all data in buffer
     /// @param[in] end the last frame to request, as determined by timestamp in nanoseconds, set to 0 along with start to requests all data in buffer
-    /// @param[in] res result callback function, will return size of buffer required upon success, 0 if no raw data was buffered, or -1 if request could not be made,
+    /// @param[in] lzo flag to specify a tarball with lzo compressed raw data inside (default) vs no compression of raw data
+    /// @param[in] fn result callback function, will return size of buffer required upon success, 0 if no raw data was buffered, or -1 if request could not be made
     /// @return success of the call
     /// @retval 0 the request was successfully made
     /// @retval -1 the request could not be made
     /// @note the probe must be frozen and in a raw data buffering mode in order for the call to succeed
-    SOLUM_EXPORT int solumRequestRawData(long long int start, long long int end, CusRawFn res);
+    SOLUM_EXPORT int solumRequestRawData(long long int start, long long int end, int lzo, CusRawRequestFn fn);
 
     /// retrieves raw data from a previous request
     /// @param[out] data a pointer to a buffer that has been allocated to read the raw data into, this must be pre-allocated with
     ///             the size returned from a previous call to solumRequestRawData
-    /// @param[in] res result callback function, will return size of buffer required upon success, 0 if no raw data was buffered, or -1 if request could not be made,
+    /// @param[in] fn result callback function, will return size of buffer required upon success, 0 if no raw data was buffered, or -1 if request could not be made,
     /// @param[in] progress download progress callback function that outputs the progress in percent
     /// @return success of the call
     /// @retval 0 the read request was successfully made
     /// @retval -1 the read request could not be made
     /// @note the probe must be frozen and a successful call to solumRequestRawData must have taken place in order for the call to succeed
-    SOLUM_EXPORT int solumReadRawData(void** data, CusRawFn res, CusProgressFn progress);
+    SOLUM_EXPORT int solumReadRawData(void** data, CusRawFn fn, CusProgressFn progress);
 
     /// sets a low level parameter to a specific value to gain access to lower level device control
     /// @param[in] prm the parameter to change

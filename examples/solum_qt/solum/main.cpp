@@ -139,6 +139,14 @@ int main(int argc, char *argv[])
             memcpy(_spectrum.data(), img, sz);
             QApplication::postEvent(_solum.get(), new event::SpectrumImage(_spectrum.data(), nfo->lines, nfo->samples, nfo->bitsPerSample));
         },
+        // new imu data callback
+        [](const CusPosInfo* pos)
+        {
+            QQuaternion imu;
+            if (pos)
+                imu = QQuaternion(static_cast<float>(pos->qw), static_cast<float>(pos->qx), static_cast<float>(pos->qy), static_cast<float>(pos->qz));
+            QApplication::postEvent(_solum.get(), new event::Imu(IMU_EVENT, imu));
+        },
         // imaging state change callback
         [](CusImagingState state, int imaging)
         {

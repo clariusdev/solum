@@ -48,6 +48,17 @@ typedef void (*CusButtonFn)(CusButton btn, int clicks);
 /// progress callback function
 /// @param[in] progress the current progress in percent
 typedef void (*CusProgressFn)(int progress);
+/// raw data availability callback function
+/// @param[in] res the request result: 0 on success, -1 on error
+/// @param[in] n_b the number of b timestamps within the array of b
+/// @param[in] b an array of timestamps for raw b data, null on error
+/// @param[in] n_iqrf the number of iq/rf timestamps within the array of iqrf
+/// @param[in] iqrf an array of timestamps for raw iq/rf data, null on error
+typedef void (*CusRawAvailabilityFn)(int res, int n_b, const long long* b, int n_iqrf, const long long* iqrf);
+/// raw data request callback function
+/// @param[in] res the raw data result, typically the size of the data package requested or actually downloaded
+/// @param[in] extension the file extension of the packaged data
+typedef void (*CusRawRequestFn)(int res, const char* extension);
 /// raw data callback function
 /// @param[in] res the raw data result, typically the size of the data package requested or actually downloaded
 typedef void (*CusRawFn)(int res);
@@ -62,3 +73,6 @@ typedef void (*CusErrorFn)(const char* msg);
 /// @param[in] name patient name if burned in to the probe
 /// @param[in] exam exam id if burned in to the probe
 typedef void (*CusTeeConnectFn)(bool connected, const char* serial, double timeRemaining, const char* id, const char* name, const char* exam);
+/// new imu data callback function
+/// @param[in] pos the positional information data tagged with the image
+typedef void (*CusNewImuDataFn)(const CusPosInfo* pos);

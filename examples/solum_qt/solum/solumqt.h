@@ -25,6 +25,7 @@ class ProbeRender;
 #define ERROR_EVENT     static_cast<QEvent::Type>(QEvent::User + 12)
 #define PROGRESS_EVENT  static_cast<QEvent::Type>(QEvent::User + 13)
 #define TEE_EVENT       static_cast<QEvent::Type>(QEvent::User + 14)
+#define IMU_EVENT       static_cast<QEvent::Type>(QEvent::User + 15)
 
 namespace event
 {
@@ -209,6 +210,18 @@ namespace event
         QString id_;            ///< patient id
         QString name_;          ///< patient name
         QString exam_;          ///< exam id
+    };
+
+    /// wrapper for new imu data events that can be posted from the api callbacks
+    class Imu : public QEvent
+    {
+    public:
+        /// default constructor
+        /// @param[in] evt the event type
+        /// @param[in] imu latest imu data
+        Imu(QEvent::Type evt, const QQuaternion& imu) : QEvent(evt), imu_(imu) { }
+
+        QQuaternion imu_;   ///< latest imu position
     };
 
     /// wrapper for error events that can be posted from the api callbacks
