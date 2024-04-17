@@ -1,3 +1,5 @@
 .vscode
 *.pro.user
 
+/openigtlink/debug/
+/openigtlink/release/
