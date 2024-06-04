@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>584</width>
-    <height>657</height>
+    <height>668</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -351,7 +351,7 @@
          </widget>
         </item>
         <item row="9" column="0" colspan="4">
-         <widget class="QProgressBar" name="progress">
+         <widget class="QProgressBar" name="updateProgress">
           <property name="toolTip">
            <string>Software Update Progress</string>
           </property>
@@ -463,6 +463,12 @@
               <property name="enabled">
                <bool>false</bool>
               </property>
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>20</height>
+               </size>
+              </property>
               <property name="text">
                <string>Depth -</string>
               </property>
@@ -472,6 +478,12 @@
              <widget class="QPushButton" name="incdepth">
               <property name="enabled">
                <bool>false</bool>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>20</height>
+               </size>
               </property>
               <property name="text">
                <string>Depth +</string>
@@ -620,6 +632,16 @@
            </widget>
           </item>
           <item>
+           <widget class="QCheckBox" name="rawBuffer">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>Raw Buffer</string>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="QCheckBox" name="rfStream">
             <property name="enabled">
              <bool>false</bool>
@@ -682,11 +704,68 @@
          </layout>
         </item>
         <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_10">
+          <item>
+           <widget class="QLabel" name="formatLabel">
+            <property name="text">
+             <string>Image Format</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QComboBox" name="format">
+            <property name="currentIndex">
+             <number>0</number>
+            </property>
+            <item>
+             <property name="text">
+              <string>Uncompressed</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Uncompressed 8-Bit</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>JPEG</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>PNG</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_5">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </item>
+        <item>
          <layout class="QHBoxLayout" name="horizontalLayout_7">
           <item>
            <widget class="QDial" name="gain">
             <property name="enabled">
              <bool>false</bool>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>25</height>
+             </size>
             </property>
             <property name="maximumSize">
              <size>
@@ -897,6 +976,112 @@
         </item>
        </layout>
       </widget>
+      <widget class="QWidget" name="_raw">
+       <attribute name="title">
+        <string>Raw</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_7">
+        <item>
+         <widget class="QPushButton" name="rawAvailability">
+          <property name="text">
+           <string>Check Raw Availability</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="downloadRaw">
+          <property name="text">
+           <string>Download Raw Data</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QProgressBar" name="rawProgress">
+          <property name="value">
+           <number>0</number>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_12">
+          <item>
+           <widget class="QLabel" name="_lowlevel">
+            <property name="text">
+             <string>Low Level Param</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="lowLevelParam"/>
+          </item>
+          <item>
+           <widget class="QPushButton" name="lowLevelFetch">
+            <property name="text">
+             <string>Fetch</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="lowLevelValue">
+            <property name="minimumSize">
+             <size>
+              <width>100</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="frameShape">
+             <enum>QFrame::StyledPanel</enum>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_13">
+          <item>
+           <widget class="QLabel" name="_lowLevelSet">
+            <property name="text">
+             <string>Value</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="lowLevelValueToSet"/>
+          </item>
+          <item>
+           <widget class="QPushButton" name="lowLevelSetValue">
+            <property name="text">
+             <string>Set</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="lowLevelToggle">
+            <property name="text">
+             <string>Toggle</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <spacer name="verticalSpacer_3">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </widget>
       <widget class="QWidget" name="_3d">
        <property name="enabled">
         <bool>true</bool>
@@ -913,17 +1098,47 @@
      </widget>
     </item>
     <item>
-     <widget class="QLabel" name="probeStatus">
-      <property name="toolTip">
-       <string>Probe Status</string>
-      </property>
-      <property name="frameShape">
-       <enum>QFrame::StyledPanel</enum>
-      </property>
-      <property name="text">
-       <string/>
-      </property>
-     </widget>
+     <layout class="QHBoxLayout" name="horizontalLayout_11">
+      <item>
+       <widget class="QLabel" name="probeStatus">
+        <property name="toolTip">
+         <string>Probe Status</string>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="horizontalSpacer_6">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeType">
+         <enum>QSizePolicy::MinimumExpanding</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QLabel" name="bitrate">
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </item>
    </layout>
   </widget>
@@ -1455,6 +1670,118 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>format</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>Solum</receiver>
+   <slot>onFormat(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>197</x>
+     <y>412</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>291</x>
+     <y>328</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>rawBuffer</sender>
+   <signal>stateChanged(int)</signal>
+   <receiver>Solum</receiver>
+   <slot>onRawBuffer(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>423</x>
+     <y>346</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>291</x>
+     <y>328</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>rawAvailability</sender>
+   <signal>clicked()</signal>
+   <receiver>Solum</receiver>
+   <slot>onRawAvailability()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>291</x>
+     <y>245</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>291</x>
+     <y>333</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>downloadRaw</sender>
+   <signal>clicked()</signal>
+   <receiver>Solum</receiver>
+   <slot>onRawDownload()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>291</x>
+     <y>275</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>291</x>
+     <y>333</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>lowLevelFetch</sender>
+   <signal>clicked()</signal>
+   <receiver>Solum</receiver>
+   <slot>onLowLevelFetch()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>416</x>
+     <y>331</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>291</x>
+     <y>333</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>lowLevelSetValue</sender>
+   <signal>clicked()</signal>
+   <receiver>Solum</receiver>
+   <slot>onLowLevelSet()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>436</x>
+     <y>364</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>291</x>
+     <y>333</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>lowLevelToggle</sender>
+   <signal>clicked()</signal>
+   <receiver>Solum</receiver>
+   <slot>onLowLevelToggle()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>522</x>
+     <y>364</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>291</x>
+     <y>333</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>onConnect()</slot>
@@ -1489,5 +1816,12 @@
   <slot>onFocus(int)</slot>
   <slot>onSplit(int)</slot>
   <slot>onPrescan(int)</slot>
+  <slot>onFormat(int)</slot>
+  <slot>onRawBuffer(int)</slot>
+  <slot>onRawAvailability()</slot>
+  <slot>onRawDownload()</slot>
+  <slot>onLowLevelFetch()</slot>
+  <slot>onLowLevelSet()</slot>
+  <slot>onLowLevelToggle()</slot>
  </slots>
 </ui>

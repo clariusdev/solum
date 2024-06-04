@@ -14,21 +14,25 @@ class RfSignal;
 class Prescan;
 class ProbeRender;
 
-#define CONNECT_EVENT   static_cast<QEvent::Type>(QEvent::User + 1)
-#define CERT_EVENT      static_cast<QEvent::Type>(QEvent::User + 2)
-#define POWER_EVENT     static_cast<QEvent::Type>(QEvent::User + 3)
-#define SWUPDATE_EVENT  static_cast<QEvent::Type>(QEvent::User + 4)
-#define LIST_EVENT      static_cast<QEvent::Type>(QEvent::User + 5)
-#define IMAGE_EVENT     static_cast<QEvent::Type>(QEvent::User + 6)
-#define PRESCAN_EVENT   static_cast<QEvent::Type>(QEvent::User + 7)
-#define SPECTRUM_EVENT  static_cast<QEvent::Type>(QEvent::User + 8)
-#define RF_EVENT        static_cast<QEvent::Type>(QEvent::User + 9)
-#define IMAGING_EVENT   static_cast<QEvent::Type>(QEvent::User + 10)
-#define BUTTON_EVENT    static_cast<QEvent::Type>(QEvent::User + 11)
-#define ERROR_EVENT     static_cast<QEvent::Type>(QEvent::User + 12)
-#define PROGRESS_EVENT  static_cast<QEvent::Type>(QEvent::User + 13)
-#define TEE_EVENT       static_cast<QEvent::Type>(QEvent::User + 14)
-#define IMU_EVENT       static_cast<QEvent::Type>(QEvent::User + 15)
+#define CONNECT_EVENT       static_cast<QEvent::Type>(QEvent::User + 1)
+#define CERT_EVENT          static_cast<QEvent::Type>(QEvent::User + 2)
+#define POWER_EVENT         static_cast<QEvent::Type>(QEvent::User + 3)
+#define SWUPDATE_EVENT      static_cast<QEvent::Type>(QEvent::User + 4)
+#define LIST_EVENT          static_cast<QEvent::Type>(QEvent::User + 5)
+#define IMAGE_EVENT         static_cast<QEvent::Type>(QEvent::User + 6)
+#define PRESCAN_EVENT       static_cast<QEvent::Type>(QEvent::User + 7)
+#define SPECTRUM_EVENT      static_cast<QEvent::Type>(QEvent::User + 8)
+#define RF_EVENT            static_cast<QEvent::Type>(QEvent::User + 9)
+#define IMAGING_EVENT       static_cast<QEvent::Type>(QEvent::User + 10)
+#define BUTTON_EVENT        static_cast<QEvent::Type>(QEvent::User + 11)
+#define ERROR_EVENT         static_cast<QEvent::Type>(QEvent::User + 12)
+#define PROGRESS_EVENT      static_cast<QEvent::Type>(QEvent::User + 13)
+#define TEE_EVENT           static_cast<QEvent::Type>(QEvent::User + 14)
+#define IMU_EVENT           static_cast<QEvent::Type>(QEvent::User + 15)
+#define RAWAVAIL_EVENT      static_cast<QEvent::Type>(QEvent::User + 16)
+#define RAWREADY_EVENT      static_cast<QEvent::Type>(QEvent::User + 17)
+#define RAWDOWNLOADED_EVENT static_cast<QEvent::Type>(QEvent::User + 18)
+#define IMU_PORT_EVENT      static_cast<QEvent::Type>(QEvent::User + 19)
 
 namespace event
 {
@@ -53,7 +57,7 @@ namespace event
     public:
         /// default constructor
         /// @param[in] daysValid days valid for certificate
-        Cert(int daysValid) : QEvent(CERT_EVENT), daysValid_(daysValid) { }
+        explicit Cert(int daysValid) : QEvent(CERT_EVENT), daysValid_(daysValid) { }
 
         int daysValid_;     ///< days valid
     };
@@ -77,7 +81,7 @@ namespace event
     public:
         /// default constructor
         /// @param[in] res the sw update code
-        SwUpdate(CusSwUpdate res) : QEvent(SWUPDATE_EVENT), res_(res)  { }
+        explicit SwUpdate(CusSwUpdate res) : QEvent(SWUPDATE_EVENT), res_(res)  { }
 
         CusSwUpdate res_;  ///< the software update code
     };
@@ -209,16 +213,27 @@ namespace event
     };
 
     /// wrapper for new imu data events that can be posted from the api callbacks
+    class ImuPort : public QEvent
+    {
+    public:
+        /// default constructor
+        /// @param[in] port latest imu port
+        explicit ImuPort(int port) : QEvent(IMU_PORT_EVENT), port_(port) { }
+
+        int port_;   ///< latest imu port
+    };
+
+    /// wrapper for new imu data events that can be posted from the api callbacks
     class Imu : public QEvent
     {
     public:
         /// default constructor
-        /// @param[in] evt the event type
         /// @param[in] imu latest imu data
-        Imu(QEvent::Type evt, const QQuaternion& imu) : QEvent(evt), imu_(imu) { }
+        explicit Imu(const QQuaternion& imu) : QEvent(IMU_EVENT), imu_(imu) { }
 
         QQuaternion imu_;   ///< latest imu position
     };
+
 
     /// wrapper for error events that can be posted from the api callbacks
     class Error : public QEvent
@@ -226,7 +241,7 @@ namespace event
     public:
         /// default constructor
         /// @param[in] err the error message
-        Error(const QString& err) : QEvent(ERROR_EVENT), error_(err) { }
+        explicit Error(const QString& err) : QEvent(ERROR_EVENT), error_(err) { }
 
         QString error_;     ///< the error message
     };
@@ -236,12 +251,65 @@ namespace event
     {
     public:
         /// default constructor
+        /// @param[in] selection progress bar to move
         /// @param[in] progress the current progress
-        Progress(int progress) : QEvent(PROGRESS_EVENT), progress_(progress) { }
+        Progress(int selection, int progress) : QEvent(PROGRESS_EVENT), selection_(selection), progress_(progress) { }
 
+        int selection_; ///< progress bar selection
         int progress_;  ///< the current progress
     };
+
+    /// wrapper for raw availability events that can be posted from the api callbacks
+    class RawAvailability : public QEvent
+    {
+    public:
+        /// default constructor
+        /// @param[in] res the result of the api call
+        /// @param[in] b number of b raw frames available
+        /// @param[in] iqrf number of iq/rf raw frames available
+        RawAvailability(int res, int b, int iqrf) : QEvent(RAWAVAIL_EVENT), res_(res), b_(b), iqrf_(iqrf) { }
+
+        int res_;   ///< result
+        int b_;     ///< b frames
+        int iqrf_;  ///< iqrf frames
+    };
+
+    /// wrapper for raw ready events that can be posted from the api callbacks
+    class RawReady : public QEvent
+    {
+    public:
+        /// default constructor
+        /// @param[in] sz size of the buffer created
+        /// @param[in] ext extension of the file package
+        RawReady(int sz, const QString& ext) : QEvent(RAWREADY_EVENT), sz_(sz), ext_(ext) { }
+
+        int sz_;        ///< size of the package
+        QString ext_;   ///< package extension
+    };
+
+    /// wrapper for raw downloaded events that can be posted from the api callbacks
+    class RawDownloaded: public QEvent
+    {
+    public:
+        /// default constructor
+        /// @param[in] res result of the download
+        explicit RawDownloaded(int res) : QEvent(RAWDOWNLOADED_EVENT), res_(res) { }
+
+        int res_;   ///< result of the download
+    };
 }
+
+/// holds raw data information
+class RawData
+{
+public:
+    RawData() : size_(0), ptr_(nullptr) { }
+
+    QString file_;
+    int size_;
+    QByteArray data_;
+    char* ptr_;
+};
 
 using Probes = std::map<QString,QString>;
 
@@ -265,6 +333,7 @@ private:
     void newPrescanImage(const void* img, int w, int h, int bpp, int sz, CusImageFormat format);
     void newSpectrumImage(const void* img, int l, int s, int bps);
     void newRfImage(const void* rf, int l, int s, int ss);
+    void newImuData(const QQuaternion& imu);
     void setConnected(CusConnection res, int port, const QString& msg);
     void certification(int daysValid);
     void poweringDown(CusPowerDown res, int tm);
@@ -272,7 +341,10 @@ private:
     void imagingState(CusImagingState state, bool imaging);
     void onButton(CusButton btn, int clicks);
     void onTee(bool connected, const QString& serial, double timeRemaining);
-    void setProgress(int progress);
+    void onRawAvailabilityResult(int res, int b, int iqrf);
+    void onRawReadyToDownload(int sz, const QString& ext);
+    void onRawDownloaded(int res);
+    void setProgress(int selection, int progress);
     void setError(const QString& err);
     void getParams();
     void updateVelocity(CusMode mode);
@@ -304,17 +376,25 @@ public slots:
     void onAutoGain(int);
     void onAutoFocus(int);
     void onImu(int);
-    void onRfStream(int);
     void onPrescan(int);
     void onSplit(int);
     void tgcTop(int);
     void tgcMid(int);
     void tgcBottom(int);
+    void onFormat(int);
+    void onRfStream(int);
+    void onRawBuffer(int);
+    void onRawAvailability();
+    void onRawDownload();
+    void onLowLevelFetch();
+    void onLowLevelSet();
+    void onLowLevelToggle();
 
 private:
     bool connected_;                ///< connection state
     bool imaging_;                  ///< imaging state
     bool teeConnected_;             ///< tee connected state
+    uint64_t acquired_;             ///< tracks acquired bytes
     Ui::Solum *ui_;                 ///< ui controls, etc.
     UltrasoundImage* image_;        ///< image display
     UltrasoundImage* image2_;       ///< secondary image display
@@ -323,8 +403,12 @@ private:
     RfSignal* signal_;              ///< rf signal display
     Prescan* prescan_;              ///< prescan display
     QTimer timer_;                  ///< timer for updating probe status
+    QTimer brTimer_;                ///< timer for updating bit rate
+    QElapsedTimer elapsed_;         ///< holds elapsed time for bit rate calculations
     QNetworkAccessManager cloud_;   ///< for accessing clarius cloud
     Ble ble_;                       ///< bluetooth module
     Probes certified_;              ///< list of certified probes
+    RawData rawData_;               ///< holds raw data info
+    CusAcoustic acoustic_;          ///< holds latest acoustic data
     std::unique_ptr<QSettings> settings_;   ///< persistent settings
 };

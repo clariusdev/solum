@@ -2,8 +2,9 @@ Solum Example
 ====
 
 1. Copy the `aar` package (found in the repository's release section) into the libs subfolder
-2. Re-sync Gradle
-3. Build
+2. Add the OEM API key in the `secrets.properties` file
+3. Re-sync Gradle
+4. Build
 
 Important Notes
 ----
@@ -23,7 +24,7 @@ OEM API Key
 
 The OEM API key is used to authenticate against the Clarius Cloud REST API for example when downloading probe certificates and firmware.
 
-Obtain the OEM API key from the Clarius Cloud settings and paste it in the `secrets.gradle` file:
+Obtain the OEM API key from the Clarius Cloud settings and paste it in the `secrets.properties` file:
 
     clarius_oem_api_key=<your key>
 

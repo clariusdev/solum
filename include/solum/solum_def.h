@@ -1,7 +1,7 @@
 #pragma once
 
 // SDK: solum
-// Version: 11.2.0
+// Version: 11.3.0
 
 #define CUS_MAXTGC  10
 #define CUS_SUCCESS 0
@@ -336,6 +336,16 @@ typedef struct _CusTgc
     double bottom;      ///< Bottom tgc in dB. valid range is -20 to 20
 
 } CusTgc;
+
+/// Acoustic index values to send to the API
+typedef struct _CusAcoustic
+{
+    double mi;          ///< mechanical index
+    double tib;         ///< thermal index bone
+    double tic;         ///< thermal index cranial
+    double tis;         ///< thermal index soft tissue
+
+} CusAcoustic;
 
 /// Status information
 typedef struct _CusStatusInfo

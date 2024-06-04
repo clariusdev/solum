@@ -123,6 +123,28 @@ void printImuData(int npos, const CusPosInfo* pos)
     }
 }
 
+/// @brief Receives the update of the imu streaming port
+/// @param port the new imu data UDP streaming port
+void newImuPort(int port)
+{
+    if (port != 0)
+    {
+        PRINT << "imu now streaming at port: " << port;
+    }
+    else
+    {
+        PRINT << "imu streaming off";
+    }
+}
+
+/// @brief Receives the new imu data streamed from the scanner
+/// @param pos the positional information data streamed
+void newImuData(const CusPosInfo* pos)
+{
+    PRINT << "imu data streamed:";
+    printImuData(1, pos);
+}
+
 /// parses and prints comma separated values
 /// @param[in] buf the string to parse
 /// @param[in] sz size of the buffer
@@ -156,7 +178,7 @@ void newRawImageFn(const void* newImage, const CusRawImageInfo* nfo, int npos, c
           << "bits. @ " << nfo->axialSize << " microns per sample. imu points: " << npos;
     else
         PRINT << "new pre-scan data (" << newImage << "): " << nfo->lines << " x " << nfo->samples << " @ " << nfo->bitsPerSample
-          << "bits. @ " << nfo->axialSize << " microns per sample. imu points: " << npos << " jpeg size: " << (int)nfo->jpeg;
+          << "bits. @ " << nfo->axialSize << " microns per sample. imu points: " << npos << " jpeg size: " << static_cast<int>(nfo->jpeg);
 
     if (npos)
         printImuData(npos, pos);
@@ -477,7 +499,7 @@ int init(int& argc, char** argv)
 
     // initialize with callbacks
     if (solumInit(argc, argv, keydir.c_str(), connectFn, certFn, powerDownFn, newProcessedImageFn,
-                   newRawImageFn, nullptr, nullptr, imagingFn, buttonFn, errorFn, width, height) < 0)
+            newRawImageFn, nullptr, newImuPort, newImuData, imagingFn, buttonFn, errorFn, width, height) < 0)
     {
         ERROR << "could not initialize solum module" << std::endl;
         return ERRCODE;

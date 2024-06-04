@@ -4,13 +4,17 @@
 #include "ui_solumqt.h"
 #include <solum/solum.h>
 
-#define IMU_TAB     4
+#define RAW_TAB         3
+#define IMU_TAB         4
+#define UPDATE_PROGRESS 0
+#define RAW_PROGRESS    1
+#define MB_CONV         (1024.0 * 1024.0)
 
 static Solum* _me;
 
 /// default constructor
 /// @param[in] parent the parent object
-Solum::Solum(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_(false), teeConnected_(false), ui_(new Ui::Solum)
+Solum::Solum(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_(false), teeConnected_(false), acquired_(0), ui_(new Ui::Solum)
 {
     _me = this;
     ui_->setupUi(this);
@@ -37,7 +41,10 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_
     ui_->opacity->setVisible(false);
     ui_->rfzoom->setVisible(false);
     ui_->rfStream->setVisible(false);
+    ui_->rawAvailability->setVisible(false);
+    ui_->downloadRaw->setVisible(false);
     ui_->split->setVisible(false);
+    ui_->_tabs->setTabEnabled(RAW_TAB, false);
     ui_->_tabs->setTabEnabled(IMU_TAB, false);
 
     settings_ = std::make_unique<QSettings>(QStringLiteral("settings.ini"), QSettings::IniFormat);
@@ -121,9 +128,17 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_
             if (teeConnected_)
                 teeTime = QStringLiteral(", TEE: %1%").arg(st.teeTimeRemaining);
 
-            ui_->probeStatus->setText(QStringLiteral("Battery: %1%, Temp: %2%, FR: %3 Hz%4")
-                   .arg(st.battery).arg(st.temperature).arg(QString::number(st.frameRate, 'f', 0)).arg(teeTime));
+            ui_->probeStatus->setText(QStringLiteral("Battery: %1%, Temp: %2%, FR: %3 Hz%4, MI: %5")
+                .arg(st.battery).arg(st.temperature).arg(QString::number(st.frameRate, 'f', 0)).arg(teeTime).arg(acoustic_.mi));
         }
+    });
+
+    // connect status timer
+    connect(&brTimer_, &QTimer::timeout, [this]()
+    {
+        double total = static_cast<double>(acquired_) / MB_CONV;
+        double br = ((static_cast<double>(acquired_ * 8.0) / (elapsed_.elapsed() / 1000.0))) / MB_CONV;
+        ui_->bitrate->setText(QStringLiteral("Acquired: %1 MB @ %2 Mbps").arg(QString::number(total, 'f', 1)).arg(QString::number(br, 'f', 3)));
     });
 
     // connect ble device list
@@ -361,6 +376,12 @@ bool Solum::event(QEvent *event)
         imagingState(evt->state_, evt->imaging_);
         return true;
     }
+    else if (event->type() == IMU_EVENT)
+    {
+        auto evt = static_cast<event::Imu*>(event);
+        newImuData(evt->imu_);
+        return true;
+    }
     else if (event->type() == BUTTON_EVENT)
     {
         auto evt = static_cast<event::Button*>(event);
@@ -369,7 +390,8 @@ bool Solum::event(QEvent *event)
     }
     else if (event->type() == PROGRESS_EVENT)
     {
-        setProgress((static_cast<event::Progress*>(event))->progress_);
+        auto evt = static_cast<event::Progress*>(event);
+        setProgress(evt->selection_, evt->progress_);
         return true;
     }
     else if (event->type() == ERROR_EVENT)
@@ -381,6 +403,24 @@ bool Solum::event(QEvent *event)
     {
         auto evt = static_cast<event::Tee*>(event);
         onTee(evt->connected_, evt->serial_, evt->timeRemaining_);
+        return true;
+    }
+    else if (event->type() == RAWAVAIL_EVENT)
+    {
+        auto evt = static_cast<event::RawAvailability*>(event);
+        onRawAvailabilityResult(evt->res_, evt->b_, evt->iqrf_);
+        return true;
+    }
+    else if (event->type() == RAWREADY_EVENT)
+    {
+        auto evt = static_cast<event::RawReady*>(event);
+        onRawReadyToDownload(evt->sz_, evt->ext_);
+        return true;
+    }
+    else if (event->type() == RAWDOWNLOADED_EVENT)
+    {
+        auto evt = static_cast<event::RawDownloaded*>(event);
+        onRawDownloaded(evt->res_);
         return true;
     }
 
@@ -489,6 +529,7 @@ void Solum::imagingState(CusImagingState state, bool imaging)
     ui_->opacity->setEnabled(ready ? true : false);
     ui_->rfzoom->setEnabled(ready ? true : false);
     ui_->rfStream->setEnabled(ready ? true : false);
+    ui_->rawBuffer->setEnabled(ready ? true : false);
     ui_->prescan->setEnabled(ready ? true : false);
     ui_->split->setEnabled(ready ? true : false);
     ui_->imu->setEnabled(ready ? true : false);
@@ -501,11 +542,28 @@ void Solum::imagingState(CusImagingState state, bool imaging)
     ui_->status->showMessage(QStringLiteral("Image: %1").arg(imaging ? QStringLiteral("Running") : QStringLiteral("Frozen")));
     if (ready)
     {
+        if (imaging != imaging_)
+        {
+            if (!imaging_)
+            {
+                acquired_ = 0;
+                brTimer_.start(100);
+                elapsed_.restart();
+            }
+            else
+            {
+                brTimer_.stop();
+            }
+        }
+
         ui_->freeze->setText(imaging ? QStringLiteral("Stop") : QStringLiteral("Run"));
         imaging_ = imaging;
         getParams();
-        image_->checkRoi();
-        image_->checkGate();
+
+        // adjust raw buffer ui
+        auto showRaw = !imaging_ && ui_->rawBuffer->isChecked();
+        ui_->rawAvailability->setVisible(showRaw);
+        ui_->downloadRaw->setVisible(showRaw);
     }
     else if (state == CertExpired)
         ui_->status->showMessage(QStringLiteral("Certificate needs updating prior to imaging"));
@@ -540,11 +598,89 @@ void Solum::onTee(bool connected, const QString& serial, double timeRemaining)
         ui_->status->showMessage(QStringLiteral("TEE Disconnected"));
 }
 
-/// called when the download progress changes
-/// @param[in] progress the current progress
-void Solum::setProgress(int progress)
+/// called when raw data availability results are obtained
+/// @param[in] res the result of the original call
+/// @param[in] b the number of raw b frames
+/// @param[in] iqrf the number of raw iq/rf frames
+void Solum::onRawAvailabilityResult(int res, int b, int iqrf)
 {
-    ui_->progress->setValue(progress);
+    Q_UNUSED(res)
+    ui_->status->showMessage(QStringLiteral("Raw Data Available: %1 B Frames & %2 IQ or RF Frames").arg(b).arg(iqrf));
+}
+
+/// called when raw data is ready to download
+/// @param[in] sz size of the package
+/// @param[in] ext extension of the package
+void Solum::onRawReadyToDownload(int sz, const QString& ext)
+{
+    if (sz > 0)
+    {
+        ui_->status->showMessage(QStringLiteral("Raw Package Size: %1 MB").arg(QString::number(static_cast<double>(sz) / MB_CONV, 'f', 2)));
+        rawData_.size_ = sz;
+        rawData_.file_ = QFileDialog::getSaveFileName(this, QStringLiteral("Save Raw Data"), QDir::homePath() + QLatin1Char('/') + QStringLiteral("raw_data%1").arg(ext), QStringLiteral("(*%1)").arg(ext));
+        if (rawData_.file_.isEmpty())
+            return;
+
+        setProgress(RAW_PROGRESS, 0);
+
+        rawData_.data_.resize(rawData_.size_);
+        rawData_.ptr_ = rawData_.data_.data();
+
+        if (solumReadRawData((void**)(&rawData_.ptr_),
+            [](int res)
+            {
+                // call is complete, post event to manage actual storage
+                QApplication::postEvent(_me, new event::RawDownloaded(res));
+            },
+            [](int progress)
+            {
+                QApplication::postEvent(_me, new event::Progress(RAW_PROGRESS, progress));
+            }
+            ) < 0)
+                ui_->status->showMessage(QStringLiteral("Raw Download Failed"));
+    }
+    else
+        ui_->status->showMessage(QStringLiteral("Error Packaging Raw Data"));
+}
+
+/// called when the download has completed or failed
+/// @param[in] res the download result
+void Solum::onRawDownloaded(int res)
+{
+    if (res <= 0)
+    {
+        ui_->status->showMessage(QStringLiteral("Raw Download Failed"));
+    }
+    else
+    {
+        QFile f(rawData_.file_);
+        if (!f.open(QIODevice::WriteOnly))
+        {
+                ui_->status->showMessage(QStringLiteral("Error Opening Requested File"));
+            return;
+        }
+        f.write(rawData_.data_);
+        f.close();
+        ui_->status->showMessage(QStringLiteral("Successfully Downloaded Data"));
+    }
+}
+
+/// called when the download progress changes
+/// @param[in] selection the progress bar to move
+/// @param[in] progress the current progress
+void Solum::setProgress(int selection, int progress)
+{
+    if (selection == UPDATE_PROGRESS)
+        ui_->updateProgress->setValue(progress);
+    else if (selection == RAW_PROGRESS)
+        ui_->rawProgress->setValue(progress);
+}
+
+/// called when the image format changes
+/// @param[in] format the new image format
+void Solum::onFormat(int format)
+{
+    solumSetFormat(static_cast<CusImageFormat>(format));
 }
 
 /// called when a new image has been sent
@@ -557,11 +693,21 @@ void Solum::setProgress(int progress)
 /// @param[in] imu the imu data if valid
 void Solum::newProcessedImage(const void* img, int w, int h, int bpp, CusImageFormat format, int sz, bool overlay, const QQuaternion& imu)
 {
+    acquired_ += static_cast<uint64_t>(sz);
+
     if (overlay)
         image2_->loadImage(img, w, h, bpp, format, sz);
     else
         image_->loadImage(img, w, h, bpp, format, sz);
 
+    if (!imu.isNull())
+        render_->update(imu);
+}
+
+/// called when a new imu data been sent
+/// @param[in] imu the imu data if valid
+void Solum::newImuData(const QQuaternion& imu)
+{
     if (!imu.isNull())
         render_->update(imu);
 }
@@ -630,7 +776,10 @@ void Solum::onFreeze()
     {
         imagingState(ImagingReady, !imaging_);
         if (imaging_)
+        {
             spectrum_->reset();
+            solumGetAcousticIndices(&acoustic_);
+        }
     }
 }
 
@@ -645,6 +794,8 @@ void Solum::onUpdate()
     if (filePath.isEmpty())
         return;
 
+    setProgress(UPDATE_PROGRESS, 0);
+
     if (solumSoftwareUpdate(
         filePath.toStdString().c_str(),
         // software update result
@@ -655,7 +806,7 @@ void Solum::onUpdate()
         // download progress
         [](int progress)
         {
-            QApplication::postEvent(_me, new event::Progress(progress));
+            QApplication::postEvent(_me, new event::Progress(UPDATE_PROGRESS, progress));
         }, 0) < 0)
         ui_->status->showMessage(QStringLiteral("Error requesting software update"));
 }
@@ -800,6 +951,32 @@ void Solum::onRfStream(int state)
     solumSetParam(RfStreaming, (state == Qt::Checked) ? 1 : 0);
 }
 
+/// called when raw buffer enable adjusted
+/// @param[in] state checkbox state
+void Solum::onRawBuffer(int state)
+{
+    ui_->_tabs->setTabEnabled(RAW_TAB, (state == Qt::Checked));
+    solumSetParam(RawBuffer, (state == Qt::Checked) ? 1 : 0);
+}
+
+/// checks raw data availability
+void Solum::onRawAvailability()
+{
+    solumRawDataAvailability([](int res, int n_b, const long long*, int n_iqrf, const long long*)
+    {
+        QApplication::postEvent(_me, new event::RawAvailability(res, n_b, n_iqrf));
+    });
+}
+
+/// tries to download raw data
+void Solum::onRawDownload()
+{
+    solumRequestRawData(0, 0, 1, [](int sz, const char* extension)
+    {
+        QApplication::postEvent(_me, new event::RawReady(sz, QString::fromLatin1(extension)));
+    });
+}
+
 /// called when separate overlays is changed
 /// @param[in] state checkbox state
 void Solum::onSplit(int state)
@@ -865,6 +1042,8 @@ void Solum::getParams()
     ui_->imu->setChecked(v > 0);
     v = solumGetParam(RfStreaming);
     ui_->rfStream->setChecked(v > 0);
+    v = solumGetParam(RawBuffer);
+    ui_->rawBuffer->setChecked(v > 0);
 
     CusTgc t;
     if (solumGetTgc(&t) == 0)
@@ -873,6 +1052,10 @@ void Solum::getParams()
         ui_->tgcmid->setValue(static_cast<int>(t.mid));
         ui_->tgcbottom->setValue(static_cast<int>(t.bottom));
     }
+
+    image_->checkActiveRegion();
+    image_->checkRoi();
+    image_->checkGate();
 }
 
 /// called on a mode change
@@ -919,4 +1102,42 @@ void Solum::updateVelocity(CusMode mode)
 void Solum::onZoom(int zoom)
 {
     signal_->setZoom(zoom);
+}
+
+/// called when user asks to fetch a low level parameter value
+void Solum::onLowLevelFetch()
+{
+    auto prm = ui_->lowLevelParam->text();
+    if (!prm.isEmpty())
+    {
+        auto v = solumGetLowLevelParam(prm.toLatin1());
+        ui_->lowLevelValue->setText(QStringLiteral("%1").arg(QString::number(v, 'f')));
+    }
+}
+
+/// called when user asks to set low level parameter value
+void Solum::onLowLevelSet()
+{
+    auto prm = ui_->lowLevelParam->text();
+    auto val = ui_->lowLevelValueToSet->text();
+    if (!prm.isEmpty() && !val.isEmpty())
+    {
+        bool ok = false;
+        auto v = val.toDouble(&ok);
+        if (ok)
+        {
+            solumSetLowLevelParam(prm.toLatin1(), v);
+        }
+    }
+}
+
+/// called when user asks to toggle a low level parameter
+void Solum::onLowLevelToggle()
+{
+    auto prm = ui_->lowLevelParam->text();
+    auto val = ui_->lowLevelValueToSet->text();
+    if (!prm.isEmpty() && (val == QStringLiteral("0") || val == QStringLiteral("1")))
+    {
+        solumEnableLowLevelParam(prm.toLatin1(), val == QStringLiteral("1") ? 1 : 0);
+    }
 }
