@@ -9,20 +9,20 @@
 #  ifndef SOLUM_EXPORT
 #    ifdef solum_EXPORTS
         /* We are building this library */
-#      define SOLUM_EXPORT __declspec(dllexport)
+#      define SOLUM_EXPORT __attribute__((visibility("default")))
 #    else
         /* We are using this library */
-#      define SOLUM_EXPORT __declspec(dllimport)
+#      define SOLUM_EXPORT __attribute__((visibility("default")))
 #    endif
 #  endif
 
 #  ifndef SOLUM_NO_EXPORT
-#    define SOLUM_NO_EXPORT 
+#    define SOLUM_NO_EXPORT __attribute__((visibility("hidden")))
 #  endif
 #endif
 
 #ifndef SOLUM_DEPRECATED
-#  define SOLUM_DEPRECATED __declspec(deprecated)
+#  define SOLUM_DEPRECATED __attribute__ ((__deprecated__))
 #endif
 
 #ifndef SOLUM_DEPRECATED_EXPORT

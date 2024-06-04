@@ -9,20 +9,22 @@ static std::vector<char> _prescanImage;
 static std::vector<char> _spectrum;
 static std::vector<char> _rfData;
 
-void print_firmware_version()
+void printFirmwareVersions()
 {
-    char buffer [64];
+    char buffer[64];
     auto get_version = [&buffer](CusPlatform platform) -> QString
     {
         if (CUS_SUCCESS != solumFwVersion(platform, buffer, static_cast<int>(std::size(buffer))))
-            return QStringLiteral("error");
-        buffer [std::size(buffer)-1] = '\0';
+            return QStringLiteral("Error");
+
+        buffer [std::size(buffer) - 1] = '\0';
         return QString::fromLatin1(buffer);
     };
-    qDebug() << '\n';
-    qDebug() << "V1 firmware version:" << get_version(CusPlatform::V1);
-    qDebug() << "HD firmware version:" << get_version(CusPlatform::HD);
-    qDebug() << "HD3 firmware version:" << get_version(CusPlatform::HD3);
+
+    qDebug() << "Firmware Versions";
+    qDebug() << "V1:" << get_version(CusPlatform::V1);
+    qDebug() << "HD:" << get_version(CusPlatform::HD);
+    qDebug() << "HD3:" << get_version(CusPlatform::HD3);
 }
 
 int main(int argc, char *argv[])
@@ -63,6 +65,7 @@ int main(int argc, char *argv[])
                 _image.resize(sz);
             memcpy(_image.data(), img, sz);
             QQuaternion imu;
+            imu.setScalar(0.0);
             if (npos && pos)
                 imu = QQuaternion(static_cast<float>(pos[0].qw), static_cast<float>(pos[0].qx), static_cast<float>(pos[0].qy), static_cast<float>(pos[0].qz));
 
@@ -103,13 +106,19 @@ int main(int argc, char *argv[])
             memcpy(_spectrum.data(), img, sz);
             QApplication::postEvent(_solum.get(), new event::SpectrumImage(_spectrum.data(), nfo->lines, nfo->samples, nfo->bitsPerSample));
         },
+        // new imu port callback
+        [](int port)
+        {
+            QApplication::postEvent(_solum.get(), new event::ImuPort(port));
+        },
         // new imu data callback
         [](const CusPosInfo* pos)
         {
             QQuaternion imu;
+            imu.setScalar(0.0);
             if (pos)
                 imu = QQuaternion(static_cast<float>(pos->qw), static_cast<float>(pos->qx), static_cast<float>(pos->qy), static_cast<float>(pos->qz));
-            QApplication::postEvent(_solum.get(), new event::Imu(IMU_EVENT, imu));
+            QApplication::postEvent(_solum.get(), new event::Imu(imu));
         },
         // imaging state change callback
         [](CusImagingState state, int imaging)
@@ -143,7 +152,7 @@ int main(int argc, char *argv[])
                 QString::fromLatin1(id), QString::fromLatin1(name), QString::fromLatin1(exam)));
         });
 
-    print_firmware_version();
+    printFirmwareVersions();
 
     _solum->show();
     const int result = a.exec();

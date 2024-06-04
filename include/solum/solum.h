@@ -14,6 +14,7 @@ extern "C"
     /// @param[in] newProcessedImage new processed image callback (scan-converted image)
     /// @param[in] newRawImage new raw image callback - (pre scan-converted image)
     /// @param[in] newSpectralImage new processed spectral image callback
+    /// @param[in] newImuPort new imu UDP port callback
     /// @param[in] newImuData new imu data callback
     /// @param[in] imaging imaging state callback
     /// @param[in] btn button press callback
@@ -27,9 +28,26 @@ extern "C"
     SOLUM_EXPORT int solumInit(int argc, char** argv, const char* dir,
         CusConnectFn connect, CusCertFn cert, CusPowerDownFn power,
         CusNewProcessedImageFn newProcessedImage, CusNewRawImageFn newRawImage,
-        CusNewSpectralImageFn newSpectralImage, CusNewImuDataFn newImuData,
+        CusNewSpectralImageFn newSpectralImage, CusNewImuPortFn newImuPort, CusNewImuDataFn newImuData,
         CusImagingFn imaging, CusButtonFn btn, CusErrorFn err,
         int width, int height);
+
+    /// initializes the solum module with a minimal set of callbacks
+    /// @param[in] connect connection status callback
+    /// @param[in] cert certificate status callback
+    /// @param[in] power probe power down callback
+    /// @param[in] imaging imaging state callback
+    /// @param[in] btn button press callback
+    /// @param[in] err error message callback
+    /// @param[in] newProcessedImage new processed image callback (scan-converted image)
+    /// @param[in] width the width of the output buffer
+    /// @param[in] height the height of the output buffer
+    /// @return success of the call
+    /// @retval 0 the initialization was successful
+    /// @retval -1 the initialization was not successful
+    /// @note must be called before any other functions will succeed
+    SOLUM_EXPORT int solumInitMinimal(CusConnectFn connect, CusCertFn cert, CusPowerDownFn power, CusImagingFn imaging, CusButtonFn btn, CusErrorFn err,
+        CusNewProcessedImageFn newProcessedImage, int width, int height);
 
     /// cleans up memory allocated by the solum module
     /// @retval 0 the destroy attempt was successful
@@ -45,6 +63,8 @@ extern "C"
     SOLUM_EXPORT int solumSetTeeFn(CusTeeConnectFn tee);
 
     /// retrieves the firmware version for a given platform
+    /// @note this is the version supported by the sdk, not the version of any connected probe,
+    ///       use this string to download the firmware binary from clarius cloud and update the probe
     /// @param[in] platform the platform to retrieve the firmware version for
     /// @param[out] version holds the firmware version for the given platform
     /// @param[in] sz size of the version string buffer, suggest at least 32 bytes allocated
@@ -205,6 +225,14 @@ extern "C"
     /// @retval -1 tgc set request could not be made
     SOLUM_EXPORT int solumGetTgc(CusTgc* tgc);
 
+    /// retrieves the active region for the grayscale image
+    /// @param[out] points holds a vector of points in x/y format
+    /// @param[in] count the number of points to generate (points buffer must be count x 2 or larger)
+    /// @return success of the call
+    /// @retval 0 roi was retrieved
+    /// @retval -1 roi could not be retrieved
+    SOLUM_EXPORT int solumGetActiveRegion(double* points, int count);
+
     /// retrieves the roi for the current mode if valid
     /// @param[out] points holds a vector of points in x/y format
     /// @param[in] count the number of points to generate (points buffer must be count x 2 or larger)
@@ -323,6 +351,7 @@ extern "C"
     /// @retval 0 the call was successful
     /// @retval -1 the call was not successful
     /// @note see external documentation for supported parameters
+    /// @warning changing parameters through this function may result in unstable operation, degradation of image quality, or operation outside of the safety limits that clarius tests to
     SOLUM_EXPORT int solumSetLowLevelParam(const char* prm, double val);
 
     /// enables or disables a low level parameter to gain access to lower device control
@@ -332,6 +361,7 @@ extern "C"
     /// @retval 0 the call was successful
     /// @retval -1 the call was not successful
     /// @note see external documentation for supported parameters
+    /// @warning changing parameters through this function may result in unstable operation, degradation of image quality, or operation outside of the safety limits that clarius tests to
     SOLUM_EXPORT int solumEnableLowLevelParam(const char* prm, int en);
 
     /// sets a pulse shape parameter to a specific value to gain access to lower level device control
@@ -341,6 +371,7 @@ extern "C"
     /// @retval 0 the call was successful
     /// @retval -1 the call was not successful
     /// @note see external documentation for supported parameters
+    /// @warning changing parameters through this function may result in unstable operation, degradation of image quality, or operation outside of the safety limits that clarius tests to
     SOLUM_EXPORT int solumSetLowLevelPulse(const char* prm, const char* shape);
 
     /// retrieves a low level parameter value
@@ -348,6 +379,13 @@ extern "C"
     /// @return the parameter value, for boolean variables, the value will be 0 (disabled) or 1 (enabled)
     /// @retval -1 if the parameter value retrieval could not be made
     SOLUM_EXPORT double solumGetLowLevelParam(const char* prm);
+
+    /// retrieves the acoustic indices for the loaded application, imaging mode, and parameter settings
+    /// @param[out] indices the acoustic index values
+    /// @return success of the call
+    /// @retval 0 the call was successful
+    /// @retval -1 the call was not successful
+    SOLUM_EXPORT int solumGetAcousticIndices(CusAcoustic* indices);
 
     /// set the tee exam info for a connected probe
     /// @param[in] id the patient id

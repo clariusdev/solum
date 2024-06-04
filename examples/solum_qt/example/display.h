@@ -11,6 +11,7 @@ public:
 
     void loadImage(const void* img, int w, int h, int bpp, CusImageFormat format, int sz);
     void setDepth(double d) { depth_ = d; }
+    void checkActiveRegion();
     void checkRoi();
     void checkGate();
 
@@ -26,10 +27,10 @@ protected:
 private:
     double depth_;          ///< depth display value
     bool overlay_;          ///< flag if this is an overlay display
-    QPolygonF roi_;         ///< region of interest points to draw
+    QPolygonF activeRoi_;   ///< active region for grayscale imaging
+    QPolygonF modeRoi_;     ///< region of interest for doppler or elastography modes
     QVector<QLineF> gate_;  ///< gate lines to draw
     QImage image_;          ///< the image buffer
-    QMutex lock_;           ///< locking mechanism
 };
 
 /// spectrum display
@@ -53,7 +54,6 @@ protected:
 private:
     QImage spectrum_;   ///< the spectrum buffer
     int offset_;        ///< offset for pushing into buffer
-    QMutex lock_;       ///< locking mechanism
 };
 
 /// rf signal display
@@ -77,7 +77,6 @@ protected:
 private:
     QVector<int16_t> signal_;   ///< the rf signal
     qreal zoom_;                ///< zoom level
-    QMutex lock_;               ///< locking mechanism
 };
 
 /// spectrum display
@@ -99,5 +98,4 @@ protected:
 
 private:
     QImage image_;  ///< the spectrum buffer
-    QMutex lock_;   ///< locking mechanism
 };

@@ -38,7 +38,6 @@ void UltrasoundImage::loadImage(const void* img, int w, int h, int bpp, CusImage
         image_.convertTo(QImage::Format_ARGB32);
 
     // set the image data
-    lock_.lock();
     // check that the size matches the dimensions (uncompressed)
     if (sz >= (w * h * (bpp / 8)))
         memcpy(image_.bits(), img, w * h * (bpp / 8));
@@ -47,16 +46,30 @@ void UltrasoundImage::loadImage(const void* img, int w, int h, int bpp, CusImage
         image_.loadFromData(static_cast<const uchar*>(img), sz, "JPG");
     else if (format == Png)
         image_.loadFromData(static_cast<const uchar*>(img), sz, "PNG");
-    lock_.unlock();
 
     // redraw
     scene()->invalidate();
 }
 
 /// checks if there's a valid roi that should be drawn
+void UltrasoundImage::checkActiveRegion()
+{
+    // make room for 4 x/y points
+    double buf[8];
+    // for sector probes, the first 2 and the last 2 points, along with the radius of curvature, should be used to calculate an arc if necessary
+    // qt supports a drawArc() function which could be useful for portraying this
+    if (solumGetActiveRegion(buf, 4) == 0)
+    {
+        QPolygonF roi;
+        for (auto i = 0u; i < 4; i++)
+            roi.push_back(QPointF(buf[i * 2], buf[(i * 2) + 1]));
+        activeRoi_ = roi;
+    }
+}
+
+/// checks if there's a valid roi that should be drawn
 void UltrasoundImage::checkRoi()
 {
-    lock_.lock();
     // make room for 32 x/y points
     double buf[64];
     if (solumGetRoi(buf, 32) == 0)
@@ -64,17 +77,15 @@ void UltrasoundImage::checkRoi()
         QPolygonF roi;
         for (auto i = 0u; i < 32; i++)
             roi.push_back(QPointF(buf[i * 2], buf[(i * 2) + 1]));
-        roi_ = roi;
+        modeRoi_ = roi;
     }
     else
-        roi_.clear();
-    lock_.unlock();
+        modeRoi_.clear();
 }
 
 /// checks if there's a valid gate that should be drawn
 void UltrasoundImage::checkGate()
 {
-    lock_.lock();
     CusGateLines lines;
     if (solumGetGate(&lines) == 0)
     {
@@ -91,7 +102,6 @@ void UltrasoundImage::checkGate()
     }
     else
         gate_.clear();
-    lock_.unlock();
 }
 
 /// handles resizing of the image view
@@ -104,16 +114,15 @@ void UltrasoundImage::resizeEvent(QResizeEvent* e)
     if (!overlay_)
         solumSetOutputSize(w, h);
 
-    lock_.lock();
     image_ = QImage(w, h, QImage::Format_ARGB32);
     image_.fill(Qt::black);
-    lock_.unlock();
 
     // update the roi in the case of a resize
     if (!overlay_)
     {
         QTimer::singleShot(250, [this]()
         {
+            checkActiveRegion();
             checkRoi();
             checkGate();
         });
@@ -153,7 +162,6 @@ void UltrasoundImage::drawBackground(QPainter* painter, const QRectF& r)
 /// @param[in] painter the drawing context
 void UltrasoundImage::drawForeground(QPainter* painter, const QRectF& r)
 {
-    lock_.lock();
     if (!image_.isNull())
     {
         painter->drawImage(r, image_);
@@ -163,10 +171,15 @@ void UltrasoundImage::drawForeground(QPainter* painter, const QRectF& r)
             painter->drawText(rect(), Qt::AlignRight | Qt::AlignBottom,
                 QStringLiteral("%1 cm").arg(QString::number(depth_, 'f', 1)));
         }
-        if (roi_.size())
+        if (activeRoi_.size())
+        {
+            painter->setPen(Qt::darkBlue);
+            painter->drawPolygon(activeRoi_);
+        }
+        if (modeRoi_.size())
         {
             painter->setPen(Qt::yellow);
-            painter->drawPolygon(roi_);
+            painter->drawPolygon(modeRoi_);
         }
         if (gate_.size())
         {
@@ -184,7 +197,6 @@ void UltrasoundImage::drawForeground(QPainter* painter, const QRectF& r)
             }
         }
     }
-    lock_.unlock();
 }
 
 /// called on a mouse button release event
@@ -230,10 +242,8 @@ Spectrum::Spectrum(QWidget* parent) : QGraphicsView(parent)
 /// resets the spectrum
 void Spectrum::reset()
 {
-    lock_.lock();
     spectrum_.fill(Qt::black);
     offset_ = 0;
-    lock_.unlock();
     scene()->invalidate();
 }
 
@@ -244,25 +254,22 @@ void Spectrum::reset()
 /// @param[in] bps bits per sample
 void Spectrum::loadImage(const void* img, int l, int s, int bps)
 {
-    lock_.lock();
-
     auto w = width();
     // recreate the image if the dimensions change
     if (s != spectrum_.width() || w != spectrum_.height())
     {
         spectrum_ = QImage(s, w, QImage::Format_Grayscale8);
+        spectrum_.fill(Qt::black);
         offset_ = 0;
     }
 
-    int sz = (l * s * (bps / 8));
+    int sz = std::min(w * s, (l * s * (bps / 8)));
     // ensure we don't go beyond the buffer space
     if (offset_ + sz > w * s)
         offset_ = 0;
 
     memcpy(spectrum_.bits() + offset_, img, sz);
     offset_ += sz;
-
-    lock_.unlock();
 
     // redraw
     scene()->invalidate();
@@ -311,14 +318,12 @@ void Spectrum::drawBackground(QPainter* painter, const QRectF& r)
 /// @param[in] painter the drawing context
 void Spectrum::drawForeground(QPainter* painter, const QRectF& r)
 {
-    lock_.lock();
     if (!spectrum_.isNull())
     {
         auto mirrored = spectrum_.mirrored(true, false);
         auto rotated = mirrored.transformed(QTransform().rotate(-90));
         painter->drawImage(r, rotated);
     }
-    lock_.unlock();
 }
 
 /// default constructor
@@ -347,12 +352,10 @@ void RfSignal::loadSignal(const void* rf, int l, int s, int ss)
         return;
 
     // pick the center line to display
-    lock_.lock();
     signal_.clear();
     const int16_t* buf = static_cast<const int16_t*>(rf) + ((l / 2) * s);
     for (auto i = 0; i < s; i++)
         signal_.push_back(*buf++);
-    lock_.unlock();
 
     // redraw
     scene()->invalidate();
@@ -408,7 +411,6 @@ void RfSignal::drawForeground(QPainter* painter, const QRectF& r)
 {
     if (!signal_.isEmpty())
     {
-        lock_.lock();
         painter->setPen(QColor(96, 96, 0));
         qreal x = 0, baseline = r.height() / 2;
         double sampleSize = static_cast<double>(r.width()) / static_cast<double>(signal_.size());
@@ -421,7 +423,6 @@ void RfSignal::drawForeground(QPainter* painter, const QRectF& r)
             p = pt;
             x = x + sampleSize;
         }
-        lock_.unlock();
     }
 }
 
@@ -449,8 +450,6 @@ Prescan::Prescan(QWidget* parent) : QGraphicsView(parent)
 /// @param[in] bpp bits per pixel (aka bits per sample)
 void Prescan::loadImage(const void* img, int w, int h, int bpp, CusImageFormat format, int sz)
 {
-    lock_.lock();
-
     // check for size match
     if (image_.width() != h || image_.height() != w)
     {
@@ -463,8 +462,6 @@ void Prescan::loadImage(const void* img, int w, int h, int bpp, CusImageFormat f
     else
         memcpy(image_.bits(), img, w * h * (bpp / 8));
 
-    lock_.unlock();
-
     // redraw
     scene()->invalidate();
 }
@@ -476,9 +473,7 @@ void Prescan::resizeEvent(QResizeEvent* e)
     auto w = e->size().width(), h = e->size().height();
 
     setSceneRect(0, 0, w, h);
-    lock_.lock();
     image_.fill(Qt::black);
-    lock_.unlock();
 
     QGraphicsView::resizeEvent(e);
 }
@@ -514,10 +509,8 @@ void Prescan::drawBackground(QPainter* painter, const QRectF& r)
 /// @param[in] painter the drawing context
 void Prescan::drawForeground(QPainter* painter, const QRectF& r)
 {
-    lock_.lock();
     if (!image_.isNull())
     {
         painter->drawImage(r, image_);
     }
-    lock_.unlock();
 }

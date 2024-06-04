@@ -41,6 +41,9 @@ typedef void (^CusNewProcessedImageFn)(NSData * _Nonnull img, const CusProcessed
 /// @param[in] img pointer to the new grayscale image information
 /// @param[in] nfo image information associated with the image data
 typedef void (^CusNewSpectralImageFn)(NSData * _Nonnull img, const CusSpectralImageInfo * _Nonnull nfo);
+/// new imu port callback function
+/// @param[in] port the new UDP port for IMU streaming
+typedef void (^CusNewImuPortFn)(int port);
 /// new imu data callback function
 /// @param[in] pos the positional information data tagged with the image
 typedef void (^CusNewImuDataFn)(const CusPosInfo * _Nonnull pos);
@@ -136,6 +139,8 @@ __attribute__((visibility("default"))) @interface Solum : NSObject
 - (BOOL)isConnected;
 
 /// retrieves the firmware version for a given platform
+/// @note this is the version supported by the SDK, not the version of any connected probe,
+///     use this string to download the firmware binary from Clarius Cloud and update the probe
 /// @param[in] platform the platform to retrieve the firmware version for
 /// @param[in] callback callback to receive the firmware version
 - (void) getFirmwareVersion:(CusPlatform) platform
@@ -378,6 +383,7 @@ __attribute__((visibility("default"))) @interface Solum : NSObject
 - (void)setNewRawImageCallback:(CusNewRawImageFn _Nullable)newRawImageCallback;
 - (void)setNewProcessedImageCallback:(CusNewProcessedImageFn _Nullable)newProcessedImageCallback;
 - (void)setNewSpectralImageCallback:(CusNewSpectralImageFn _Nullable)newSpectralImageCallback;
+- (void)setNewImuPortCallback:(CusNewImuPortFn _Nullable)newImuPortCallback;
 - (void)setNewImuDataCallback:(CusNewImuDataFn _Nullable)newImuDataCallback;
 - (void)setImagingCallback:(CusImagingFn _Nullable)imagingCallback;
 - (void)setButtonCallback:(CusButtonFn _Nullable)buttonCallback;

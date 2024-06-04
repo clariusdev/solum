@@ -98,7 +98,11 @@ public class FirstFragment extends Fragment {
         }
 
         @Override
-        public void newImuDataFn(PosInfo[] pos) {
+        public void newImuPortFn(int port) {
+        }
+
+        @Override
+        public void newImuDataFn(PosInfo pos) {
         }
 
         @Override
@@ -157,6 +161,7 @@ public class FirstFragment extends Fragment {
                 showError("Failed to join Wi-Fi " + ssid);
             }
         });
+
         certificatesManager = new CertificatesManager(requireActivity(), new CertificatesManager.Listener() {
             @Override
             public void certsDownloaded() {
@@ -221,9 +226,8 @@ public class FirstFragment extends Fragment {
         binding.buttonLoadApplication.setOnClickListener(v -> doLoadApplication());
         binding.buttonToggleRawDataBuffering.setOnClickListener(v -> toggleBuffering());
         binding.buttonGetRawData.setOnClickListener(v -> doRequestRawData());
-
         binding.buttonWifiAutoJoin.setOnClickListener(v -> doWifiAutoJoin());
-
+        binding.buttonCheckRawDataAvailability.setOnClickListener(v -> doRequestRawDataAvailability());
 
         Secrets.maybeSSID().ifPresent(s -> binding.wifiSsid.setText(s));
         Secrets.maybePassphrase().ifPresent(s -> binding.wifiPassphrase.setText(s));
@@ -397,6 +401,24 @@ public class FirstFragment extends Fragment {
         Log.e(TAG, "Error: " + text);
         Handler mainHandler = new Handler(Looper.getMainLooper());
         mainHandler.post(() -> Toast.makeText(requireContext(), text, Toast.LENGTH_SHORT).show());
+    }
+
+    private void doRequestRawDataAvailability() {
+        // Ensure the probe is frozen and in raw data buffering mode
+        if (!isRunning && isBuffering) {
+            solum.requestRawDataAvailability(new Solum.RequestRawDataAvailabilityCallback() {
+                @Override
+                public void accept(int result, long[] b, long[] iqrf) {
+                    if (0 == result) {
+                        showMessage("Availability b: " + b.length + ", iqrf " + iqrf.length);
+                    } else {
+                        showError("Error while retrieving raw data availability.");
+                    }
+                }
+            });
+        } else {
+            showError("Ensure the probe is frozen and in raw data buffering mode.");
+        }
     }
 
     private void parseInfoFromBluetooth(Bundle fields) {

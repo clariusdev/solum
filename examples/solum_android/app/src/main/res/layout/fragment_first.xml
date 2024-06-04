@@ -230,6 +230,12 @@
             android:layout_height="wrap_content"
             android:text="@string/get_raw_data" />
 
+		<Button
+			android:id="@+id/buttonCheckRawDataAvailability"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:text="Check Raw Data Availability" />
+
         <ProgressBar
             android:id="@+id/raw_data_progress_bar"
             style="?android:attr/progressBarStyleHorizontal"
