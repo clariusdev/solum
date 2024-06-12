@@ -42,3 +42,24 @@ How to obtain a probe certificate:
 ```
 curl -H "Authorization: OEM-API-Key <your key>" "https://cloud.clarius.com/api/public/v0/devices/oem/"
 ```
+
+## Probe Firmware
+
+The probe firmware is not embedded in the libraries and must be downloaded from Clarius Cloud.
+
+1. Obtain your OEM API key for Clarius Cloud, it will be used to authorize the HTTP request.
+2. Obtain the firmware version with `solumFwVersion()`.
+3. Download the firmware at:
+
+```
+https://cloud.clarius.com/api/public/v0/devices/oem/firmware/<firmware version>/
+```
+
+For example:
+
+```
+curl -H "Authorization: OEM-API-Key <your key>" "https://cloud.clarius.com/api/public/v0/devices/oem/firmware/11.3.0-587+670db68186"
+```
+
+4. Upload the firmware to the probe with `solumSoftwareUpdate()`.
+
