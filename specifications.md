@@ -226,7 +226,13 @@ Other standard BLE services that the probe offers include:
 The __PWS__ is a custom service built by clarius to read and manage the power status of the probe.
 
 ### Power Published Characteristic
-Once ready, the device powered status will be published through the _Power Published_ characteristic, and can be read at any point after a BLE connection, as well as subscribed to, and thus a notification will take place when the information has changed. The read and notifications should always be 1 byte, with 0 denoting an off state, and 1 denoting an on state.
+Once ready, the device powered status will be published through the _Power Published_ characteristic, and can be read at any point after a BLE connection, as well as subscribed to, and thus a notification will take place when the information has changed. The read and notifications will always be 1 byte, with the following potential values:
+* 0: Powered Off
+* 1: Powered On
+* 2: Cannot Boot - Low Battery
+* 3: Cannot Boot - Too Warm
+* 4: Cannot Boot - Other Error
+* 5: Device Fully Booted (preparing/ready for Wi-Fi connection)
 
 To subscribe to the Power Published characteristic, one can write 0100 to the characteristic's Client Characteristic Configuration Descriptor (CCCD), allowing the probe to send out notifications to the connected program.
 
