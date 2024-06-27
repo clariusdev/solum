@@ -11,21 +11,25 @@ class RfSignal;
 class Prescan;
 class ProbeRender;
 
-#define CONNECT_EVENT   static_cast<QEvent::Type>(QEvent::User + 1)
-#define CERT_EVENT      static_cast<QEvent::Type>(QEvent::User + 2)
-#define POWER_EVENT     static_cast<QEvent::Type>(QEvent::User + 3)
-#define SWUPDATE_EVENT  static_cast<QEvent::Type>(QEvent::User + 4)
-#define LIST_EVENT      static_cast<QEvent::Type>(QEvent::User + 5)
-#define IMAGE_EVENT     static_cast<QEvent::Type>(QEvent::User + 6)
-#define PRESCAN_EVENT   static_cast<QEvent::Type>(QEvent::User + 7)
-#define SPECTRUM_EVENT  static_cast<QEvent::Type>(QEvent::User + 8)
-#define RF_EVENT        static_cast<QEvent::Type>(QEvent::User + 9)
-#define IMAGING_EVENT   static_cast<QEvent::Type>(QEvent::User + 10)
-#define BUTTON_EVENT    static_cast<QEvent::Type>(QEvent::User + 11)
-#define ERROR_EVENT     static_cast<QEvent::Type>(QEvent::User + 12)
-#define PROGRESS_EVENT  static_cast<QEvent::Type>(QEvent::User + 13)
-#define TEE_EVENT       static_cast<QEvent::Type>(QEvent::User + 14)
-#define IMU_EVENT       static_cast<QEvent::Type>(QEvent::User + 15)
+#define CONNECT_EVENT       static_cast<QEvent::Type>(QEvent::User + 1)
+#define CERT_EVENT          static_cast<QEvent::Type>(QEvent::User + 2)
+#define POWER_EVENT         static_cast<QEvent::Type>(QEvent::User + 3)
+#define SWUPDATE_EVENT      static_cast<QEvent::Type>(QEvent::User + 4)
+#define LIST_EVENT          static_cast<QEvent::Type>(QEvent::User + 5)
+#define IMAGE_EVENT         static_cast<QEvent::Type>(QEvent::User + 6)
+#define PRESCAN_EVENT       static_cast<QEvent::Type>(QEvent::User + 7)
+#define SPECTRUM_EVENT      static_cast<QEvent::Type>(QEvent::User + 8)
+#define RF_EVENT            static_cast<QEvent::Type>(QEvent::User + 9)
+#define IMAGING_EVENT       static_cast<QEvent::Type>(QEvent::User + 10)
+#define BUTTON_EVENT        static_cast<QEvent::Type>(QEvent::User + 11)
+#define ERROR_EVENT         static_cast<QEvent::Type>(QEvent::User + 12)
+#define PROGRESS_EVENT      static_cast<QEvent::Type>(QEvent::User + 13)
+#define TEE_EVENT           static_cast<QEvent::Type>(QEvent::User + 14)
+#define IMU_EVENT           static_cast<QEvent::Type>(QEvent::User + 15)
+#define RAWAVAIL_EVENT      static_cast<QEvent::Type>(QEvent::User + 16)
+#define RAWREADY_EVENT      static_cast<QEvent::Type>(QEvent::User + 17)
+#define RAWDOWNLOADED_EVENT static_cast<QEvent::Type>(QEvent::User + 18)
+#define IMU_PORT_EVENT      static_cast<QEvent::Type>(QEvent::User + 19)
 
 namespace event
 {
@@ -210,6 +214,17 @@ namespace event
         QString id_;            ///< patient id
         QString name_;          ///< patient name
         QString exam_;          ///< exam id
+    };
+
+    /// wrapper for new imu data events that can be posted from the api callbacks
+    class ImuPort : public QEvent
+    {
+    public:
+        /// default constructor
+        /// @param[in] port latest imu port
+        explicit ImuPort(int port) : QEvent(IMU_PORT_EVENT), port_(port) { }
+
+        int port_;   ///< latest imu port
     };
 
     /// wrapper for new imu data events that can be posted from the api callbacks

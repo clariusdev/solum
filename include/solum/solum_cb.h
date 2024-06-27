@@ -16,7 +16,7 @@ typedef void (*CusConnectFn)(CusConnection res, int port, const char* status);
 typedef void (*CusCertFn)(int daysValid);
 /// powering down callback function
 /// @param[in] res the power down reason
-/// @param[in] tm time for when probe is powering down, 0 for immediately
+/// @param[in] tm time in seconds for when probe is powering down, 0 for immediately
 typedef void (*CusPowerDownFn)(CusPowerDown res, int tm);
 /// software update callback function
 /// @param[in] res the software update result
@@ -73,6 +73,9 @@ typedef void (*CusErrorFn)(const char* msg);
 /// @param[in] name patient name if burned in to the probe
 /// @param[in] exam exam id if burned in to the probe
 typedef void (*CusTeeConnectFn)(bool connected, const char* serial, double timeRemaining, const char* id, const char* name, const char* exam);
+/// new imu data streaming port function
+/// @param[in] port the new imu data UDP streaming port
+typedef void (*CusNewImuPortFn)(int port);
 /// new imu data callback function
 /// @param[in] pos the positional information data tagged with the image
 typedef void (*CusNewImuDataFn)(const CusPosInfo* pos);

@@ -139,6 +139,11 @@ int main(int argc, char *argv[])
             memcpy(_spectrum.data(), img, sz);
             QApplication::postEvent(_solum.get(), new event::SpectrumImage(_spectrum.data(), nfo->lines, nfo->samples, nfo->bitsPerSample));
         },
+        // new imu port callback
+        [](int port)
+        {
+            QApplication::postEvent(_solum.get(), new event::ImuPort(port));
+        },
         // new imu data callback
         [](const CusPosInfo* pos)
         {
