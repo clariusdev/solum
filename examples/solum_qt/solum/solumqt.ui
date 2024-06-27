@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Solum Tester</string>
+   <string>Clarius Server</string>
   </property>
   <widget class="QWidget" name="_central">
    <layout class="QVBoxLayout" name="verticalLayout">

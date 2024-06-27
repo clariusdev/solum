@@ -48,9 +48,9 @@ int main(int argc, char *argv[])
     }
 #endif
 
-    QCoreApplication::setOrganizationName(QStringLiteral("Clarius"));
-    QCoreApplication::setOrganizationDomain(QStringLiteral("clarius.com"));
-    QCoreApplication::setApplicationName(QStringLiteral("Solum Demo"));
+    QCoreApplication::setOrganizationName(QStringLiteral("Siemens Healthineers AG"));
+    QCoreApplication::setOrganizationDomain(QStringLiteral("healthineers.com"));
+    QCoreApplication::setApplicationName(QStringLiteral("Clarius Server"));
 
     const int width  = 640; // width of the rendered image
     const int height = 480; // height of the rendered image
