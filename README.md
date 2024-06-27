@@ -42,3 +42,17 @@ How to obtain a probe certificate:
 ```
 curl -H "Authorization: OEM-API-Key <your key>" "https://cloud.clarius.com/api/public/v0/devices/oem/"
 ```
+
+
+## Deploy with all dependencies of QT
+
+[windeployqt](https://doc.qt.io/qt-6/windows-deployment.html) needs to be executed in order to copy all required QT dependencies into the directory of the executable:
+
+
+For example, open a terminal where the solum.exe was build and enter the following command:
+
+```
+C:\Qt\6.6.0\msvc2019_64\bin\windeployqt.exe solum.exe
+```
+
+This copies all required dependencies into the same folder. **The solum.dll file though needs to be copied manually in addition.**
