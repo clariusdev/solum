@@ -1,7 +1,7 @@
 #pragma once
 
 // SDK: solum
-// Version: 11.0.0
+// Version: 11.3.0
 
 #define CUS_MAXTGC  10
 #define CUS_SUCCESS 0
@@ -337,6 +337,16 @@ typedef struct _CusTgc
 
 } CusTgc;
 
+/// Acoustic index values to send to the API
+typedef struct _CusAcoustic
+{
+    double mi;          ///< mechanical index
+    double tib;         ///< thermal index bone
+    double tic;         ///< thermal index cranial
+    double tis;         ///< thermal index soft tissue
+
+} CusAcoustic;
+
 /// Status information
 typedef struct _CusStatusInfo
 {
@@ -366,6 +376,7 @@ typedef struct _CusProbeSettings
     int sounds;         ///< Flag allowing the probe to make beeping sounds
     int wakeOnShake;    ///< Flag allowing the probe to start imaging when it is picked up while frozen
     int bandwidthOptimization; ///< Flag allowing the system to adjust bandwidth parameters automatically when lag or dropped frames are determined
+    int forceLogSend;   ///< Flag allowing the probe to send logs while imaging
     CusButtonSetting up; ///< Button up setting
     CusButtonSetting down; ///< Button down setting
     CusButtonSetting handle; ///< Button handle setting

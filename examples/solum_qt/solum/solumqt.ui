@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Solum Tester</string>
+   <string>Clarius Server</string>
   </property>
   <widget class="QWidget" name="_central">
    <layout class="QVBoxLayout" name="verticalLayout">
@@ -41,7 +41,7 @@
     <item>
      <widget class="QTabWidget" name="_tabs">
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="_certs">
        <attribute name="title">
@@ -141,6 +141,9 @@
          <layout class="QHBoxLayout" name="horizontalLayout_5">
           <item>
            <widget class="JobButton" name="blesearch">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="maximumSize">
              <size>
               <width>100</width>

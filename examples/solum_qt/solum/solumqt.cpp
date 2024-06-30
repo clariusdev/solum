@@ -60,7 +60,11 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), imaging_(false), teeConnect
     reflectMode(BMode);
     ui_._tabs->setTabEnabled(ui_._tabs->indexOf(ui_._3d), false);
 
-    settings_ = std::make_unique<QSettings>(QStringLiteral("settings.ini"), QSettings::IniFormat);
+    // settings.ini file needs to be at a location the application can write to.
+    // Writing directly into the application directory (using 'settings.ini') does not work on some systems (e.g. macos).
+    QString p = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
+    settings_ = std::make_unique<QSettings>(p + "/settings.ini", QSettings::IniFormat);
+
     ui_.token->setText(settings_->value("token").toString());
     settings_->beginGroup("Probes");
     for (const auto& probe: settings_->childGroups())
@@ -296,6 +300,7 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), imaging_(false), teeConnect
             if (f.size())
             {
                 ret = f[0];
+                ret = ret.replace("\"", QString{});
                 ret.replace(field + QStringLiteral(" "), QString{});
             }
             return ret;
@@ -335,8 +340,28 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), imaging_(false), teeConnect
 
     imagingState(ImagingNotReady, false);
 
-    // Automatically trigger a BLE search at startup
-    ui_.blesearch->click();
+#if QT_CONFIG(permissions)
+    QBluetoothPermission bluetoothPermission;
+    switch (qApp->checkPermission(bluetoothPermission)) {
+    case Qt::PermissionStatus::Undetermined:
+        qApp->requestPermission(bluetoothPermission, this, [this]()
+                                {
+                                    qDebug() << "bluetooth permission granted";
+                                    ui_.blesearch->setEnabled(true);
+                                    // Automatically trigger a BLE search at startup
+                                    ui_.blesearch->click();
+                                });
+        return;
+    case Qt::PermissionStatus::Denied:
+        qDebug() << "bluetooth permission was denied";
+        return;
+    case Qt::PermissionStatus::Granted:
+        // Automatically trigger a BLE search at startup
+        ui_.blesearch->setEnabled(true);
+        ui_.blesearch->click();
+        break; // Proceed
+    }
+#endif
 }
 
 /// destructor

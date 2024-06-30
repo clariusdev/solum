@@ -48,9 +48,9 @@ int main(int argc, char *argv[])
     }
 #endif
 
-    QCoreApplication::setOrganizationName(QStringLiteral("Clarius"));
-    QCoreApplication::setOrganizationDomain(QStringLiteral("clarius.com"));
-    QCoreApplication::setApplicationName(QStringLiteral("Solum Demo"));
+    QCoreApplication::setOrganizationName(QStringLiteral("Siemens Healthineers AG"));
+    QCoreApplication::setOrganizationDomain(QStringLiteral("healthineers.com"));
+    QCoreApplication::setApplicationName(QStringLiteral("Clarius Server"));
 
     const int width  = 640; // width of the rendered image
     const int height = 480; // height of the rendered image
@@ -138,6 +138,19 @@ int main(int argc, char *argv[])
                 _spectrum.resize(sz);
             memcpy(_spectrum.data(), img, sz);
             QApplication::postEvent(_solum.get(), new event::SpectrumImage(_spectrum.data(), nfo->lines, nfo->samples, nfo->bitsPerSample));
+        },
+        // new imu port callback
+        [](int port)
+        {
+            QApplication::postEvent(_solum.get(), new event::ImuPort(port));
+        },
+        // new imu data callback
+        [](const CusPosInfo* pos)
+        {
+            QQuaternion imu;
+            if (pos)
+                imu = QQuaternion(static_cast<float>(pos->qw), static_cast<float>(pos->qx), static_cast<float>(pos->qy), static_cast<float>(pos->qz));
+            QApplication::postEvent(_solum.get(), new event::Imu(IMU_EVENT, imu));
         },
         // imaging state change callback
         [](CusImagingState state, int imaging)

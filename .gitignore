@@ -1,3 +1,8 @@
 .vscode
 *.pro.user
 
+/openigtlink/debug/
+/openigtlink/release/
+openigtlink/build/
+.DS_Store
+examples/solum_qt/CMakeLists.txt.user

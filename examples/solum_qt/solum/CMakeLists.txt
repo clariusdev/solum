@@ -32,7 +32,7 @@ qt_add_executable(solum_qt
 set_target_properties(solum_qt PROPERTIES
     WIN32_EXECUTABLE TRUE
     MACOSX_BUNDLE TRUE
-    MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/macos/Info.plist
+    MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/../macos/Info.plist
     MACOSX_BUNDLE_GUI_IDENTIFIER "me.clarius.sdk.solum_qt"
 )
 
