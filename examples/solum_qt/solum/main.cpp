@@ -186,6 +186,18 @@ int main(int argc, char *argv[])
 
     print_firmware_version();
 
+    // CONFIGURE PROBE SETTINGS
+    CusProbeSettings settings;
+    settings.contactDetection = 0;
+    settings.autoFreeze = 0;
+    settings.keepAwake = 0;
+    settings.deepSleep = 0;
+    settings.wifiOptimization = 0;
+    if (solumSetProbeSettings(&settings) != 0)
+    {
+        std::cerr << "Failed to set Clarius OEM probe settings" << std::endl;
+    }
+
     _solum->show();
     const int result = a.exec();
     solumDestroy();
