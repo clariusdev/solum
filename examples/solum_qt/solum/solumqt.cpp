@@ -202,6 +202,9 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), imaging_(false), teeConnect
     ui_.modes->addItem(QStringLiteral("RF"));
     ui_.modes->blockSignals(false);
 
+    // Start the IGTL server at startup
+    onIGTLServe();
+
     // connect status timer
     connect(&timer_, &QTimer::timeout, [this]()
     {
