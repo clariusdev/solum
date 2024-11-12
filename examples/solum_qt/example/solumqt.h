@@ -241,9 +241,10 @@ namespace event
     public:
         /// default constructor
         /// @param[in] err the error message
-        explicit Error(const QString& err) : QEvent(ERROR_EVENT), error_(err) { }
+        explicit Error(CusErrorCode code, const QString& err) : QEvent(ERROR_EVENT), code_(code), error_(err) { }
 
-        QString error_;     ///< the error message
+        CusErrorCode code_;     ///< error code
+        QString error_;         ///< error message
     };
 
     /// wrapper for progress events that can be posted from the api callbacks
@@ -394,6 +395,7 @@ private:
     bool connected_;                ///< connection state
     bool imaging_;                  ///< imaging state
     bool teeConnected_;             ///< tee connected state
+    uint32_t imuSamples_;           ///< keeps track of samples collected
     uint64_t acquired_;             ///< tracks acquired bytes
     Ui::Solum *ui_;                 ///< ui controls, etc.
     UltrasoundImage* image_;        ///< image display

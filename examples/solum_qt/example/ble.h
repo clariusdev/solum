@@ -2,6 +2,17 @@
 
 typedef QVector<QPair<QString,QBluetoothDeviceInfo>> DiscoveredDevices;
 
+/// power states the probe will publish
+enum class PowerState
+{
+    Off = 0,        ///< probe powered off
+    On,             ///< probe powered on
+    LowBattery,     ///< cannot boot, low battery
+    TooHot,         ///< cannot boot, too hot
+    ErrorBooting,   ///< cannot boot, other error
+    Booted          ///< probe booted, setting up wi-fi
+};
+
 /// bluetooth module
 class Ble : public QObject
 {
@@ -30,7 +41,7 @@ private slots:
 signals:
     void devices(const QStringList&);
     void powerReady(bool);
-    void powered(bool);
+    void powered(PowerState);
     void wifiReady(bool);
     void wifiInfo(const QString&);
 

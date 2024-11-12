@@ -1,7 +1,7 @@
 #pragma once
 
 // SDK: solum
-// Version: 11.3.0
+// Version: 12.0.0
 
 #define CUS_MAXTGC  10
 #define CUS_SUCCESS 0
@@ -84,6 +84,7 @@ typedef enum _CusConnection
     ProbeDisconnected,  ///< Disconnected from probe
     ConnectionFailed,   ///< Failed to connect to probe
     SwUpdateRequired,   ///< Software update required
+    OSUpdateRequired,   ///< Scanner O/S update required
 
 } CusConnection;
 
@@ -182,6 +183,8 @@ typedef enum _CusPowerDown
     TooHot,             ///< Probe got too hot
     LowBattery,         ///< Low battery
     ButtonOff,          ///< User held button to shut down probe
+    ChargingInDock,     ///< Probe was docked in charger
+    SoftwareShutdown,   ///< Solum software sent shutdown command
 
 } CusPowerDown;
 
@@ -204,6 +207,19 @@ typedef enum _CusSwUpdate
     SwUpdateCorrupt,    ///< Probe file system may be corrupt
 
 } CusSwUpdate;
+
+/// Error codes
+typedef enum _CusErrorCode
+{
+    ErrorGeneric,       ///< Generic error
+    ErrorSetup,         ///< Setup error
+    ErrorProbe,         ///< Probe error
+    ErrorApplication,   ///< Application load error
+    ErrorSwUpdate,      ///< Software update error
+    ErrorGl,            ///< GL error
+    ErrorRawData,       ///< Raw data error
+
+} CusErrorCode;
 
 /// Wireless optimization methods
 ///
@@ -368,6 +384,7 @@ typedef struct _CusProbeSettings
     int keepAwake;      ///< The number of minutes to power down the device once imaging has been frozen, valid range is 0 - 120, where 0 turns the function off
     int deepSleep;      ///< The number of hours for probe to go into deep sleep, valid range is 0 - 96, where 0 disables deep sleep
     int stationary;     ///< The number of seconds to engage freezing imaging after being stationary for a specific time frame
+    int autoBoot;       ///< Auto boot probe when it comes out of deep sleep
     int wifiOptimization; ///< Flag allowing the probe to automatically freeze when poor wifi connectivity is detected
     int wifiSearch;     ///< Flag to force the probe to scan the networks and choose the appropriate channel before bringing up its Wi-Fi
     int htWifi;         ///< Flag to enable 40 MHz bands for the probe's Wi-Fi network
@@ -377,6 +394,8 @@ typedef struct _CusProbeSettings
     int wakeOnShake;    ///< Flag allowing the probe to start imaging when it is picked up while frozen
     int bandwidthOptimization; ///< Flag allowing the system to adjust bandwidth parameters automatically when lag or dropped frames are determined
     int forceLogSend;   ///< Flag allowing the probe to send logs while imaging
+    int imageOnUndock;  ///< Start imaging when probe comes out of charging dock
+    int alarmOnUndock;  ///< Sound an alarm when probe comes out of charging dock
     CusButtonSetting up; ///< Button up setting
     CusButtonSetting down; ///< Button down setting
     CusButtonSetting handle; ///< Button handle setting
