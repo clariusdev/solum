@@ -28,6 +28,7 @@ import java.util.concurrent.Executors;
 import me.clarius.sdk.Button;
 import me.clarius.sdk.Config;
 import me.clarius.sdk.Connection;
+import me.clarius.sdk.ErrorCode;
 import me.clarius.sdk.ImagingState;
 import me.clarius.sdk.LogLevel;
 import me.clarius.sdk.Mode;
@@ -57,7 +58,7 @@ public class FirstFragment extends Fragment {
     private ImageConverter imageConverter;
     private final Solum.Listener solumListener = new Solum.Listener() {
         @Override
-        public void error(String msg) {
+        public void error(ErrorCode code, String msg) {
             showError(msg);
         }
 
@@ -66,8 +67,10 @@ public class FirstFragment extends Fragment {
             Log.d(TAG, "Connection result: " + result + ", port: " + port + ", status: " + status);
             if (result == Connection.ProbeConnected) {
                 showMessage("Connected");
-            } else if (result == Connection.SwUpdateRequired) {
+            } else if (result == Connection.OSUpdateRequired) {
                 showMessage("Firmware update needed");
+            } else if (result == Connection.SwUpdateRequired) {
+                showMessage("Scanner software update needed");
             } else {
                 showMessage("Disconnected");
             }

@@ -148,7 +148,7 @@ class SolumModel: ObservableObject {
     private let solum = Solum()
     /// Initialize the framework and set up callbacks
     init() {
-        solum.setErrorCallback({ (errorString: String) -> Void in
+        solum.setErrorCallback({ (code: CusErrorCode, errorString: String) -> Void in
             print(errorString)
         })
         solum.setImagingCallback({ (state: CusImagingState, imageRunning: Int32) -> Void in
@@ -176,7 +176,7 @@ class SolumModel: ObservableObject {
             if status == ProbeDisconnected {
                 self.updateRequired = false
             }
-            if status == SwUpdateRequired {
+            if status == OSUpdateRequired || status == SwUpdateRequired {
                 self.updateRequired = true
             }
         })
@@ -187,6 +187,9 @@ class SolumModel: ObservableObject {
             let rowBytes = nfo.width * nfo.bitsPerPixel / 8
             let totalBytes = Int(nfo.height * rowBytes)
             let rawBytes = UnsafeMutableRawPointer.allocate(byteCount: totalBytes, alignment: 1)
+            defer {
+                rawBytes.deallocate()
+            }
             let bmpInfo = CGImageAlphaInfo.premultipliedFirst.rawValue | CGBitmapInfo.byteOrder32Little.rawValue
             imageData.copyBytes(to: UnsafeMutableRawBufferPointer(start: rawBytes, count: totalBytes))
             guard let colorspace = CGColorSpace(name: CGColorSpace.sRGB) else {

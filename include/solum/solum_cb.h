@@ -1,6 +1,7 @@
 #pragma once
 
 #include "solum_def.h"
+#include <stdbool.h>
 
 /// string list callback function
 /// @param[in] list the string list
@@ -38,7 +39,12 @@ typedef void (*CusNewProcessedImageFn)(const void* img, const CusProcessedImageI
 /// @param[in] nfo image information associated with the image data
 typedef void (*CusNewSpectralImageFn)(const void* img, const CusSpectralImageInfo* nfo);
 /// imaging callback function
-/// @param[in] state the imaging ready state
+/// used primarily to denote 4 different scenarios:
+/// 1. when imaging is ready after an application load or parameter update (ImagingReady state)
+/// 2. when there is an error after trying to load an application or updating a parameter (ImagingNotReady state)
+/// 3. when the low bandwidth flag has changed to denote that imaging has been re-optimized for the network performance (LowBandwidth state)
+/// 4. when the probe has frozen or unfrozen due to an internal state change (all other states)
+/// @param[in] state the imaging state
 /// @param[in] imaging 1 = running , 0 = stopped
 typedef void (*CusImagingFn)(CusImagingState state, int imaging);
 /// button callback function
@@ -63,8 +69,9 @@ typedef void (*CusRawRequestFn)(int res, const char* extension);
 /// @param[in] res the raw data result, typically the size of the data package requested or actually downloaded
 typedef void (*CusRawFn)(int res);
 /// error callback function
+/// @param[in] code error code to associate with the error
 /// @param[in] msg the error message with associated error that occurred
-typedef void (*CusErrorFn)(const char* msg);
+typedef void (*CusErrorFn)(CusErrorCode code, const char* msg);
 /// tee connection callback function
 /// @param[in] connected flag associated with the tee having a disposable probe connection
 /// @param[in] serial if a probe is connected, the serial number of the probe
