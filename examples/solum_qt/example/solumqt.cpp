@@ -14,7 +14,7 @@ static Solum* _me;
 
 /// default constructor
 /// @param[in] parent the parent object
-Solum::Solum(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_(false), teeConnected_(false), acquired_(0), ui_(new Ui::Solum)
+Solum::Solum(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_(false), teeConnected_(false), imuSamples_(0), acquired_(0), ui_(new Ui::Solum)
 {
     _me = this;
     ui_->setupUi(this);
@@ -34,6 +34,7 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_
     ui_->render->addWidget(QWidget::createWindowContainer(render_));
     auto reset = new QPushButton(QStringLiteral("Reset"), this);
     ui_->render->addWidget(reset);
+    // ** ensure the path is updated as necessary
     render_->init(QStringLiteral("scanner.obj"));
     render_->show();
     ui_->cfigain->setVisible(false);
@@ -98,6 +99,7 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_
     QObject::connect(reset, &QPushButton::clicked, [this]()
     {
         render_->reset();
+        imuSamples_ = 0;
     });
 
     // load probes list
@@ -130,6 +132,10 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_
 
             ui_->probeStatus->setText(QStringLiteral("Battery: %1%, Temp: %2%, FR: %3 Hz%4, MI: %5")
                 .arg(st.battery).arg(st.temperature).arg(QString::number(st.frameRate, 'f', 0)).arg(teeTime).arg(acoustic_.mi));
+
+            // unreleased peripheral detection may denote that the fan is backwards for now
+            if (st.guide != NoGuide)
+                ui_->status->showMessage(QStringLiteral("Fan May Be Placed Backwards, Reverse to Properly Function"));
         }
     });
 
@@ -167,9 +173,14 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_
     });
 
     // power status sent
-    connect(&ble_, &Ble::powered, [this](bool en)
+    connect(&ble_, &Ble::powered, [this](PowerState state)
     {
-        ui_->status->showMessage(QStringLiteral("Powered: %1").arg(en ? QStringLiteral("On") : QStringLiteral("Off")));
+        if (state == PowerState::LowBattery || state == PowerState::TooHot || state == PowerState::ErrorBooting)
+            ui_->status->showMessage(QStringLiteral("Cannot Boot"));
+        else if (state == PowerState::Booted)
+            ui_->status->showMessage(QStringLiteral("Probe Booted, Setting up Wi-Fi"));
+        else
+            ui_->status->showMessage(QStringLiteral("Powered: %1").arg(state == PowerState::On ? QStringLiteral("On") : QStringLiteral("Off")));
     });
 
     // wifi info sent
@@ -469,6 +480,8 @@ void Solum::setConnected(CusConnection res, int port, const QString& msg)
     }
     else if (res == ConnectionFailed || res == ConnectionError)
         ui_->status->showMessage(QStringLiteral("Error connecting: %1").arg(msg));
+    else if (res == OSUpdateRequired)
+        ui_->status->showMessage(QStringLiteral("Scanner O/S update required prior to imaging"));
     else if (res == SwUpdateRequired)
         ui_->status->showMessage(QStringLiteral("Software update required prior to imaging"));
 }
@@ -491,13 +504,17 @@ void Solum::certification(int daysValid)
 void Solum::poweringDown(CusPowerDown res, int tm)
 {
     if (res == Idle)
-        ui_->status->showMessage(QStringLiteral("Idle power down in: %1s").arg(tm));
+        ui_->status->showMessage(QStringLiteral("Probe Idle, Shutting Down in: %1s").arg(tm));
     else if (res == TooHot)
-        ui_->status->showMessage(QStringLiteral("Heating power down in: %1s").arg(tm));
+        ui_->status->showMessage(QStringLiteral("Probe Too Hot, Shutting Down in: %1s").arg(tm));
     else if (res == LowBattery)
-        ui_->status->showMessage(QStringLiteral("Battery low power down in: %1s").arg(tm));
+        ui_->status->showMessage(QStringLiteral("Battery Low, Shutting Down"));
     else if (res == ButtonOff)
-        ui_->status->showMessage(QStringLiteral("Button press power down in: %1s").arg(tm));
+        ui_->status->showMessage(QStringLiteral("Shutdown Button Pressed"));
+    else if (res == ChargingInDock)
+        ui_->status->showMessage(QStringLiteral("Charging in Dock, Shutting Down"));
+    else if (res == SoftwareShutdown)
+        ui_->status->showMessage(QStringLiteral("Solum Software Sent Shutdown Command"));
 }
 
 /// called when there's a software update notification
@@ -565,8 +582,23 @@ void Solum::imagingState(CusImagingState state, bool imaging)
         ui_->rawAvailability->setVisible(showRaw);
         ui_->downloadRaw->setVisible(showRaw);
     }
-    else if (state == CertExpired)
-        ui_->status->showMessage(QStringLiteral("Certificate needs updating prior to imaging"));
+
+    if (state == CertExpired)
+        ui_->status->showMessage(QStringLiteral("Certificate Needs Updating Prior to Imaging"));
+    else if (state == PoorWifi)
+        ui_->status->showMessage(QStringLiteral("Stopped Imaging. Poor Wi-Fi Performance Detected. Optimize or Change Network"));
+    else if (state == LowBandwidth)
+        ui_->status->showMessage(QStringLiteral("Probe Has Optimized Imaging Parameters After Detecting a Low Bandwidth Network"));
+    else if (state == NoContact)
+        ui_->status->showMessage(QStringLiteral("Stopped Imaging. No Patient Contact Detected"));
+    else if (state == ChargingChanged)
+        ui_->status->showMessage(QStringLiteral("Charging State Changed: %1").arg(imaging ? QStringLiteral("Started Imaging") : QStringLiteral("Stopped Imaging")));
+    else if (state == MotionSensor)
+        ui_->status->showMessage(QStringLiteral("Motion Sensor State Changed: %1").arg(imaging ? QStringLiteral("Started Imaging") : QStringLiteral("Stopped Imaging")));
+
+    // update the acoustic indices at the appropriate time when we get the state update
+    if (state == ImagingReady)
+        solumGetAcousticIndices(&acoustic_);
 }
 
 /// called when there is a button press on the ultrasound
@@ -709,7 +741,10 @@ void Solum::newProcessedImage(const void* img, int w, int h, int bpp, CusImageFo
 void Solum::newImuData(const QQuaternion& imu)
 {
     if (!imu.isNull())
+    {
         render_->update(imu);
+        ui_->imuStats->setText(QStringLiteral("Collected %1 IMU Samples").arg(++imuSamples_));
+    }
 }
 
 /// called when a new pre-scan image has been sent
@@ -749,7 +784,10 @@ void Solum::onConnect()
 {
     if (!connected_)
     {
-        if (solumConnect(ui_->ip->text().toStdString().c_str(), ui_->port->text().toInt()) < 0)
+        auto prms = solumDefaultConnectionParams();
+        prms.ipAddress = ui_->ip->text().toStdString().c_str();
+        prms.port = ui_->port->text().toInt();
+        if (solumConnect(&prms) < 0)
             ui_->status->showMessage(QStringLiteral("Connection failed"));
         else
             ui_->status->showMessage(QStringLiteral("Trying connection"));
@@ -774,11 +812,9 @@ void Solum::onFreeze()
         ui_->status->showMessage(QStringLiteral("Error requesting imaging run/stop"));
     else
     {
-        imagingState(ImagingReady, !imaging_);
         if (imaging_)
         {
             spectrum_->reset();
-            solumGetAcousticIndices(&acoustic_);
         }
     }
 }

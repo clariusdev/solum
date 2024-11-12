@@ -40,7 +40,7 @@ void UltrasoundImage::loadImage(const void* img, int w, int h, int bpp, CusImage
     // set the image data
     // check that the size matches the dimensions (uncompressed)
     if (sz >= (w * h * (bpp / 8)))
-        memcpy(image_.bits(), img, w * h * (bpp / 8));
+        std::memcpy(image_.bits(), img, w * h * (bpp / 8));
     // try to load jpeg
     else if (format == Jpeg)
         image_.loadFromData(static_cast<const uchar*>(img), sz, "JPG");
@@ -268,7 +268,7 @@ void Spectrum::loadImage(const void* img, int l, int s, int bps)
     if (offset_ + sz > w * s)
         offset_ = 0;
 
-    memcpy(spectrum_.bits() + offset_, img, sz);
+    std::memcpy(spectrum_.bits() + offset_, img, sz);
     offset_ += sz;
 
     // redraw
@@ -460,7 +460,7 @@ void Prescan::loadImage(const void* img, int w, int h, int bpp, CusImageFormat f
     if (format == Jpeg)
         image_.loadFromData(static_cast<const uchar*>(img), sz, "JPG");
     else
-        memcpy(image_.bits(), img, w * h * (bpp / 8));
+        std::memcpy(image_.bits(), img, w * h * (bpp / 8));
 
     // redraw
     scene()->invalidate();

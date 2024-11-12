@@ -1,6 +1,7 @@
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 #include <string>
+#include <cstring>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -28,10 +29,11 @@ static char buffer_[2048];
 static int counter_ = 0;
 
 /// callback for error messages
+/// @param[in] code the error code
 /// @param[in] err the error message sent from the solum module
-void errorFn(const char* err)
+void errorFn(CusErrorCode code, const char* err)
 {
-    ERROR << "error: " << err;
+    ERROR << "error: (" << static_cast<int>(code) << ") " << err;
 }
 
 /// callback for connection status
@@ -154,7 +156,7 @@ bool printCsv(const char* buf, int sz)
     if (sz > static_cast<int>(sizeof(buffer_)))
         return false;
 
-    memcpy(buffer_, buf, sz);
+    std::memcpy(buffer_, buf, sz);
     char* p = strtok(buffer_, ",");
     while (p != nullptr)
     {
@@ -212,6 +214,7 @@ void processEventLoop(std::atomic_bool& quit)
     std::string cmd, buf1, buf2;
     CusStatusInfo stats;
     CusProbeInfo probe;
+    auto connectParams = solumDefaultConnectionParams();
     double v;
     int m;
 
@@ -265,7 +268,9 @@ void processEventLoop(std::atomic_bool& quit)
                 try { port_ = std::stoi(buf1); }
                 catch (std::exception&) { ERROR << "invalid port specified"; }
             }
-            if (solumConnect(ip_.c_str(), port_) < 0)
+            connectParams.ipAddress = ip_.c_str();
+            connectParams.port = port_;
+            if (solumConnect(&connectParams) < 0)
                 ERROR << "error calling connect";
             else
                 PRINT << "trying to connect";
@@ -419,6 +424,7 @@ void processEventLoop(std::atomic_bool& quit)
 
 int init(int& argc, char** argv)
 {
+    auto connectParams = solumDefaultConnectionParams();
     const int width  = 640;
     const int height = 480;
     // ensure console buffers are flushed automatically
@@ -497,9 +503,24 @@ int init(int& argc, char** argv)
 
     PRINT << "starting solum program...";
 
+    auto initParams = solumDefaultInitParams();
+    initParams.args.argc = argc;
+    initParams.args.argv = argv;
+    initParams.storeDir = keydir.c_str();
+    initParams.connectFn = connectFn;
+    initParams.certFn = certFn;
+    initParams.powerDownFn = powerDownFn;
+    initParams.newProcessedImageFn = newProcessedImageFn;
+    initParams.newRawImageFn = newRawImageFn;
+    initParams.newImuPortFn = newImuPort;
+    initParams.newImuDataFn = newImuData;
+    initParams.imagingFn = imagingFn;
+    initParams.buttonFn = buttonFn;
+    initParams.errorFn = errorFn;
+    initParams.width = width;
+    initParams.height = height;
     // initialize with callbacks
-    if (solumInit(argc, argv, keydir.c_str(), connectFn, certFn, powerDownFn, newProcessedImageFn,
-            newRawImageFn, nullptr, newImuPort, newImuData, imagingFn, buttonFn, errorFn, width, height) < 0)
+    if (solumInit(&initParams) < 0)
     {
         ERROR << "could not initialize solum module" << std::endl;
         return ERRCODE;
@@ -508,7 +529,9 @@ int init(int& argc, char** argv)
     // try and connect right away if parameters provided
     if (ip_.size() && port_)
     {
-        if (solumConnect(ip_.c_str(), port_) < 0)
+        connectParams.ipAddress = ip_.c_str();
+        connectParams.port = port_;
+        if (solumConnect(&connectParams) < 0)
             ERROR << "error calling connect";
         else
             PRINT << "trying to connect";
