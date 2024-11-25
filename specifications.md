@@ -10,15 +10,15 @@ The API communicates with the Clarius probe directly, and makes use of TCP/UDP t
 Bluetooth communications is not built directly into the API and thus must be written by the developer using the library/platform of their choice.
 
 ```mermaid
-  flowchart RL
-  prb[Probe]
-  subgraph app[Application]
-    solum[Solum API]
-    ble[BLE Module]
-  end
-  prb-- Images/UDP -->solum
-  solum-- Control/TCP -->prb
-  ble-- Wi-Fi/Power Control -->prb
+flowchart RL
+prb[Probe]
+subgraph app[Application]
+  solum[Solum API]
+  ble[BLE Module]
+end
+prb-- Images/UDP -->solum
+solum-- Control/TCP -->prb
+ble-- Wi-Fi/Power Control -->prb
 ```
 
 # Performance Specifications
@@ -226,7 +226,9 @@ Other standard BLE services that the probe offers include:
 The __PWS__ is a custom service built by clarius to read and manage the power status of the probe.
 
 ### Power Published Characteristic
+
 Once ready, the device powered status will be published through the _Power Published_ characteristic, and can be read at any point after a BLE connection, as well as subscribed to, and thus a notification will take place when the information has changed. The read and notifications will always be 1 byte, with the following potential values:
+
 * 0: Powered Off
 * 1: Powered On
 * 2: Cannot Boot - Low Battery
@@ -237,12 +239,15 @@ Once ready, the device powered status will be published through the _Power Publi
 To subscribe to the Power Published characteristic, one can write 0100 to the characteristic's Client Characteristic Configuration Descriptor (CCCD), allowing the probe to send out notifications to the connected program.
 
 ### Power Request Characteristic
-To power on or off the device, the _Power Request_ characteristic can be written to. Writing 0x00 to the characteristic will power the device off, and writing 0x01 will power the device on.
+
+To power on or off the device, one can write to the _Power Request_ characteristic. Writing 0x00 to the characteristic will power the device off, and writing 0x01 will power the device on.
 
 ## Wi-Fi Information Service
-The __WIS__ is a custom service built by Clarius to read and manage the Wi-Fi network once the probe is powered up and ready. A probe is typically in a ready state when the LED has stopped flashing and is solid blue. The service data is published and written to in [YAML](https://yaml.org).
+
+The __WIS__ is a custom service built by Clarius to read and manage the Wi-Fi network once the probe is powered up and ready. A probe is typically in a ready state when the LED has stopped flashing and is solid blue. The service data is published and written in [YAML](https://yaml.org).
 
 ### Wi-Fi Published Characteristic
+
 Once ready, the current Wi-Fi network information will be published through the _Wi-Fi Published_ characteristic, and can be read at any point after a BLE connection, as well as subscribed to, and thus a notification will take place when the information has changed. If the service reads "N/A", it typically means the probe has not finished booting to a ready state.
 
 To subscribe to the Wi-Fi Published characteristic, one can write 0100 to the characteristic's Client Characteristic Configuration Descriptor (CCCD), allowing the probe to send out notifications to the connected program.
@@ -250,11 +255,13 @@ To subscribe to the Wi-Fi Published characteristic, one can write 0100 to the ch
 The read back text from the characteristic is in YAML format (note that strings may or may not have quotes).
 
 If the probe is still booting up and the Wi-Fi network is not yet ready:
+
 ```
 state: disabled
 ```
 
 If the Wi-Fi network is in AP mode and ready for connection:
+
 ```
 state: connected
 ap: true
@@ -267,21 +274,25 @@ avail: <'available' if available for control, 'listen' if available for casting,
 channel: <wifi channel>
 mac: <mac address>
 ```
+
 Note that the password will only be sent if the network used is the probe's own Access Point (AP). If connected to a router, the password will not be sent as it is assumed that the credentials are managed elsewhere.
 
 ### Wi-Fi Request Characteristic
-To change network configurations, the _Wi-Fi Request_ characteristic can be written to. Note that the probe must be in a ready state before the request will have any effect.
 
-To put the probe on it's internal access point, simply send:
+To change network configurations, one can write to the _Wi-Fi Request_ characteristic. Note that the probe must be in a ready state before the request will have any effect.
+
+To put the probe on its internal access point, simply send:
+
 ```
 ap: true
 ch: <'auto' or channel number>
 ```
 
 To request to put the probe on a router (or any other external network), write to the characteristic in the following format:
+
 ```
 ap: false
-ssid: <network ssid>
+ssid: <network SSID>
 password: <network password>
 ```
 
