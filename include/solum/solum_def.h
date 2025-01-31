@@ -1,7 +1,7 @@
 #pragma once
 
 // SDK: solum
-// Version: 12.0.0
+// Version: 12.0.2
 
 #define CUS_MAXTGC  10
 #define CUS_SUCCESS 0
@@ -383,7 +383,8 @@ typedef struct _CusProbeSettings
     int autoFreeze;     ///< The number of seconds to engage freezing imaging after no contact mode has been engaged, valid range is 0 - 120, where 0 turns the function off
     int keepAwake;      ///< The number of minutes to power down the device once imaging has been frozen, valid range is 0 - 120, where 0 turns the function off
     int deepSleep;      ///< The number of hours for probe to go into deep sleep, valid range is 0 - 96, where 0 disables deep sleep
-    int stationary;     ///< The number of seconds to engage freezing imaging after being stationary for a specific time frame
+    int stationary;     ///< The number of seconds to engage freezing imaging after being stationary for a specific time frame, valid range is 0 - 120, where 0 turns the function off
+    int powerFan;       ///< Flag for the ability to use the power fan
     int autoBoot;       ///< Auto boot probe when it comes out of deep sleep
     int wifiOptimization; ///< Flag allowing the probe to automatically freeze when poor wifi connectivity is detected
     int wifiSearch;     ///< Flag to force the probe to scan the networks and choose the appropriate channel before bringing up its Wi-Fi
