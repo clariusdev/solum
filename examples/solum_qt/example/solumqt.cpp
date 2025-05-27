@@ -785,7 +785,8 @@ void Solum::onConnect()
     if (!connected_)
     {
         auto prms = solumDefaultConnectionParams();
-        prms.ipAddress = ui_->ip->text().toStdString().c_str();
+        std::string ip_str = ui_->ip->text().toStdString();
+        prms.ipAddress = ip_str.c_str();
         prms.port = ui_->port->text().toInt();
         if (solumConnect(&prms) < 0)
             ui_->status->showMessage(QStringLiteral("Connection failed"));
