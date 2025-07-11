@@ -1,59 +1,64 @@
 #pragma once
+
 #include "solum_export.h"
 #include "solum_cb.h"
 
-extern "C"
+/// probe connection parameters for solumConnect
+typedef struct _CusConnectionParams
 {
-    /// initializes the solum module
-    /// @param[in] argc the argument count for input parameters to pass to the library
-    /// @param[in] argv the arguments to pass to the library, possibly required for qt graphics buffer initialization
-    /// @param[in] dir the directory to store security keys
-    /// @param[in] connect connection status callback
-    /// @param[in] cert certificate status callback
-    /// @param[in] power probe power down callback
-    /// @param[in] newProcessedImage new processed image callback (scan-converted image)
-    /// @param[in] newRawImage new raw image callback - (pre scan-converted image)
-    /// @param[in] newSpectralImage new processed spectral image callback
-    /// @param[in] newImuPort new imu UDP port callback
-    /// @param[in] newImuData new imu data callback
-    /// @param[in] imaging imaging state callback
-    /// @param[in] btn button press callback
-    /// @param[in] err error message callback
-    /// @param[in] width the width of the output buffer
-    /// @param[in] height the height of the output buffer
-    /// @return success of the call
-    /// @retval 0 the initialization was successful
-    /// @retval -1 the initialization was not successful
-    /// @note must be called before any other functions will succeed
-    SOLUM_EXPORT int solumInit(int argc, char** argv, const char* dir,
-        CusConnectFn connect, CusCertFn cert, CusPowerDownFn power,
-        CusNewProcessedImageFn newProcessedImage, CusNewRawImageFn newRawImage,
-        CusNewSpectralImageFn newSpectralImage, CusNewImuPortFn newImuPort, CusNewImuDataFn newImuData,
-        CusImagingFn imaging, CusButtonFn btn, CusErrorFn err,
-        int width, int height);
+    const char* ipAddress;      ///< the ip address of the probe
+    unsigned int port;          ///< the probe's tcp port to connect to
+    long long int networkId;    ///< the wifi network id obtained when auto-joining wifi on android. optional, 0 by default
 
-    /// initializes the solum module with a minimal set of callbacks
-    /// @param[in] connect connection status callback
-    /// @param[in] cert certificate status callback
-    /// @param[in] power probe power down callback
-    /// @param[in] imaging imaging state callback
-    /// @param[in] btn button press callback
-    /// @param[in] err error message callback
-    /// @param[in] newProcessedImage new processed image callback (scan-converted image)
-    /// @param[in] width the width of the output buffer
-    /// @param[in] height the height of the output buffer
+} CusConnectionParams;
+
+/// initialization parameters for solumInit
+typedef struct _CusInitParams
+{
+    struct Args
+    {
+        int argc;       ///< the argument count for input parameters to pass to the library
+        char** argv;    ///< the arguments to pass to the library, possibly required for qt graphics buffer initialization
+    }
+    args;
+    const char* storeDir;                       ///< the directory to store security keys
+    CusConnectFn connectFn;                     ///< connection status callback
+    CusCertFn certFn;                           ///< certificate status callback
+    CusPowerDownFn powerDownFn;                 ///< probe power down callback
+    CusImagingFn imagingFn;                     ///< imaging state callback
+    CusButtonFn buttonFn;                       ///< button press callback
+    CusErrorFn errorFn;                         ///< error message callback
+    CusNewProcessedImageFn newProcessedImageFn; ///< new processed image callback (scan-converted image)
+    CusNewRawImageFn newRawImageFn;             ///< new raw image callback (pre scan-converted image or rf data)
+    CusNewSpectralImageFn newSpectralImageFn;   ///< new processed spectral image callback
+    CusNewImuPortFn newImuPortFn;               ///< new imu udp port callback
+    CusNewImuDataFn newImuDataFn;               ///< new imu data callback
+    int width;                                  ///< the width of the output buffer
+    int height;                                 ///< the height of the output buffer
+
+} CusInitParams;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+    /// initializes the solum module
+    /// @param[in] params the sdk configuration parameters
     /// @return success of the call
     /// @retval 0 the initialization was successful
     /// @retval -1 the initialization was not successful
     /// @note must be called before any other functions will succeed
-    SOLUM_EXPORT int solumInitMinimal(CusConnectFn connect, CusCertFn cert, CusPowerDownFn power, CusImagingFn imaging, CusButtonFn btn, CusErrorFn err,
-        CusNewProcessedImageFn newProcessedImage, int width, int height);
+    SOLUM_EXPORT int solumInit(const CusInitParams* params);
+
+    /// get init params with default values
+    /// @return a zero initialized struct
+    SOLUM_EXPORT CusInitParams solumDefaultInitParams(void);
 
     /// cleans up memory allocated by the solum module
     /// @retval 0 the destroy attempt was successful
     /// @retval -1 the destroy attempt was not successful
     /// @note should be called prior to exiting the application
-    SOLUM_EXPORT int solumDestroy();
+    SOLUM_EXPORT int solumDestroy(void);
 
     /// sets a callback for the tee connectivity function
     /// @param[in] tee the callback function
@@ -67,32 +72,35 @@ extern "C"
     ///       use this string to download the firmware binary from clarius cloud and update the probe
     /// @param[in] platform the platform to retrieve the firmware version for
     /// @param[out] version holds the firmware version for the given platform
-    /// @param[in] sz size of the version string buffer, suggest at least 32 bytes allocated
+    /// @param[in] sz size of the version string buffer, with at least 128 bytes allocated
     /// @return success of the call
     /// @retval 0 the information was retrieved
     /// @retval -1 the information could not be retrieved
     SOLUM_EXPORT int solumFwVersion(CusPlatform platform, char* version, int sz);
 
+    /// get connection params with default values
+    /// @return a zero initialized struct
+    SOLUM_EXPORT CusConnectionParams solumDefaultConnectionParams(void);
+
     /// connects to a probe that is on the same network as the caller
-    /// @param[in] ipAddress the ip address of the probe
-    /// @param[in] port the probe's tcp port to connect to
+    /// @param[in] params the connection parameters
     /// @return success of the call
     /// @retval 0 the connection attempt was successful
     /// @retval -1 the connection attempt was not successful
-    SOLUM_EXPORT int solumConnect(const char* ipAddress, unsigned int port);
+    SOLUM_EXPORT int solumConnect(const CusConnectionParams* params);
 
     /// disconnects from an existing connection
     /// @return success of the call
     /// @retval 0 disconnection was successful
     /// @retval -1 the disconnection was unsuccessful
-    SOLUM_EXPORT int solumDisconnect();
+    SOLUM_EXPORT int solumDisconnect(void);
 
     /// retrieves the current connected state of the module
     /// @return the connected state of the module
     /// @retval 0 there is currently no connection
     /// @retval 1 there is currently a connection
     /// @retval -1 the module is not initialized
-    SOLUM_EXPORT int solumIsConnected();
+    SOLUM_EXPORT int solumIsConnected(void);
 
     /// sets the certificate for the probe to be connected with
     /// @param[in] cert the certificate provided by clarius
@@ -180,7 +188,7 @@ extern "C"
     /// @retval -1 the shutdown request could not be made
     /// @note it is typically desirable to disconnect from bluetooth once the tcp connection has been established
     ///       instead of relying on the power service, this function can be used to power down the probe over tcp
-    SOLUM_EXPORT int solumPowerDown();
+    SOLUM_EXPORT int solumPowerDown(void);
 
     /// sets the internal probe settings to be applied upon a connection or when an existing connection exists
     /// @param[in] settings the structure containing the probe settings
@@ -254,7 +262,7 @@ extern "C"
     /// @return success of the call
     /// @retval 0 roi could be adjusted
     /// @retval -1 roi could not be adjusted
-    SOLUM_EXPORT int solumMaximizeRoi();
+    SOLUM_EXPORT int solumMaximizeRoi(void);
 
     /// retrieves the gate for the current mode if valid
     /// @param[out] lines holds the lines that can be drawn to portray the gate on the image
@@ -280,7 +288,7 @@ extern "C"
 
     /// retrieves the current imaging mode
     /// @return the current imaging mode
-    SOLUM_EXPORT CusMode solumGetMode();
+    SOLUM_EXPORT CusMode solumGetMode(void);
 
     /// enables the 5v output on or off
     /// @param[in] en the enable state, set to 1 to turn 5v on, or 0 to turn off
@@ -395,4 +403,7 @@ extern "C"
     /// @retval 0 the function was successful
     /// @retval -1 the function was not successful
     SOLUM_EXPORT int solumSetTeeExamInfo(const char* id, const char* name, const char* exam);
+
+#ifdef __cplusplus
 }
+#endif
