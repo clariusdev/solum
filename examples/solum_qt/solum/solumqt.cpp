@@ -2,6 +2,7 @@
 #include "display.h"
 #include "3d.h"
 #include <solum/solum.h>
+#include <string>
 
 static Solum* _me;
 
@@ -843,7 +844,15 @@ void Solum::onTcpConnect()
 {
     if (!tcpConnected_)
     {
-        if (solumConnect(ui_.ip->text().toStdString().c_str(), ui_.port->text().toInt()) < 0)
+
+        const std::string ip = ui_.ip->text().toStdString();
+        const CusConnectionParams connectionParams = {
+            ip.c_str(),
+            ui_.port->text().toUInt(),
+            0
+        };
+
+        if (solumConnect(&connectionParams) < 0)
             addStatus(tr("Connection failed"));
         else
             addStatus(tr("Trying connection"));

@@ -33,6 +33,7 @@
 #  define SOLUM_DEPRECATED_NO_EXPORT SOLUM_NO_EXPORT SOLUM_DEPRECATED
 #endif
 
+/* NOLINTNEXTLINE(readability-avoid-unconditional-preprocessor-if) */
 #if 0 /* DEFINE_NO_DEPRECATED */
 #  ifndef SOLUM_NO_DEPRECATED
 #    define SOLUM_NO_DEPRECATED

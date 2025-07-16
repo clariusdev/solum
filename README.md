@@ -56,3 +56,18 @@ C:\Qt\6.6.0\msvc2019_64\bin\windeployqt.exe solum.exe
 ```
 
 This copies all required dependencies into the same folder. **The solum.dll file though needs to be copied manually in addition.**
+
+## Developer startup
+
+
+### Windows
+
+1. Download and install Qt creator
+2. Ensure you use a msvc compiler (Qt.bluetooth is not supported with the mingw
+   compiler)
+    - I none is installed on your machine download it via the microsoft build
+    tools
+3. Open the `solum_qt.pro` with qt creator
+4. Run the application
+5. Make sure that you add the necessary certificates. You can find the
+   necessary token to claim them on the [clarius user website](https://cloud.clarius.com/login/)
