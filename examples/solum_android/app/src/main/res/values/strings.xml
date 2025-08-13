@@ -26,6 +26,10 @@
     <string name="select_bluetooth_probe">Select</string>
     <string name="probe_serial">Serial</string>
     <string name="unknown">Unknown</string>
+    <string name="check_raw_data_availability">Check Raw Data Availability</string>
+    <string name="check_battery">Check Battery</string>
+    <string name="imu_cal_motion">IMU Calibration (motion)</string>
+    <string name="imu_cal_stationary">IMU Calibration (stationary)</string>
 
     <string name="request_permissions">Request Permissions</string>
     <string name="scanning">Scanning…</string>

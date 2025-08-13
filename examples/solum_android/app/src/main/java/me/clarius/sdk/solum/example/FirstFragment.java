@@ -25,11 +25,14 @@ import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import me.clarius.sdk.BatteryHealth;
 import me.clarius.sdk.Button;
 import me.clarius.sdk.Config;
 import me.clarius.sdk.Connection;
 import me.clarius.sdk.ErrorCode;
+import me.clarius.sdk.ElementTest;
 import me.clarius.sdk.ImagingState;
+import me.clarius.sdk.ImuCalibration;
 import me.clarius.sdk.LogLevel;
 import me.clarius.sdk.Mode;
 import me.clarius.sdk.Param;
@@ -116,6 +119,11 @@ public class FirstFragment extends Fragment {
         @Override
         public void buttonPressed(Button button, int count) {
             Log.d(TAG, "Button '" + button + "' pressed, count: " + count);
+        }
+
+        @Override
+        public void elementTestFn(ElementTest result, double value) {
+            Log.d(TAG, "Element test result: " + result + " value: " + value);
         }
     };
     private CertificatesManager certificatesManager;
@@ -231,6 +239,9 @@ public class FirstFragment extends Fragment {
         binding.buttonGetRawData.setOnClickListener(v -> doRequestRawData());
         binding.buttonWifiAutoJoin.setOnClickListener(v -> doWifiAutoJoin());
         binding.buttonCheckRawDataAvailability.setOnClickListener(v -> doRequestRawDataAvailability());
+        binding.buttonBatteryHealth.setOnClickListener(v -> doBatteryHealth());
+        binding.buttonImuCalMotion.setOnClickListener(v -> doCalibrateImuMotion());
+        binding.buttonImuCalStationary.setOnClickListener((v -> doCalibrateImuStationary()));
 
         Secrets.maybeSSID().ifPresent(s -> binding.wifiSsid.setText(s));
         Secrets.maybePassphrase().ifPresent(s -> binding.wifiPassphrase.setText(s));
@@ -245,6 +256,19 @@ public class FirstFragment extends Fragment {
             binding.buttonDownloadFirmware.setOnClickListener(listener);
             binding.buttonDownloadCertificates.setOnClickListener(listener);
         }
+    }
+
+    private void doBatteryHealth() {
+        solum.batteryHealth(new Solum.BatteryHealthCallback() {
+            @Override
+            public void accept(BatteryHealth result, double value) {
+                if (BatteryHealth.BatteryHealthError == result) {
+                    showError("Battery check error");
+                } else {
+                    showMessage("Battery health: " + (int)value);
+                }
+            }
+        });
     }
 
     private void doSwUpdate() {
@@ -358,7 +382,23 @@ public class FirstFragment extends Fragment {
         solum.getRoi(6, result -> Log.d(TAG, "ROI: " + Strings.fromPoints(result)));
         solum.getStatus(result -> Log.d(TAG, "Status: " + result.map(Strings::fromStatusInfo).orElse("<none>")));
         solum.getProbeInfo(result -> Log.d(TAG, "Probe Info: " + result.map(Strings::fromProbeInfo).orElse("<none>")));
-        solum.getRange(Param.DynamicRange, result -> Log.d(TAG, "Dynamic Range: " + result.map(Strings::fromRange).orElse("<none>")));
+        solum.getRange(Param.Contrast, result -> Log.d(TAG, "Contrast: " + result.map(Strings::fromRange).orElse("<none>")));
+    }
+
+    private void doCalibrateImuStationary() {
+        solum.calibrateImu(false, this::printImu, this::printImuProgress);
+    }
+
+    private void doCalibrateImuMotion() {
+        solum.calibrateImu(true, this::printImu, this::printImuProgress);
+    }
+
+    private void printImu(ImuCalibration result) {
+        showMessage("Imu result: " + result);
+    }
+
+    private void printImuProgress(int progress, int total) {
+        Log.d(TAG, "Imu progress: " + progress + "/" + total);
     }
 
     private void doFactoryReset() {

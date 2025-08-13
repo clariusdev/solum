@@ -1,7 +1,7 @@
 #pragma once
 
 // SDK: solum
-// Version: 12.0.2
+// Version: 12.2.0
 
 #define CUS_MAXTGC  10
 #define CUS_SUCCESS 0
@@ -33,6 +33,7 @@ typedef enum _CusPlatform
     V1,                 ///< First generation
     HD,                 ///< Second generation (HD)
     HD3,                ///< Third generation (HD3)
+    HD4,                ///< Fourth generation (HD4)
 
 } CusPlatform;
 
@@ -122,6 +123,33 @@ typedef enum _CusImagingState
 
 } CusImagingState;
 
+/// Imu calibration results
+typedef enum _CusImuCalibration
+{
+    ImuCalibrationInProgress = 0, ///< IMU calibration in progress
+    ImuCalibrationFailed, ///< IMU calibration failed
+    ImuCalibrationSuccess, ///< IMU calibration success
+
+} CusImuCalibration;
+
+/// Battery health
+typedef enum _CusBatteryHealth
+{
+    BatteryHealthError = 0, ///< Battery health check error
+    BatteryHealthSuccess, ///< Battery health success
+    BatteryHealthFailed, ///< Battery health failed
+
+} CusBatteryHealth;
+
+/// Element test results
+typedef enum _CusElementTest
+{
+    ElementTestError = 0, ///< Element check error
+    ElementTestSuccess, ///< Element test success
+    ElementTestFailed,  ///< Element test failed
+
+} CusElementTest;
+
 /// Logging level
 typedef enum _CusLogLevel
 {
@@ -142,6 +170,7 @@ typedef enum _CusMode
     NeedleEnhance,      ///< Needle enhance mode (available on linear probes)
     Strain,             ///< Strain elastography (available in most workflows)
     RfMode,             ///< RF capture mode (interleaved with B)
+    ElemTest,           ///< Element test raw signals
 
 } CusMode;
 
@@ -151,13 +180,13 @@ typedef enum _CusParam
     ImageDepth,         ///< Imaging depth in cm (default dependent on application)
     Gain,               ///< Gain in percent (default 50%)
     AutoGain,           ///< Auto gain enable (default on for most applications)
-    DynamicRange,       ///< Dynamic range in percent (default 50%)
+    Contrast,           ///< Contrast in percent (default 50%)
     Chroma,             ///< Chroma map enable (default off)
     Smooth,             ///< Smooth range in percent (default 50%)
     PenetrationMode,    ///< Penetration mode enable (default off)
     AutoFocus,          ///< Auto focus enable (default on all applications)
     FocusDepth,         ///< Focus depth in cm (applied when auto focus turned off)
-    Trapezoidal,        ///< Trapezoidal imaging enable (available on linear probes, default off for most applications)
+    ExtendFov,          ///< Extended FOV Imaging enable (available on linear probes, default off for most applications)
     ColorGain,          ///< Color/power gain in percent (default 50%)
     ColorPrf,           ///< Color/power pulse repetition frequency in kHz (default dependent on application)
     ColorSteer,         ///< Color/power steering angle in degrees (available on linear probes, default dependent on application)
@@ -268,6 +297,7 @@ typedef struct _CusProbeInfo
     int elements;       ///< Number of probe elements
     int pitch;          ///< Element pitch
     int radius;         ///< Radius in millimeters
+    int frequency;      ///< Center frequency in Hz
 
 } CusProbeInfo;
 
@@ -387,7 +417,6 @@ typedef struct _CusProbeSettings
     int powerFan;       ///< Flag for the ability to use the power fan
     int autoBoot;       ///< Auto boot probe when it comes out of deep sleep
     int wifiOptimization; ///< Flag allowing the probe to automatically freeze when poor wifi connectivity is detected
-    int wifiSearch;     ///< Flag to force the probe to scan the networks and choose the appropriate channel before bringing up its Wi-Fi
     int htWifi;         ///< Flag to enable 40 MHz bands for the probe's Wi-Fi network
     int keepAwakeCharging; ///< Flag to force the probe to stay powered while being charged
     int powerOn;        ///< Flag allowing the probe's buttons to power the device on

@@ -130,6 +130,9 @@ struct ContentView: View {
                         Button(action: solum.factoryReset) {
                                 Text("Factory Reset")
                         }
+                        Button(action: solum.batteryHealth) {
+                                Text("Battery Health")
+                        }
                     }
                 }.padding()
                 GroupBox(label: Label("Imaging", systemImage: "waveform").font(.title3)) {

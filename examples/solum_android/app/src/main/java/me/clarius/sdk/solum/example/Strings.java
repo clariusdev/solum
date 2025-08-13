@@ -10,7 +10,7 @@ import me.clarius.sdk.Tgc;
 
 public class Strings {
     public static String fromProbeInfo(final ProbeInfo probeInfo) {
-        return new StringJoiner(", ").add("version: " + probeInfo.version).add("element count: " + probeInfo.elements).add("pitch: " + probeInfo.pitch).add("radius: " + probeInfo.radius + " mm").toString();
+        return new StringJoiner(", ").add("version: " + probeInfo.version).add("element count: " + probeInfo.elements).add("pitch: " + probeInfo.pitch).add("radius: " + probeInfo.radius + " mm").add("frequency: " + probeInfo.frequency).toString();
     }
 
     public static String fromRange(final Range range) {
