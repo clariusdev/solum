@@ -86,3 +86,14 @@ typedef void (*CusNewImuPortFn)(int port);
 /// new imu data callback function
 /// @param[in] pos the positional information data tagged with the image
 typedef void (*CusNewImuDataFn)(const CusPosInfo* pos);
+/// imu calibration callback function
+/// @param[in] res the calibration result
+typedef void (*CusImuCalibrationFn)(CusImuCalibration res);
+/// battery health callback function
+/// @param[in] res the health result
+/// @param[in] val the health value
+typedef void (*CusBatteryHealthFn)(CusBatteryHealth res, double val);
+/// element test callback function
+/// @param[in] res the test result
+/// @param[in] val the test value
+typedef void (*CusElementTestFn)(CusElementTest res, double val);

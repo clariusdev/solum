@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ble.h"
-#include <sdk/solum_def.h>
+#include <solum/solum_def.h>
 
 namespace Ui
 {
@@ -14,25 +14,27 @@ class RfSignal;
 class Prescan;
 class ProbeRender;
 
-#define CONNECT_EVENT       static_cast<QEvent::Type>(QEvent::User + 1)
-#define CERT_EVENT          static_cast<QEvent::Type>(QEvent::User + 2)
-#define POWER_EVENT         static_cast<QEvent::Type>(QEvent::User + 3)
-#define SWUPDATE_EVENT      static_cast<QEvent::Type>(QEvent::User + 4)
-#define LIST_EVENT          static_cast<QEvent::Type>(QEvent::User + 5)
-#define IMAGE_EVENT         static_cast<QEvent::Type>(QEvent::User + 6)
-#define PRESCAN_EVENT       static_cast<QEvent::Type>(QEvent::User + 7)
-#define SPECTRUM_EVENT      static_cast<QEvent::Type>(QEvent::User + 8)
-#define RF_EVENT            static_cast<QEvent::Type>(QEvent::User + 9)
-#define IMAGING_EVENT       static_cast<QEvent::Type>(QEvent::User + 10)
-#define BUTTON_EVENT        static_cast<QEvent::Type>(QEvent::User + 11)
-#define ERROR_EVENT         static_cast<QEvent::Type>(QEvent::User + 12)
-#define PROGRESS_EVENT      static_cast<QEvent::Type>(QEvent::User + 13)
-#define TEE_EVENT           static_cast<QEvent::Type>(QEvent::User + 14)
-#define IMU_EVENT           static_cast<QEvent::Type>(QEvent::User + 15)
-#define RAWAVAIL_EVENT      static_cast<QEvent::Type>(QEvent::User + 16)
-#define RAWREADY_EVENT      static_cast<QEvent::Type>(QEvent::User + 17)
-#define RAWDOWNLOADED_EVENT static_cast<QEvent::Type>(QEvent::User + 18)
-#define IMU_PORT_EVENT      static_cast<QEvent::Type>(QEvent::User + 19)
+#define CONNECT_EVENT           static_cast<QEvent::Type>(QEvent::User + 1)
+#define CERT_EVENT              static_cast<QEvent::Type>(QEvent::User + 2)
+#define POWER_EVENT             static_cast<QEvent::Type>(QEvent::User + 3)
+#define SWUPDATE_EVENT          static_cast<QEvent::Type>(QEvent::User + 4)
+#define LIST_EVENT              static_cast<QEvent::Type>(QEvent::User + 5)
+#define IMAGE_EVENT             static_cast<QEvent::Type>(QEvent::User + 6)
+#define PRESCAN_EVENT           static_cast<QEvent::Type>(QEvent::User + 7)
+#define SPECTRUM_EVENT          static_cast<QEvent::Type>(QEvent::User + 8)
+#define RF_EVENT                static_cast<QEvent::Type>(QEvent::User + 9)
+#define IMAGING_EVENT           static_cast<QEvent::Type>(QEvent::User + 10)
+#define BUTTON_EVENT            static_cast<QEvent::Type>(QEvent::User + 11)
+#define ERROR_EVENT             static_cast<QEvent::Type>(QEvent::User + 12)
+#define PROGRESS_EVENT          static_cast<QEvent::Type>(QEvent::User + 13)
+#define TEE_EVENT               static_cast<QEvent::Type>(QEvent::User + 14)
+#define IMU_EVENT               static_cast<QEvent::Type>(QEvent::User + 15)
+#define RAWAVAIL_EVENT          static_cast<QEvent::Type>(QEvent::User + 16)
+#define RAWREADY_EVENT          static_cast<QEvent::Type>(QEvent::User + 17)
+#define RAWDOWNLOADED_EVENT     static_cast<QEvent::Type>(QEvent::User + 18)
+#define IMU_PORT_EVENT          static_cast<QEvent::Type>(QEvent::User + 19)
+#define BATTERY_HEALTH_EVENT    static_cast<QEvent::Type>(QEvent::User + 20)
+#define ELEMENT_TEST_EVENT      static_cast<QEvent::Type>(QEvent::User + 21)
 
 namespace event
 {
@@ -298,6 +300,32 @@ namespace event
 
         int res_;   ///< result of the download
     };
+
+    /// wrapper for battery health events that can be posted from the api callbacks
+    class BatteryHealth : public QEvent
+    {
+    public:
+        /// default constructor
+        /// @param[in] res the result of the api call
+        /// @param[in] val the health value
+        BatteryHealth(CusBatteryHealth res, double val) : QEvent(BATTERY_HEALTH_EVENT), res_(res), val_(val) { }
+
+        CusBatteryHealth res_;  ///< result
+        int val_;               ///< health value
+    };
+
+    /// wrapper for element test events that can be posted from the api callbacks
+    class ElementTest : public QEvent
+    {
+    public:
+        /// default constructor
+        /// @param[in] res the result of the api call
+        /// @param[in] val the test result value
+        ElementTest(CusElementTest res, double val) : QEvent(ELEMENT_TEST_EVENT), res_(res), val_(val) { }
+
+        CusElementTest res_;    ///< result
+        int val_;               ///< test result value
+    };
 }
 
 /// holds raw data information
@@ -345,6 +373,8 @@ private:
     void onRawAvailabilityResult(int res, int b, int iqrf);
     void onRawReadyToDownload(int sz, const QString& ext);
     void onRawDownloaded(int res);
+    void onBatteryHealthResult(CusBatteryHealth res, double val);
+    void onElementTestResult(CusElementTest res, double val);
     void setProgress(int selection, int progress);
     void setError(const QString& err);
     void getParams();
@@ -364,6 +394,7 @@ public slots:
     void onFreeze();
     void onUpdate();
     void onUpdateCert();
+    void onBatteryHealth();
     void onLoad();
     void onProbeSelected(const QString& probe);
     void onMode(int);

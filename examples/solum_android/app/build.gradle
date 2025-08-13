@@ -4,18 +4,18 @@ plugins {
 }
 
 secrets {
-    propertiesFileName 'secrets.properties'
-    defaultPropertiesFileName 'secrets.properties.in'
+    propertiesFileName = 'secrets.properties'
+    defaultPropertiesFileName = 'secrets.properties.in'
 }
 
 android {
-    compileSdk 34
+    compileSdk = 34
     defaultConfig {
-        applicationId 'me.clarius.sdk.solum.example'
-        minSdk 29
-        targetSdk 34
-        versionCode 1
-        versionName '1.0'
+        applicationId = 'me.clarius.sdk.solum.example'
+        minSdk = 29
+        targetSdk = 34
+        versionCode = 1
+        versionName = '1.0'
 
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }
@@ -26,13 +26,13 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_9
-        targetCompatibility JavaVersion.VERSION_1_9
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
     }
     buildFeatures {
-        dataBinding true
-        viewBinding true
-        buildConfig true
+        dataBinding = true
+        viewBinding = true
+        buildConfig = true
     }
     packagingOptions {
         jniLibs {
@@ -40,18 +40,17 @@ android {
             useLegacyPackaging = true
         }
     }
-    namespace 'me.clarius.sdk.solum.example'
+    namespace = 'me.clarius.sdk.solum.example'
 }
 
 dependencies {
-    implementation fileTree(dir: '../../../libs', include: 'solum-debug.aar')
-    implementation fileTree(dir: 'libs', include: 'solum-debug.aar')
+    implementation fileTree(dir: '../../../lib', include: 'solum-debug.aar')
 
     implementation 'androidx.appcompat:appcompat:1.7.0'
     implementation 'com.google.android.material:material:1.12.0'
-    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
-    implementation 'androidx.navigation:navigation-fragment:2.8.2'
-    implementation 'androidx.navigation:navigation-ui:2.8.2'
-    implementation group: 'org.yaml', name: 'snakeyaml', version: '2.3'
+    implementation 'androidx.constraintlayout:constraintlayout:2.2.0'
+    implementation 'androidx.navigation:navigation-fragment:2.8.6'
+    implementation 'androidx.navigation:navigation-ui:2.8.6'
+    implementation group: 'org.yaml', name: 'snakeyaml', version: '2.4'
     implementation 'com.google.android.gms:play-services-cronet:18.1.0'
 }

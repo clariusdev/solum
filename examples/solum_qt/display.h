@@ -1,6 +1,6 @@
 #pragma once
 
-#include <sdk/solum_def.h>
+#include <solum/solum_def.h>
 
 /// ultrasound image display
 class UltrasoundImage : public QGraphicsView

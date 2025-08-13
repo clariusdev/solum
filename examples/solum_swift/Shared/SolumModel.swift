@@ -144,6 +144,15 @@ class SolumModel: ObservableObject {
             NotificationCenter.default.post(name: .firmwareVersion, object: nil, userInfo: userInfo)
         }
     }
+    func batteryHealth() {
+        solum.batteryHealth { (result: CusBatteryHealth, value: Double) -> Void in
+            if result == BatteryHealthError {
+                print("Battery health error")
+                return
+            }
+            print("Battery health: \(value)")
+        }
+    }
     /// Solum framework instance
     private let solum = Solum()
     /// Initialize the framework and set up callbacks
@@ -199,6 +208,10 @@ class SolumModel: ObservableObject {
                 return
             }
             self.image = ctxt.makeImage()
+        })
+        // Element test result
+        solum.setElementTestCallback({ (result: CusElementTest, value: Double) -> Void in
+            print("Element test result: \(result) with value \(value)")
         })
         // Listen for notifications from the scanners model about scanner details
         NotificationCenter.default.addObserver(forName: .scannerDetails, object: nil, queue: nil) { [weak self] notification in

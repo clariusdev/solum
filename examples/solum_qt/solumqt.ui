@@ -28,7 +28,7 @@
     <item>
      <spacer name="verticalSpacer">
       <property name="orientation">
-       <enum>Qt::Vertical</enum>
+       <enum>Qt::Orientation::Vertical</enum>
       </property>
       <property name="sizeHint" stdset="0">
        <size>
@@ -200,7 +200,7 @@
              <item>
               <spacer name="horizontalSpacer">
                <property name="orientation">
-                <enum>Qt::Horizontal</enum>
+                <enum>Qt::Orientation::Horizontal</enum>
                </property>
                <property name="sizeHint" stdset="0">
                 <size>
@@ -215,7 +215,7 @@
            <item>
             <layout class="QHBoxLayout" name="horizontalLayout_4">
              <property name="sizeConstraint">
-              <enum>QLayout::SetDefaultConstraint</enum>
+              <enum>QLayout::SizeConstraint::SetDefaultConstraint</enum>
              </property>
              <item>
               <widget class="QPushButton" name="wifi">
@@ -274,7 +274,7 @@
                 <string>Password</string>
                </property>
                <property name="echoMode">
-                <enum>QLineEdit::Password</enum>
+                <enum>QLineEdit::EchoMode::Password</enum>
                </property>
               </widget>
              </item>
@@ -286,7 +286,7 @@
         <item>
          <spacer name="_blespacer">
           <property name="orientation">
-           <enum>Qt::Vertical</enum>
+           <enum>Qt::Orientation::Vertical</enum>
           </property>
           <property name="sizeHint" stdset="0">
            <size>
@@ -343,10 +343,10 @@
         <item row="1" column="1">
          <widget class="QLineEdit" name="ip">
           <property name="inputMask">
-           <string>000.000.000.000</string>
+           <string/>
           </property>
           <property name="text">
-           <string>192.168.1.1</string>
+           <string/>
           </property>
          </widget>
         </item>
@@ -370,7 +370,7 @@
         <item row="10" column="0" colspan="4">
          <spacer name="verticalSpacer_2">
           <property name="orientation">
-           <enum>Qt::Vertical</enum>
+           <enum>Qt::Orientation::Vertical</enum>
           </property>
           <property name="sizeHint" stdset="0">
            <size>
@@ -383,7 +383,7 @@
         <item row="7" column="1">
          <widget class="QLabel" name="cert">
           <property name="frameShape">
-           <enum>QFrame::StyledPanel</enum>
+           <enum>QFrame::Shape::StyledPanel</enum>
           </property>
           <property name="text">
            <string/>
@@ -410,7 +410,7 @@
            <string>#####</string>
           </property>
           <property name="text">
-           <string>11000</string>
+           <string>5000</string>
           </property>
          </widget>
         </item>
@@ -421,6 +421,13 @@
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="0">
+         <widget class="QLabel" name="_wflist">
+          <property name="text">
+           <string>Workflows</string>
           </property>
          </widget>
         </item>
@@ -440,10 +447,13 @@
           </property>
          </widget>
         </item>
-        <item row="5" column="0">
-         <widget class="QLabel" name="_wflist">
+        <item row="5" column="3">
+         <widget class="QPushButton" name="batteryHealth">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
           <property name="text">
-           <string>Workflows</string>
+           <string>Battery Health</string>
           </property>
          </widget>
         </item>
@@ -493,13 +503,13 @@
             <item>
              <widget class="QLabel" name="maxdepth">
               <property name="frameShape">
-               <enum>QFrame::StyledPanel</enum>
+               <enum>QFrame::Shape::StyledPanel</enum>
               </property>
               <property name="text">
                <string>Max: 0 cm</string>
               </property>
               <property name="alignment">
-               <set>Qt::AlignCenter</set>
+               <set>Qt::AlignmentFlag::AlignCenter</set>
               </property>
              </widget>
             </item>
@@ -509,7 +519,7 @@
                <bool>true</bool>
               </property>
               <property name="frameShape">
-               <enum>QFrame::StyledPanel</enum>
+               <enum>QFrame::Shape::StyledPanel</enum>
               </property>
               <property name="text">
                <string>+/- 0 cm/s</string>
@@ -541,7 +551,7 @@
                <number>5</number>
               </property>
               <property name="orientation">
-               <enum>Qt::Horizontal</enum>
+               <enum>Qt::Orientation::Horizontal</enum>
               </property>
              </widget>
             </item>
@@ -566,7 +576,7 @@
                <number>5</number>
               </property>
               <property name="orientation">
-               <enum>Qt::Horizontal</enum>
+               <enum>Qt::Orientation::Horizontal</enum>
               </property>
              </widget>
             </item>
@@ -591,7 +601,7 @@
                <number>5</number>
               </property>
               <property name="orientation">
-               <enum>Qt::Horizontal</enum>
+               <enum>Qt::Orientation::Horizontal</enum>
               </property>
              </widget>
             </item>
@@ -654,7 +664,7 @@
           <item>
            <spacer name="horizontalSpacer_3">
             <property name="orientation">
-             <enum>Qt::Horizontal</enum>
+             <enum>Qt::Orientation::Horizontal</enum>
             </property>
             <property name="sizeHint" stdset="0">
              <size>
@@ -691,7 +701,7 @@
           <item>
            <spacer name="horizontalSpacer_4">
             <property name="orientation">
-             <enum>Qt::Horizontal</enum>
+             <enum>Qt::Orientation::Horizontal</enum>
             </property>
             <property name="sizeHint" stdset="0">
              <size>
@@ -742,7 +752,7 @@
           <item>
            <spacer name="horizontalSpacer_5">
             <property name="orientation">
-             <enum>Qt::Horizontal</enum>
+             <enum>Qt::Orientation::Horizontal</enum>
             </property>
             <property name="sizeHint" stdset="0">
              <size>
@@ -923,7 +933,7 @@
           <item>
            <spacer name="horizontalSpacer_2">
             <property name="orientation">
-             <enum>Qt::Horizontal</enum>
+             <enum>Qt::Orientation::Horizontal</enum>
             </property>
             <property name="sizeHint" stdset="0">
              <size>
@@ -964,7 +974,7 @@
         <item>
          <spacer name="_prmsspacer">
           <property name="orientation">
-           <enum>Qt::Vertical</enum>
+           <enum>Qt::Orientation::Vertical</enum>
           </property>
           <property name="sizeHint" stdset="0">
            <size>
@@ -1030,7 +1040,7 @@
              </size>
             </property>
             <property name="frameShape">
-             <enum>QFrame::StyledPanel</enum>
+             <enum>QFrame::Shape::StyledPanel</enum>
             </property>
             <property name="text">
              <string/>
@@ -1070,7 +1080,7 @@
         <item>
          <spacer name="verticalSpacer_3">
           <property name="orientation">
-           <enum>Qt::Vertical</enum>
+           <enum>Qt::Orientation::Vertical</enum>
           </property>
           <property name="sizeHint" stdset="0">
            <size>
@@ -1102,7 +1112,7 @@
            </size>
           </property>
           <property name="frameShape">
-           <enum>QFrame::StyledPanel</enum>
+           <enum>QFrame::Shape::StyledPanel</enum>
           </property>
           <property name="text">
            <string/>
@@ -1121,7 +1131,7 @@
          <string>Probe Status</string>
         </property>
         <property name="frameShape">
-         <enum>QFrame::StyledPanel</enum>
+         <enum>QFrame::Shape::StyledPanel</enum>
         </property>
         <property name="text">
          <string/>
@@ -1131,10 +1141,10 @@
       <item>
        <spacer name="horizontalSpacer_6">
         <property name="orientation">
-         <enum>Qt::Horizontal</enum>
+         <enum>Qt::Orientation::Horizontal</enum>
         </property>
         <property name="sizeType">
-         <enum>QSizePolicy::MinimumExpanding</enum>
+         <enum>QSizePolicy::Policy::MinimumExpanding</enum>
         </property>
         <property name="sizeHint" stdset="0">
          <size>
@@ -1147,7 +1157,7 @@
       <item>
        <widget class="QLabel" name="bitrate">
         <property name="frameShape">
-         <enum>QFrame::StyledPanel</enum>
+         <enum>QFrame::Shape::StyledPanel</enum>
         </property>
         <property name="text">
          <string/>
@@ -1162,15 +1172,53 @@
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <tabstops>
-  <tabstop>_tabs</tabstop>
-  <tabstop>update</tabstop>
+  <tabstop>token</tabstop>
+  <tabstop>blesearch</tabstop>
+  <tabstop>bleprobes</tabstop>
+  <tabstop>bleconnect</tabstop>
+  <tabstop>poweron</tabstop>
+  <tabstop>poweroff</tabstop>
+  <tabstop>ring</tabstop>
+  <tabstop>wifi</tabstop>
+  <tabstop>ap</tabstop>
+  <tabstop>ssid</tabstop>
+  <tabstop>password</tabstop>
   <tabstop>ip</tabstop>
+  <tabstop>port</tabstop>
+  <tabstop>connect</tabstop>
+  <tabstop>probes</tabstop>
+  <tabstop>workflows</tabstop>
+  <tabstop>load</tabstop>
+  <tabstop>update</tabstop>
   <tabstop>decdepth</tabstop>
   <tabstop>incdepth</tabstop>
   <tabstop>tgctop</tabstop>
   <tabstop>tgcmid</tabstop>
   <tabstop>tgcbottom</tabstop>
+  <tabstop>autogain</tabstop>
+  <tabstop>autofocus</tabstop>
+  <tabstop>imu</tabstop>
+  <tabstop>rawBuffer</tabstop>
+  <tabstop>rfStream</tabstop>
+  <tabstop>prescan</tabstop>
+  <tabstop>format</tabstop>
+  <tabstop>gain</tabstop>
+  <tabstop>focus</tabstop>
+  <tabstop>cfigain</tabstop>
+  <tabstop>opacity</tabstop>
+  <tabstop>rfzoom</tabstop>
+  <tabstop>freeze</tabstop>
   <tabstop>modes</tabstop>
+  <tabstop>rawAvailability</tabstop>
+  <tabstop>downloadRaw</tabstop>
+  <tabstop>lowLevelParam</tabstop>
+  <tabstop>lowLevelFetch</tabstop>
+  <tabstop>lowLevelValueToSet</tabstop>
+  <tabstop>lowLevelSetValue</tabstop>
+  <tabstop>lowLevelToggle</tabstop>
+  <tabstop>_tabs</tabstop>
+  <tabstop>split</tabstop>
+  <tabstop>retrieve</tabstop>
  </tabstops>
  <resources/>
  <connections>
@@ -1798,6 +1846,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>batteryHealth</sender>
+   <signal>clicked()</signal>
+   <receiver>Solum</receiver>
+   <slot>onBatteryHealth()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>488</x>
+     <y>323</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>291</x>
+     <y>333</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>onConnect()</slot>
@@ -1839,5 +1903,6 @@
   <slot>onLowLevelFetch()</slot>
   <slot>onLowLevelSet()</slot>
   <slot>onLowLevelToggle()</slot>
+  <slot>onBatteryHealth()</slot>
  </slots>
 </ui>
