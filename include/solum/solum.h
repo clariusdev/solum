@@ -28,6 +28,7 @@ typedef struct _CusInitParams
     CusImagingFn imagingFn;                     ///< imaging state callback
     CusButtonFn buttonFn;                       ///< button press callback
     CusErrorFn errorFn;                         ///< error message callback
+    CusElementTestFn elemTestFn;                ///< element test result callback
     CusNewProcessedImageFn newProcessedImageFn; ///< new processed image callback (scan-converted image)
     CusNewRawImageFn newRawImageFn;             ///< new raw image callback (pre scan-converted image or rf data)
     CusNewSpectralImageFn newSpectralImageFn;   ///< new processed spectral image callback
@@ -182,7 +183,14 @@ extern "C" {
     /// @retval -1 the run request could not be made
     SOLUM_EXPORT int solumRun(int run);
 
-    /// shuts down the scanner
+    /// retrieves the current imaging state of the probe
+    /// @return the imaging state of the probe
+    /// @retval 0 the probe is not imaging
+    /// @retval 1 the probe is imaging
+    /// @retval -1 the module is not initialized
+    SOLUM_EXPORT int solumIsImaging(void);
+
+    /// shuts down the probe
     /// @return success of the call
     /// @retval 0 shutdown was successful
     /// @retval -1 the shutdown request could not be made
@@ -403,6 +411,25 @@ extern "C" {
     /// @retval 0 the function was successful
     /// @retval -1 the function was not successful
     SOLUM_EXPORT int solumSetTeeExamInfo(const char* id, const char* name, const char* exam);
+
+    /// calibrates the imu
+    /// @param[in] stationary set to 1 if calibrating for stationary detection, 0 for motion calibration
+    /// @param[in] fn the callback upon calibration completion
+    /// @param[in] progress the callback for calibration completion rate
+    /// @return success of the call
+    /// @note the probe must be frozen to calibrate the imu
+    /// @retval 0 the call was successful
+    /// @retval -1 the call was not successful
+    SOLUM_EXPORT int solumCalibrateImu(int stationary, CusImuCalibrationFn fn, CusProgressFn progress);
+
+    /// runs a battery health test
+    /// @param[in] fn the callback upon test completion
+    /// @return success of the call
+    /// @note the probe must be frozen to run the battery health test
+    ///       this check may take up to 10 seconds to return a result
+    /// @retval 0 the call was successful
+    /// @retval -1 the call was not successful
+    SOLUM_EXPORT int solumBatteryHealth(CusBatteryHealthFn fn);
 
 #ifdef __cplusplus
 }

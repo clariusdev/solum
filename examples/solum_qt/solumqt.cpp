@@ -118,6 +118,7 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_
     ui_->modes->addItem(QStringLiteral("NE"));
     ui_->modes->addItem(QStringLiteral("SI"));
     ui_->modes->addItem(QStringLiteral("RF"));
+    ui_->modes->addItem(QStringLiteral("ET"));
     ui_->modes->blockSignals(false);
 
     // connect status timer
@@ -199,9 +200,13 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_
             }
             return ret;
         };
-        auto ip = getField(QStringLiteral("ip4:"));
+        auto ip4 = getField(QStringLiteral("ip4:"));
+        auto ip6 = getField(QStringLiteral("ip6:"));
+        ip4.remove('\"');
+        ip6.remove('\"');
         auto port = getField(QStringLiteral("ctl:"));
         auto ssid = getField(QStringLiteral("ssid:"));
+        QString ip = ip4.isEmpty() ? ip6 : ip4;
         ui_->ip->setText(ip);
         ui_->port->setText(port);
         if (!ip.isEmpty() && !port.isEmpty())
@@ -434,6 +439,18 @@ bool Solum::event(QEvent *event)
         onRawDownloaded(evt->res_);
         return true;
     }
+    else if (event->type() == BATTERY_HEALTH_EVENT)
+    {
+        auto evt = static_cast<event::BatteryHealth*>(event);
+        onBatteryHealthResult(evt->res_, evt->val_);
+        return true;
+    }
+    else if (event->type() == ELEMENT_TEST_EVENT)
+    {
+        auto evt = static_cast<event::ElementTest*>(event);
+        onElementTestResult(evt->res_, evt->val_);
+        return true;
+    }
 
     return QMainWindow::event(event);
 }
@@ -458,6 +475,7 @@ void Solum::setConnected(CusConnection res, int port, const QString& msg)
         ui_->status->showMessage(QStringLiteral("Connected on port: %1").arg(port));
         ui_->connect->setText("Disconnect");
         ui_->update->setEnabled(true);
+        ui_->batteryHealth->setEnabled(true);
         ui_->load->setEnabled(true);
 
         // load the certificate if it was already retrieved from the cloud
@@ -474,6 +492,7 @@ void Solum::setConnected(CusConnection res, int port, const QString& msg)
         ui_->cert->clear();
         ui_->freeze->setEnabled(false);
         ui_->update->setEnabled(false);
+        ui_->batteryHealth->setEnabled(false);
         ui_->load->setEnabled(false);
         // disable controls upon disconnect
         imagingState(ImagingNotReady, false);
@@ -596,9 +615,14 @@ void Solum::imagingState(CusImagingState state, bool imaging)
     else if (state == MotionSensor)
         ui_->status->showMessage(QStringLiteral("Motion Sensor State Changed: %1").arg(imaging ? QStringLiteral("Started Imaging") : QStringLiteral("Stopped Imaging")));
 
-    // update the acoustic indices at the appropriate time when we get the state update
+    // update the depth range and acoustic indices at the appropriate time when we get the state update
     if (state == ImagingReady)
+    {
+        CusRange range;
+        if (solumGetRange(ImageDepth, &range) == 0)
+            ui_->maxdepth->setText(QStringLiteral("Max: %1cm").arg(range.max));
         solumGetAcousticIndices(&acoustic_);
+    }
 }
 
 /// called when there is a button press on the ultrasound
@@ -785,8 +809,8 @@ void Solum::onConnect()
     if (!connected_)
     {
         auto prms = solumDefaultConnectionParams();
-        std::string ip_str = ui_->ip->text().toStdString();
-        prms.ipAddress = ip_str.c_str();
+        std::string ipAddress{ui_->ip->text().toStdString()};
+        prms.ipAddress = ipAddress.c_str();
         prms.port = ui_->port->text().toInt();
         if (solumConnect(&prms) < 0)
             ui_->status->showMessage(QStringLiteral("Connection failed"));
@@ -865,6 +889,14 @@ void Solum::onUpdateCert()
     }
 }
 
+void Solum::onBatteryHealth()
+{
+    solumBatteryHealth([](CusBatteryHealth res, double val)
+    {
+        QApplication::postEvent(_me, new event::BatteryHealth(res, val));
+    });
+}
+
 /// initiates a workflow load
 void Solum::onLoad()
 {
@@ -873,20 +905,6 @@ void Solum::onLoad()
 
     if (solumLoadApplication(ui_->probes->currentText().toStdString().c_str(), ui_->workflows->currentText().toStdString().c_str()) < 0)
         ui_->status->showMessage(QStringLiteral("Error requesting application load"));
-    // update depth range on a successful load
-    else
-    {
-        // wait a second for the application load to propagate internally before fetching the range
-        // ideally the api would provide a callback for when the application is fully loaded (ofi)
-        QTimer::singleShot(1000, this, [this] ()
-        {
-            CusRange range;
-            if (solumGetRange(ImageDepth, &range) == 0)
-            {
-                ui_->maxdepth->setText(QStringLiteral("Max: %1cm").arg(range.max));
-            }
-        });
-    }
 }
 
 /// called when user selects a new probe definition
@@ -1104,12 +1122,12 @@ void Solum::onMode(int mode)
     else
     {
         spectrum_->setVisible(m == MMode || m == PwMode);
-        signal_->setVisible(m == RfMode);
+        signal_->setVisible(m == RfMode || m == ElemTest);
         ui_->cfigain->setVisible(m == ColorMode || m == PowerMode);
         ui_->velocity->setVisible(m == ColorMode || m == PwMode);
         ui_->opacity->setVisible(m == Strain);
-        ui_->rfzoom->setVisible(m == RfMode);
-        ui_->rfStream->setVisible(m == RfMode);
+        ui_->rfzoom->setVisible(m == RfMode || m == ElemTest);
+        ui_->rfStream->setVisible(m == RfMode || m == ElemTest);
         ui_->split->setVisible(m == ColorMode || m == PowerMode || m == Strain);
 
         updateVelocity(m);
@@ -1177,4 +1195,26 @@ void Solum::onLowLevelToggle()
     {
         solumEnableLowLevelParam(prm.toLatin1(), val == QStringLiteral("1") ? 1 : 0);
     }
+}
+
+/// called when there is a battery test result
+/// @param[in] res the test result
+/// @param[in] val the resulting test value in percentage
+void Solum::onBatteryHealthResult(CusBatteryHealth res, double val)
+{
+    if (res == BatteryHealthError)
+        ui_->status->showMessage(QStringLiteral("Battery Health Check Error"));
+    else
+        ui_->status->showMessage(QStringLiteral("Battery Health: %1 (%2)").arg(res == BatteryHealthSuccess ? QStringLiteral("Passed") : QStringLiteral("Failed")).arg(val));
+}
+
+/// called when there is an element test result
+/// @param[in] res the test result
+/// @param[in] val the resulting test value in percentage
+void Solum::onElementTestResult(CusElementTest res, double val)
+{
+    if (res == ElementTestError)
+        ui_->status->showMessage(QStringLiteral("Element Test Error"));
+    else
+        ui_->status->showMessage(QStringLiteral("Element Test: %1 (%2)").arg(res == ElementTestSuccess ? QStringLiteral("Passed") : QStringLiteral("Failed")).arg(val));
 }

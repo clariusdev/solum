@@ -320,7 +320,7 @@ void Spectrum::drawForeground(QPainter* painter, const QRectF& r)
 {
     if (!spectrum_.isNull())
     {
-        auto mirrored = spectrum_.mirrored(true, false);
+        auto mirrored = spectrum_.flipped(Qt::Horizontal);
         auto rotated = mirrored.transformed(QTransform().rotate(-90));
         painter->drawImage(r, rotated);
     }
