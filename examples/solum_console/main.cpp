@@ -147,6 +147,15 @@ void newImuData(const CusPosInfo* pos)
     printImuData(1, pos);
 }
 
+/// callback for battery health check
+/// @param[in] res the result
+/// @param[in] val the battery health value
+void batteryHealthFn(CusBatteryHealth res, double val)
+{
+    if (res == BatteryHealthSuccess)
+        PRINT << "battery health: (" << static_cast<int>(val);
+}
+
 /// parses and prints comma separated values
 /// @param[in] buf the string to parse
 /// @param[in] sz size of the buffer
@@ -401,6 +410,11 @@ void processEventLoop(std::atomic_bool& quit)
             if (solumSetMode(mode(buf1)) < 0)
                 ERROR << "mode request failed";
         }
+        else if (cmd == "B" || cmd == "b")
+        {
+            if (solumBatteryHealth(batteryHealthFn) < 0)
+                ERROR << "battery health check failed";
+        }
         else
         {
             PRINT << "valid commands: [q: quit, h: help]";
@@ -410,6 +424,7 @@ void processEventLoop(std::atomic_bool& quit)
             PRINT << "       imaging: [r: run imaging, s: stop imaging ]";
             PRINT << "    parameters: [f: fetch parameter, v: set parameter value ]";
             PRINT << "  imaging mode: [n: fetch mode, m: set mode ]";
+            PRINT << "  health/calib: [b: check battery health]";
             PRINT << " ";
             PRINT << " typical usage: - power up and fetch tcp information via ble (not demonstrated here)";
             PRINT << "                - connect over wifi/tcp";

@@ -234,7 +234,25 @@
 			android:id="@+id/buttonCheckRawDataAvailability"
 			android:layout_width="wrap_content"
 			android:layout_height="wrap_content"
-			android:text="Check Raw Data Availability" />
+			android:text="@string/check_raw_data_availability" />
+
+        <Button
+            android:id="@+id/buttonBatteryHealth"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/check_battery" />
+
+        <Button
+            android:id="@+id/buttonImuCalStationary"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/imu_cal_motion" />
+
+        <Button
+            android:id="@+id/buttonImuCalMotion"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/imu_cal_stationary" />
 
         <ProgressBar
             android:id="@+id/raw_data_progress_bar"

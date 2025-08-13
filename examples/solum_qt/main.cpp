@@ -156,6 +156,13 @@ int main(int argc, char *argv[])
             QApplication::postEvent(_solum.get(), new event::Error(code, err));
     };
 
+    initParams.elemTestFn  =
+        [](CusElementTest res, double val)
+    {
+        // post event here, as the gui (statusbar) will be updated directly, and it needs to come from the application thread
+        QApplication::postEvent(_solum.get(), new event::ElementTest(res, val));
+    };
+
     if (solumInit(&initParams) != CUS_SUCCESS)
     {
         qDebug() << "error initializing solum";
