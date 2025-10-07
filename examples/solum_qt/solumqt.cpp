@@ -176,10 +176,16 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_
     // power status sent
     connect(&ble_, &Ble::powered, [this](PowerState state)
     {
-        if (state == PowerState::LowBattery || state == PowerState::TooHot || state == PowerState::ErrorBooting)
-            ui_->status->showMessage(QStringLiteral("Cannot Boot"));
+        if (state == PowerState::LowBattery)
+            ui_->status->showMessage(QStringLiteral("Cannot Boot - Low Battery"));
+        else if (state == PowerState::TooHot)
+            ui_->status->showMessage(QStringLiteral("Cannot Boot - Too Hot"));
+        else if (state == PowerState::BootFailure || state == PowerState::ErrorBooting)
+            ui_->status->showMessage(QStringLiteral("Boot Failure or Other Boot Error"));
         else if (state == PowerState::Booted)
-            ui_->status->showMessage(QStringLiteral("Probe Booted, Setting up Wi-Fi"));
+            ui_->status->showMessage(QStringLiteral("Probe Booted - Setting up Wi-Fi"));
+        else if (state == PowerState::Restarting)
+            ui_->status->showMessage(QStringLiteral("Probe Restarting After Firmware Update or Factory Reset"));
         else
             ui_->status->showMessage(QStringLiteral("Powered: %1").arg(state == PowerState::On ? QStringLiteral("On") : QStringLiteral("Off")));
     });

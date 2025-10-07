@@ -1,7 +1,7 @@
 #pragma once
 
 // SDK: solum
-// Version: 12.2.0
+// Version: 12.2.2
 
 #define CUS_MAXTGC  10
 #define CUS_SUCCESS 0

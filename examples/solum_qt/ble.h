@@ -10,7 +10,9 @@ enum class PowerState
     LowBattery,     ///< cannot boot, low battery
     TooHot,         ///< cannot boot, too hot
     ErrorBooting,   ///< cannot boot, other error
-    Booted          ///< probe booted, setting up wi-fi
+    Booted,         ///< probe booted, setting up wi-fi
+    BootFailure,    ///< cannot boot, firmware/kernel failed to load from internal memory, potential sd card problem
+    Restarting      ///< probe is restarting after an update
 };
 
 /// bluetooth module
