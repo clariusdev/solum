@@ -28,8 +28,18 @@ https://github.com/user-attachments/assets/54ed5fec-ff11-4605-ae1c-97e70337f726
 
 ### Documentation
 
-- [Specifications](specifications.md)
-- [Design](design.md)
+Start here:
+
+- [Getting Started](docs/getting-started.md) — write a Solum app from connection to live imaging and raw data capture
+- [API Reference](docs/api-reference.md) — every function, callback, enumeration, and struct
+- [Parameter Reference](docs/parameters.md) — imaging parameters, modes, TGC, ROI/gate, and low-level controls
+
+Background:
+
+- [Specifications](specifications.md) — BLE services, supported probes/applications, imaging modes
+- [Design](design.md) — architecture notes
+
+> Documentation tracks the publicly released **v12** SDK.
 
 To create a PDF from one of our markdown documents, try the pandoc program: `pandoc document.md -o document.pdf`.
 In cases where mermaid is used for diagramming, also pass in: `-F mermaid-filter`, which can be installed via an npm package
