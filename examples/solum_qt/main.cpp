@@ -55,9 +55,9 @@ int main(int argc, char *argv[])
         };
 
     initParams.certFn =
-        [](int daysValid)
+        [](bool expired, int daysValid, bool error)
         {
-            QApplication::postEvent(_solum.get(), new event::Cert(daysValid));
+            QApplication::postEvent(_solum.get(), new event::Cert(expired, daysValid, error));
         };
 
     initParams.powerDownFn =
@@ -76,8 +76,9 @@ int main(int argc, char *argv[])
             std::memcpy(_image.data(), img, sz);
             QQuaternion imu;
             imu.setScalar(0.0);
+            // pos holds all the imu samples collected during the frame; use the newest for display
             if (npos && pos)
-                imu = QQuaternion(static_cast<float>(pos[0].qw), static_cast<float>(pos[0].qx), static_cast<float>(pos[0].qy), static_cast<float>(pos[0].qz));
+                imu = QQuaternion(static_cast<float>(pos[npos - 1].qw), static_cast<float>(pos[npos - 1].qx), static_cast<float>(pos[npos - 1].qy), static_cast<float>(pos[npos - 1].qz));
 
             QApplication::postEvent(_solum.get(), new event::Image(IMAGE_EVENT, _image.data(), nfo->width, nfo->height, nfo->bitsPerPixel, nfo->format, sz, nfo->overlay, imu));
         };
@@ -139,7 +140,7 @@ int main(int argc, char *argv[])
         [](CusImagingState state, int imaging)
         {
             // post event here, as the gui (statusbar) will be updated directly, and it needs to come from the application thread
-            QApplication::postEvent(_solum.get(), new event::Imaging(state, imaging ? true : false));
+            QApplication::postEvent(_solum.get(), new event::Imaging(state, imaging != 0));
         };
 
     initParams.buttonFn =

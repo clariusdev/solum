@@ -44,3 +44,13 @@ target_link_libraries(solum_qt PRIVATE
     Qt::Widgets
     SOLUM_SDK
 )
+
+# On Linux, embed an RPATH to the SDK's lib/ so the built example finds libsolum.so (and the deps
+# bundled in lib/libs/) at runtime, with no need to set LD_LIBRARY_PATH or copy any .so around.
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    get_filename_component(SOLUM_SDK_LIBDIR "${CMAKE_SOURCE_DIR}/../../lib" ABSOLUTE)
+    set_target_properties(solum_qt PROPERTIES
+        BUILD_RPATH "${SOLUM_SDK_LIBDIR}"
+        INSTALL_RPATH "${SOLUM_SDK_LIBDIR}"
+    )
+endif()

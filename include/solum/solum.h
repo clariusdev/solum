@@ -6,9 +6,10 @@
 /// probe connection parameters for solumConnect
 typedef struct _CusConnectionParams
 {
-    const char* ipAddress;      ///< the ip address of the probe
-    unsigned int port;          ///< the probe's tcp port to connect to
-    long long int networkId;    ///< the wifi network id obtained when auto-joining wifi on android. optional, 0 by default
+    const char* ipAddress;          ///< the ip address of the probe
+    unsigned int port;              ///< the probe's tcp port to connect to
+    long long int networkId;        ///< the wifi network id obtained when auto-joining wifi on android. optional, 0 by default
+    int ignoreFirmwareMismatch;     ///< dangerous flag to use to force a connection and ability to try and image without ensuring firmware versions match
 
 } CusConnectionParams;
 
@@ -32,6 +33,7 @@ typedef struct _CusInitParams
     CusNewProcessedImageFn newProcessedImageFn; ///< new processed image callback (scan-converted image)
     CusNewRawImageFn newRawImageFn;             ///< new raw image callback (pre scan-converted image or rf data)
     CusNewSpectralImageFn newSpectralImageFn;   ///< new processed spectral image callback
+    CusNewImageReadyFn newImageReadyFn;         ///< new image is ready
     CusNewImuPortFn newImuPortFn;               ///< new imu udp port callback
     CusNewImuDataFn newImuDataFn;               ///< new imu data callback
     int width;                                  ///< the width of the output buffer
@@ -139,10 +141,13 @@ extern "C" {
     /// loads an application
     /// @param[in] probe the probe model to load
     /// @param[in] workflow the workflow to load
+    /// @param[in] array the array choice for multi-array probes, leave to 0 to let solum determine appropriate array
     /// @return success of the call
-    /// @retval 0 the application was loaded
+    /// @retval 0 the application was loaded, or accepted while the post-connection software version
+    ///           check is still in flight, in which case it proceeds once the check passes and any
+    ///           failure is reported through the error callback
     /// @retval -1 the application could not be loaded
-    SOLUM_EXPORT int solumLoadApplication(const char* probe, const char* workflow);
+    SOLUM_EXPORT int solumLoadApplication(const char* probe, const char* workflow, int array);
 
     /// retrieves the current probe status if there's a connection
     /// @param[out] info the status information
@@ -204,6 +209,17 @@ extern "C" {
     /// @retval 0 the settings were successfully programmed
     /// @retval -1 the settings could not be programmed
     SOLUM_EXPORT int solumSetProbeSettings(const CusProbeSettings* settings);
+
+    /// retrieves the latest image buffered
+    /// @param[in] stream the image stream to retrieve the latest image from
+    /// @param[out] buffer the image buffer passed in to receive copied image data
+    /// @param[in] size the size of the input buffer
+    /// @param[in] info latest image information
+    /// @return success of the call
+    /// @retval 0 image retrieval was successful
+    /// @retval -1 image could not be retrieved
+    /// @note the image ready callback will provide the stream, timestamp, and size of the buffer for retrieval
+    SOLUM_EXPORT int solumGetLatestImage(int stream, unsigned char* buffer, int size, CusProcessedImageInfo* info);
 
     /// sets an imaging parameter
     /// @param[in] param the parameter to set
@@ -341,13 +357,13 @@ extern "C" {
     /// makes a request for raw data from the probe
     /// @param[in] start the first frame to request, as determined by timestamp in nanoseconds, set to 0 along with end to requests all data in buffer
     /// @param[in] end the last frame to request, as determined by timestamp in nanoseconds, set to 0 along with start to requests all data in buffer
-    /// @param[in] lzo flag to specify a tarball with lzo compressed raw data inside (default) vs no compression of raw data
+    /// @param[in] compression the compression type to use for the raw data package
     /// @param[in] fn result callback function, will return size of buffer required upon success, 0 if no raw data was buffered, or -1 if request could not be made
     /// @return success of the call
     /// @retval 0 the request was successfully made
     /// @retval -1 the request could not be made
     /// @note the probe must be frozen and in a raw data buffering mode in order for the call to succeed
-    SOLUM_EXPORT int solumRequestRawData(long long int start, long long int end, int lzo, CusRawRequestFn fn);
+    SOLUM_EXPORT int solumRequestRawData(long long int start, long long int end, CusRawCompression compression, CusRawRequestFn fn);
 
     /// retrieves raw data from a previous request
     /// @param[out] data a pointer to a buffer that has been allocated to read the raw data into, this must be pre-allocated with
@@ -389,6 +405,16 @@ extern "C" {
     /// @note see external documentation for supported parameters
     /// @warning changing parameters through this function may result in unstable operation, degradation of image quality, or operation outside of the safety limits that clarius tests to
     SOLUM_EXPORT int solumSetLowLevelPulse(const char* prm, const char* shape);
+
+    /// sets a string-valued low level parameter, for parameters that take a selection rather than a number
+    /// @param[in] prm the parameter to change
+    /// @param[in] val the string value to set
+    /// @return success of the call
+    /// @retval 0 the call was successful
+    /// @retval -1 the call was not successful
+    /// @note see external documentation for supported parameters
+    /// @warning changing parameters through this function may result in unstable operation, degradation of image quality, or operation outside of the safety limits that clarius tests to
+    SOLUM_EXPORT int solumSetLowLevelString(const char* prm, const char* val);
 
     /// retrieves a low level parameter value
     /// @param[in] prm the parameter to retrieve the value for

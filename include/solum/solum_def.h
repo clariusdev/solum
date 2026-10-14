@@ -1,7 +1,7 @@
 #pragma once
 
 // SDK: solum
-// Version: 12.2.4
+// Version: 13.1.0
 
 #define CUS_MAXTGC  10
 #define CUS_SUCCESS 0
@@ -26,6 +26,15 @@ typedef enum _CusImageFormat
     Png,                ///< Processed images are sent as a png (with header)
 
 } CusImageFormat;
+
+/// The types of raw data compression which are handled in the software
+typedef enum _CusRawCompression
+{
+    RawCompressionNone, ///< no compression (store)
+    RawCompressionDeflate, ///< deflate compression
+    RawCompressionZstd, ///< zstandard compression
+
+} CusRawCompression;
 
 /// Major Clarius platforms
 typedef enum _CusPlatform
@@ -170,6 +179,7 @@ typedef enum _CusMode
     Strain,             ///< Strain elastography (available in most workflows)
     RfMode,             ///< RF capture mode (interleaved with B)
     ElemTest,           ///< Element test raw signals
+    CableTest,          ///< Cable test electrical signals
 
 } CusMode;
 
@@ -327,6 +337,8 @@ typedef struct _CusRawImageInfo
     int bitsPerSample;  ///< bits per sample
     double axialSize;   ///< axial microns per sample
     double lateralSize; ///< lateral microns per line
+    double samplingRate; ///< sampling rate in mhz
+    double vsound;      ///< speed of sound in m/s
     long long int tm;   ///< timestamp of image
     int jpeg;           ///< size of the jpeg image, 0 if not a jpeg compressed image
     int rf;             ///< flag specifying data is rf and not envelope
@@ -425,6 +437,7 @@ typedef struct _CusProbeSettings
     int forceLogSend;   ///< Flag allowing the probe to send logs while imaging
     int imageOnUndock;  ///< Start imaging when probe comes out of charging dock
     int alarmOnUndock;  ///< Sound an alarm when probe comes out of charging dock
+    int imageWhileCharging; ///< Allows imaging while charging in the dock
     CusButtonSetting up; ///< Button up setting
     CusButtonSetting down; ///< Button down setting
     CusButtonSetting handle; ///< Button handle setting

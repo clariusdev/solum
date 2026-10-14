@@ -31,9 +31,6 @@ public:
     bool requestWifi(const QString& info);
     bool ring();
 
-private:
-    bool ping();
-
 private slots:
     void searchComplete();
     void onConnected();
@@ -54,5 +51,4 @@ private:
     std::unique_ptr<QLowEnergyService> power_;
     std::unique_ptr<QLowEnergyService> wifi_;
     std::unique_ptr<QLowEnergyService> ias_;
-    QTimer ping_;
 };

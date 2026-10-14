@@ -12,6 +12,8 @@
 #include <boost/program_options.hpp>
 #else
 #include <unistd.h>
+#include <sys/stat.h>
+#include <cstdlib>
 #endif
 
 #include <solum/solum.h>
@@ -52,12 +54,14 @@ void connectFn(CusConnection res, int port, const char* status)
 }
 
 /// callback for certification status
+/// @param[in] expired flag if the certificate is expired
 /// @param[in] daysValid # of days valid for certificate
-void certFn(int daysValid)
+/// @param[in] error flag to denote error with sending or parsing certificate
+void certFn(bool expired, int daysValid, bool error)
 {
-    if (daysValid == CERT_INVALID)
-        ERROR << "certificate invalid or not found";
-    else if (!daysValid)
+    if (error)
+        ERROR << "certificate error";
+    else if (expired || daysValid < 1)
         ERROR << "certificate expired";
     else
         PRINT << "certificate valid for (" << daysValid << ") more days";
@@ -162,10 +166,11 @@ void batteryHealthFn(CusBatteryHealth res, double val)
 /// @return success of the call
 bool printCsv(const char* buf, int sz)
 {
-    if (sz > static_cast<int>(sizeof(buffer_)))
+    if (sz < 0 || sz >= static_cast<int>(sizeof(buffer_)))
         return false;
 
     std::memcpy(buffer_, buf, sz);
+    buffer_[sz] = '\0';
     char* p = strtok(buffer_, ",");
     while (p != nullptr)
     {
@@ -355,7 +360,7 @@ void processEventLoop(std::atomic_bool& quit)
             std::getline(std::cin, buf1);
             PRINT << "enter application: ";
             std::getline(std::cin, buf2);
-            if (solumLoadApplication(buf1.c_str(), buf2.c_str()) == 0)
+            if (solumLoadApplication(buf1.c_str(), buf2.c_str(), 0) == 0)
                 PRINT << "trying to load application: " << buf2;
             else
                 ERROR << "error calling load application";
@@ -483,7 +488,25 @@ int init(int& argc, char** argv)
     }
 #else // every other platform has 'getopt' which we're using so as to not pull in the Boost dependency
     int o;
-    std::string keydir = "/tmp/";
+    // Default the key store to a per-user, owner-only directory instead of the world-writable /tmp
+    // (CWE-377); override with -k. A 0700 parent protects the generated key/cert regardless of umask.
+    std::string keydir;
+    {
+        const char* xdgRuntime = std::getenv("XDG_RUNTIME_DIR");
+        const char* homeDir = std::getenv("HOME");
+        std::string base = (xdgRuntime && *xdgRuntime) ? std::string(xdgRuntime)
+                         : (homeDir && *homeDir)       ? std::string(homeDir) + "/.clarius"
+                                                       : std::string();
+        // With no per-user location, require an explicit -k (checked after option parsing) rather
+        // than defaulting to a guessable, world-writable path like /tmp where the generated SSL
+        // private key could be pre-created or read by another local user (CWE-377).
+        if (base.size())
+        {
+            mkdir(base.c_str(), 0700);
+            keydir = base + "/solum/";
+            mkdir(keydir.c_str(), 0700);
+        }
+    }
 
     // check command line options
     while ((o = getopt(argc, argv, "lk:a:p:")) != -1)
@@ -506,6 +529,12 @@ int init(int& argc, char** argv)
         case '?': PRINT << "invalid argument, valid options: -a [addr], -p [port], -k [keydir]"; break;
         default: break;
         }
+    }
+
+    if (!keydir.size())
+    {
+        ERROR << "no key directory available; set HOME or XDG_RUNTIME_DIR, or run with '-k [keydir]'";
+        return ERRCODE;
     }
 #endif
 
