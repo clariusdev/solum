@@ -15,6 +15,9 @@ INC_FLAGS := $(addprefix -I,$(INC_DIRS))
 CPPFLAGS += $(INC_FLAGS)
 CXXFLAGS += -std=gnu++14
 LDFLAGS += -L$(SOLUM_SDK)/lib -lsolum -lpthread
+# Embed an RPATH to the SDK's lib/ so the built example finds libsolum.so (and the deps bundled in
+# lib/libs/) at runtime, with no need to set LD_LIBRARY_PATH or copy any .so around.
+LDFLAGS += -Wl,-rpath,$(abspath $(SOLUM_SDK)/lib)
 
 $(BUILD_DIR)/$(TARGET_EXEC): $(OBJS)
 	$(CXX) $(OBJS) -o $@ $(LDFLAGS)

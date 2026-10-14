@@ -13,8 +13,10 @@ typedef void (*CusListFn)(const char* list, int sz);
 /// @param[in] status the status message
 typedef void (*CusConnectFn)(CusConnection res, int port, const char* status);
 /// certification callback function
+/// @param[in] expired certificate expiry flag
 /// @param[in] daysValid # of days valid for certificate
-typedef void (*CusCertFn)(int daysValid);
+/// @param[in] error flag to denote error with sending or parsing certificate
+typedef void (*CusCertFn)(bool expired, int daysValid, bool error);
 /// powering down callback function
 /// @param[in] res the power down reason
 /// @param[in] tm time in seconds for when probe is powering down, 0 for immediately
@@ -38,6 +40,11 @@ typedef void (*CusNewProcessedImageFn)(const void* img, const CusProcessedImageI
 /// @param[in] img pointer to the new grayscale image information
 /// @param[in] nfo image information associated with the image data
 typedef void (*CusNewSpectralImageFn)(const void* img, const CusSpectralImageInfo* nfo);
+/// new image ready callback function
+/// @param[in] stream the image stream the image is ready from
+/// @param[in] timestamp the timestamp of the frame that is ready
+/// @param[in] size the size of the new image in bytes
+typedef void (*CusNewImageReadyFn)(int stream, long long timestamp, int size);
 /// imaging callback function
 /// used primarily to denote 4 different scenarios:
 /// 1. when imaging is ready after an application load or parameter update (ImagingReady state)

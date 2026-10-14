@@ -12,6 +12,21 @@
 
 static Solum* _me;
 
+namespace
+{
+    /// picks the bundled probe mesh that best matches the given probe model name
+    /// @param[in] probe the probe model name
+    /// @return resource path of the mesh to render
+    QString probeMesh(const QString& probe)
+    {
+        if (probe.startsWith(QLatin1String("C"), Qt::CaseInsensitive) || probe.startsWith(QLatin1String("EC"), Qt::CaseInsensitive))
+            return QStringLiteral(":/res/c3.obj");
+        if (probe.startsWith(QLatin1String("L20"), Qt::CaseInsensitive))
+            return QStringLiteral(":/res/l20.obj");
+        return QStringLiteral(":/res/l15.obj");
+    }
+}
+
 /// default constructor
 /// @param[in] parent the parent object
 Solum::Solum(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_(false), teeConnected_(false), imuSamples_(0), acquired_(0), ui_(new Ui::Solum)
@@ -34,9 +49,13 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_
     ui_->render->addWidget(QWidget::createWindowContainer(render_));
     auto reset = new QPushButton(QStringLiteral("Reset"), this);
     ui_->render->addWidget(reset);
-    // ** ensure the path is updated as necessary
-    render_->init(QStringLiteral("scanner.obj"));
+    render_->init(QStringLiteral(":/res/l15.obj"));
     render_->show();
+    // render the mesh matching the selected probe model
+    QObject::connect(ui_->probes, &QComboBox::currentTextChanged, [this](const QString& probe)
+    {
+        render_->load(probeMesh(probe));
+    });
     ui_->cfigain->setVisible(false);
     ui_->velocity->setVisible(false);
     ui_->opacity->setVisible(false);
@@ -59,6 +78,18 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_
     auto probe = settings_->value("probe").toString();
     if (!probe.isEmpty())
         ui_->probes->setCurrentText(probe);
+
+    // populate array selector for multi-array probe support (1=primary, 2=secondary, 3=tertiary; 0=app default)
+    ui_->arrays->addItem(QStringLiteral("Default (app)"), 0);
+    ui_->arrays->addItem(QStringLiteral("Primary"), 1);
+    ui_->arrays->addItem(QStringLiteral("Secondary"), 2);
+    ui_->arrays->addItem(QStringLiteral("Tertiary"), 3);
+    const auto savedArrayIdx = ui_->arrays->findData(settings_->value("array", 0).toInt());
+    ui_->arrays->setCurrentIndex(savedArrayIdx >= 0 ? savedArrayIdx : 0);
+    QObject::connect(ui_->arrays, QOverload<int>::of(&QComboBox::currentIndexChanged), [this](int)
+    {
+        settings_->setValue("array", ui_->arrays->currentData().toInt());
+    });
 
     // handle the reply from the call to clarius cloud to obtain json probe information
     connect(&cloud_, &QNetworkAccessManager::finished, [this](QNetworkReply* reply)
@@ -144,7 +175,7 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_
     connect(&brTimer_, &QTimer::timeout, [this]()
     {
         double total = static_cast<double>(acquired_) / MB_CONV;
-        double br = ((static_cast<double>(acquired_ * 8.0) / (elapsed_.elapsed() / 1000.0))) / MB_CONV;
+        double br = (static_cast<double>(acquired_) * 8.0) / (static_cast<double>(elapsed_.elapsed()) / 1000.0) / MB_CONV;
         ui_->bitrate->setText(QStringLiteral("Acquired: %1 MB @ %2 Mbps").arg(QString::number(total, 'f', 1)).arg(QString::number(br, 'f', 3)));
     });
 
@@ -212,6 +243,10 @@ Solum::Solum(QWidget *parent) : QMainWindow(parent), connected_(false), imaging_
         ip6.remove('\"');
         auto port = getField(QStringLiteral("ctl:"));
         auto ssid = getField(QStringLiteral("ssid:"));
+        auto pw = getField(QStringLiteral("pw:"));
+        auto cb = QGuiApplication::clipboard();
+        if (cb && !pw.isEmpty())
+            cb->setText(pw);
         QString ip = ip4.isEmpty() ? ip6 : ip4;
         ui_->ip->setText(ip);
         ui_->port->setText(port);
@@ -344,7 +379,7 @@ bool Solum::event(QEvent *event)
     else if (event->type() == CERT_EVENT)
     {
         auto evt = static_cast<event::Cert*>(event);
-        certification(evt->daysValid_);
+        certification(evt->expired_, evt->daysValid_, evt->error_);
         return true;
     }
     else if (event->type() == POWER_EVENT)
@@ -506,18 +541,20 @@ void Solum::setConnected(CusConnection res, int port, const QString& msg)
     else if (res == ConnectionFailed || res == ConnectionError)
         ui_->status->showMessage(QStringLiteral("Error connecting: %1").arg(msg));
     else if (res == OSUpdateRequired)
-        ui_->status->showMessage(QStringLiteral("Scanner O/S update required prior to imaging"));
+        ui_->status->showMessage(QStringLiteral("Probe O/S update required prior to imaging"));
     else if (res == SwUpdateRequired)
-        ui_->status->showMessage(QStringLiteral("Software update required prior to imaging"));
+        ui_->status->showMessage(QStringLiteral("Probe software update required prior to imaging"));
 }
 
 /// called when a new certification message has been sent
+/// @param[in] expired flag if the certificate is expired
 /// @param[in] daysValid # of days valid for certificate
-void Solum::certification(int daysValid)
+/// @param[in] error flag to denote error with sending or parsing certificate
+void Solum::certification(bool expired, int daysValid, bool error)
 {
-    if (daysValid == CERT_INVALID)
-        ui_->cert->setText(QStringLiteral("Invalid"));
-    else if (!daysValid)
+    if (error)
+        ui_->cert->setText(QStringLiteral("Error Parsing Certificate"));
+    else if (expired || daysValid < 1)
         ui_->cert->setText(QStringLiteral("Expired"));
     else
         ui_->cert->setText(QStringLiteral("%1 Days").arg(daysValid));
@@ -559,27 +596,27 @@ void Solum::softwareUpdate(CusSwUpdate res)
 /// @param[in] imaging the imaging state
 void Solum::imagingState(CusImagingState state, bool imaging)
 {
-    bool ready = (state != ImagingNotReady);
-    ui_->freeze->setEnabled(ready ? true : false);
-    ui_->autogain->setEnabled(ready ? true : false);
-    ui_->autofocus->setEnabled(ready ? true : false);
-    ui_->decdepth->setEnabled(ready ? true : false);
-    ui_->incdepth->setEnabled(ready ? true : false);
-    ui_->gain->setEnabled(ready ? true : false);
-    ui_->focus->setEnabled((ready && !ui_->autofocus->isChecked()) ? true : false);
-    ui_->cfigain->setEnabled(ready ? true : false);
-    ui_->opacity->setEnabled(ready ? true : false);
-    ui_->rfzoom->setEnabled(ready ? true : false);
-    ui_->rfStream->setEnabled(ready ? true : false);
-    ui_->rawBuffer->setEnabled(ready ? true : false);
-    ui_->prescan->setEnabled(ready ? true : false);
-    ui_->split->setEnabled(ready ? true : false);
-    ui_->imu->setEnabled(ready ? true : false);
-    bool ag = ui_->autogain->isChecked();
-    ui_->tgctop->setEnabled((ready && !ag) ? true : false);
-    ui_->tgcmid->setEnabled((ready && !ag) ? true : false);
-    ui_->tgcbottom->setEnabled((ready && !ag) ? true : false);
-    ui_->modes->setEnabled(ready ? true : false);
+    const bool ready = (state != ImagingNotReady);
+    ui_->freeze->setEnabled(ready);
+    ui_->autogain->setEnabled(ready);
+    ui_->autofocus->setEnabled(ready);
+    ui_->decdepth->setEnabled(ready);
+    ui_->incdepth->setEnabled(ready);
+    ui_->gain->setEnabled(ready);
+    ui_->focus->setEnabled(ready && !ui_->autofocus->isChecked());
+    ui_->cfigain->setEnabled(ready);
+    ui_->opacity->setEnabled(ready);
+    ui_->rfzoom->setEnabled(ready);
+    ui_->rfStream->setEnabled(ready);
+    ui_->rawBuffer->setEnabled(ready);
+    ui_->prescan->setEnabled(ready);
+    ui_->split->setEnabled(ready);
+    ui_->imu->setEnabled(ready);
+    const bool ag = ui_->autogain->isChecked();
+    ui_->tgctop->setEnabled(ready && !ag);
+    ui_->tgcmid->setEnabled(ready && !ag);
+    ui_->tgcbottom->setEnabled(ready && !ag);
+    ui_->modes->setEnabled(ready);
 
     ui_->status->showMessage(QStringLiteral("Image: %1").arg(imaging ? QStringLiteral("Running") : QStringLiteral("Frozen")));
     if (ready)
@@ -664,9 +701,8 @@ void Solum::onTee(bool connected, const QString& serial, double timeRemaining)
 /// @param[in] res the result of the original call
 /// @param[in] b the number of raw b frames
 /// @param[in] iqrf the number of raw iq/rf frames
-void Solum::onRawAvailabilityResult(int res, int b, int iqrf)
+void Solum::onRawAvailabilityResult([[maybe_unused]] int res, int b, int iqrf)
 {
-    Q_UNUSED(res)
     ui_->status->showMessage(QStringLiteral("Raw Data Available: %1 B Frames & %2 IQ or RF Frames").arg(b).arg(iqrf));
 }
 
@@ -909,7 +945,9 @@ void Solum::onLoad()
     if (!connected_)
         return;
 
-    if (solumLoadApplication(ui_->probes->currentText().toStdString().c_str(), ui_->workflows->currentText().toStdString().c_str()) < 0)
+    if (solumLoadApplication(ui_->probes->currentText().toStdString().c_str(),
+                             ui_->workflows->currentText().toStdString().c_str(),
+                             ui_->arrays->currentData().toInt()) < 0)
         ui_->status->showMessage(QStringLiteral("Error requesting application load"));
 }
 
@@ -1032,7 +1070,7 @@ void Solum::onRawAvailability()
 /// tries to download raw data
 void Solum::onRawDownload()
 {
-    solumRequestRawData(0, 0, 1, [](int sz, const char* extension)
+    solumRequestRawData(0, 0, RawCompressionZstd, [](int sz, const char* extension)
     {
         QApplication::postEvent(_me, new event::RawReady(sz, QString::fromLatin1(extension)));
     });
@@ -1114,9 +1152,12 @@ void Solum::getParams()
         ui_->tgcbottom->setValue(static_cast<int>(t.bottom));
     }
 
-    image_->checkActiveRegion();
-    image_->checkRoi();
-    image_->checkGate();
+    if (image_)
+    {
+        image_->checkActiveRegion();
+        image_->checkRoi();
+        image_->checkGate();
+    }
 }
 
 /// called on a mode change

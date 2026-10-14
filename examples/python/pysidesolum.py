@@ -15,7 +15,7 @@ if sys.platform.startswith("linux"):
     libsolum_handle = ctypes.CDLL("./libsolum.so", ctypes.RTLD_GLOBAL)._handle  # load the libsolum.so shared library
     pysolum = ctypes.cdll.LoadLibrary("./pysolum.so")  # load the pysolum.so shared library
 
-import pysolum
+import pysolum  # noqa: E402  # after ctypes LoadLibrary of pysolum.so above on Linux
 
 DEPTH: Final = 0
 GAIN: Final = 1
@@ -184,10 +184,9 @@ class MainWidget(QtWidgets.QMainWindow):
         def tryCert():
             name = QtWidgets.QFileDialog.getOpenFileName(self, "Load Certificate", "", "Cert Files (*.crt *.txt)")
             if os.path.isfile(name[0]):
-                file = open(name[0])
-                cert = file.read()
+                with open(name[0]) as file:
+                    cert = file.read()
                 print(f"certificate:\n{cert}")
-                file.close()
                 solum.setCertificate(cert)
 
         # try to run/stop
@@ -287,7 +286,8 @@ class MainWidget(QtWidgets.QMainWindow):
         self.statusBar().showMessage(f"Cert valid for {daysValid} days")
         if daysValid:
             # load a default application which should be updated as necessary
-            self.solum.loadApplication("L7HD", "smp")
+            # (array 0 lets solum determine the appropriate array for multi-array probes)
+            self.solum.loadApplication("L7HD", "smp", 0)
 
     # handles power downs
     @Slot(int, int)
@@ -394,8 +394,10 @@ def connectFn(res, port, msg):
 
 
 ## called after a certificate was sent for validation
+# @param expired flag if the certificate has expired
 # @param daysValid the # of days the passed certificate is valid for
-def certFn(daysValid):
+# @param err flag if there is an error with the certificate
+def certFn(expired, daysValid, err):
     evt = CertEvent(daysValid)
     QtCore.QCoreApplication.postEvent(signaller, evt)
 
