@@ -80,8 +80,12 @@ public class FirstFragment extends Fragment {
         }
 
         @Override
-        public void certInfo(int daysValid) {
-            showMessage("Days valid for cert: " + daysValid);
+        public void certInfo(boolean expired, int daysValid, boolean error) {
+            if (expired) {
+                showMessage("Certificate Expired");
+            } else {
+                showMessage("Days valid for cert: " + daysValid);
+            }
         }
 
         @Override
@@ -101,6 +105,10 @@ public class FirstFragment extends Fragment {
 
         @Override
         public void newSpectralImageFn(ByteBuffer buffer, SpectralImageInfo info) {
+        }
+
+        @Override
+        public void newImageReadyFn(int stream, long timestamp, int size) {
         }
 
         @Override
@@ -303,9 +311,9 @@ public class FirstFragment extends Fragment {
     private void doRequestRawData() {
         final int start = 0;
         final int end = 0;
-        final boolean lzo = true;
+        final boolean compress = true;
         RawDataCallback callback = new RawDataCallback();
-        solum.requestRawData(start, end, lzo, callback::requestResult);
+        solum.requestRawData(start, end, compress, callback::requestResult);
     }
 
     private void toggleBuffering() {
@@ -370,7 +378,7 @@ public class FirstFragment extends Fragment {
             return;
         }
         showMessage("Loading application '" + currentApplication + "' for probe " + currentProbe);
-        solum.loadApplication(currentProbe, currentApplication);
+        solum.loadApplication(currentProbe, currentApplication, 0);
     }
 
     private void doAskState() {

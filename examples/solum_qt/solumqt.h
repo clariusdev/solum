@@ -58,10 +58,14 @@ namespace event
     {
     public:
         /// default constructor
-        /// @param[in] daysValid days valid for certificate
-        explicit Cert(int daysValid) : QEvent(CERT_EVENT), daysValid_(daysValid) { }
+        /// @param[in] expired expiry flag
+        /// @param[in] daysValid # of days valid for certificate
+        /// @param[in] error denotes if there was an error checking the certificate
+        explicit Cert(bool expired, int daysValid, bool error) : QEvent(CERT_EVENT), expired_(expired), daysValid_(daysValid), error_(error) { }
 
+        bool expired_;      ///< expiry flag
         int daysValid_;     ///< days valid
+        bool error_;        ///< error flag
     };
 
     /// wrapper for power down events that can be posted from the api callbacks
@@ -364,7 +368,7 @@ private:
     void newRfImage(const void* rf, int l, int s, int ss);
     void newImuData(const QQuaternion& imu);
     void setConnected(CusConnection res, int port, const QString& msg);
-    void certification(int daysValid);
+    void certification(bool expired, int daysValid, bool error);
     void poweringDown(CusPowerDown res, int tm);
     void softwareUpdate(CusSwUpdate res);
     void imagingState(CusImagingState state, bool imaging);

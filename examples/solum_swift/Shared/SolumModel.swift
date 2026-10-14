@@ -120,7 +120,7 @@ class SolumModel: ObservableObject {
     /// Load the application for the given scanner model and application ID
     func loadApplication() {
         if scannerTypes.contains(scannerType) && applications.contains(applicationID) {
-            solum.loadApplication(applicationID, probe: scannerType)
+            solum.loadApplication(applicationID, probe: scannerType, 0)
         } else {
             print("Invalid probe/application combination: \(scannerType.isEmpty ? "<no probe>" : scannerType) with \(applicationID.isEmpty ? "<no application>" : applicationID)")
         }

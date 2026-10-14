@@ -33,10 +33,7 @@ def newProcessedImage(image, width, height, sz, micronsPerPixel, timestamp, angl
             f"image: {timestamp}, {width}x{height} @ {bpp} bpp, {micronsPerPixel:.2f} um/px, imu: {len(imu)} pts",
             end="\r",
         )
-    if bpp == 4:
-        _img = Image.frombytes("RGBA", (width, height), image)
-    else:
-        _img = Image.frombytes("L", (width, height), image)
+    _img = Image.frombytes("RGBA", (width, height), image) if bpp == 4 else Image.frombytes("L", (width, height), image)
     # img.save("processed_image.png")
 
 
@@ -96,8 +93,10 @@ def connectFn(res, port, msg):
 
 
 ## called after a certificate was sent for validation
+# @param expired flag if the certificate has expired
 # @param daysValid the # of days the passed certificate is valid for
-def certFn(daysValid):
+# @param err flag if there is an error with the certificate
+def certFn(expired, daysValid, err):
     print(f"certificate is valid for {daysValid} days")
 
 
@@ -185,7 +184,8 @@ def main():
     while key != "q" and key != "Q":
         key = input(
             "options:\n(c)->connect\n(d)->disconnect\n(f)->firmware version\n(p)->list (p)robes\n(a)->list (a)pplications\n(t)->load cer(t)ificate\n"
-            "(l)->load application\n(r)->run/stop\n(g)->get parameter value\n(v)->set parameter (v)alue\n(#)->toggle console imaging stream\n(q)->quit\n",
+            "(l)->load application\n(r)->run/stop\n(g)->get parameter value\n(v)->set parameter (v)alue\n(w)->do(w)nload raw data\n"
+            "(#)->toggle console imaging stream\n(q)->quit\n",
         )
         if key == "c" or key == "C":
             inp = input("enter: {ip address} {port}").split()
@@ -223,17 +223,17 @@ def main():
             else:
                 f = pathlib.Path(inp[0])
                 if f.exists():
-                    file = open(f)
-                    cert = file.read()
+                    with open(f) as file:
+                        cert = file.read()
                     print(f"certificate:\n{cert}")
-                    file.close()
                     solum.setCertificate(cert)
         elif key == "l" or key == "L" or key == "l" or key == "L":
-            inp = input("enter: {probe} {application}").split()
-            if len(inp) != 2:
-                print("please format as: {probe} {application}")
+            inp = input("enter: {probe} {application} [array]").split()
+            if len(inp) < 2 or len(inp) > 3:
+                print("please format as: {probe} {application} [array]")
             else:
-                solum.loadApplication(inp[0], inp[1])
+                array = int(inp[2]) if len(inp) == 3 else 0
+                solum.loadApplication(inp[0], inp[1], array)
         elif key == "r" or key == "R":
             global isRunning
             if isRunning:
@@ -254,6 +254,25 @@ def main():
                 print("please format as: {parameter id}")
             else:
                 print(f"value: {solum.getParameter(int(inp[0]))}")
+        elif key == "w" or key == "W":
+            inp = input("enter: {output file} [compress true/false]").split()
+            if len(inp) < 1 or len(inp) > 2:
+                print("please format as: {output file} [compress true/false]")
+            else:
+                compress = len(inp) < 2 or inp[1] == "true"
+                # the probe must be frozen and buffering raw data; 0, 0 requests the whole buffer
+                sz = solum.requestRawData(0, 0, compress)
+                if sz <= 0:
+                    print("no raw data available")
+                else:
+                    print(f"downloading {sz} bytes")
+                    try:
+                        data = solum.readRawData()
+                    except RuntimeError as e:
+                        print(f"raw data read failed: {e}")
+                    else:
+                        pathlib.Path(inp[0]).write_bytes(data)
+                        print(f"wrote {len(data)} bytes to {inp[0]}")
         elif key == "#":
             global printStream
             printStream = not printStream

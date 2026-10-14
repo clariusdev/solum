@@ -9,11 +9,11 @@ secrets {
 }
 
 android {
-    compileSdk = 34
+    compileSdk = 36
     defaultConfig {
         applicationId = 'me.clarius.sdk.solum.example'
         minSdk = 29
-        targetSdk = 34
+        targetSdk = 36
         versionCode = 1
         versionName = '1.0'
 
@@ -46,11 +46,11 @@ android {
 dependencies {
     implementation fileTree(dir: '../../../lib', include: 'solum-debug.aar')
 
-    implementation 'androidx.appcompat:appcompat:1.7.0'
-    implementation 'com.google.android.material:material:1.12.0'
-    implementation 'androidx.constraintlayout:constraintlayout:2.2.0'
-    implementation 'androidx.navigation:navigation-fragment:2.8.6'
-    implementation 'androidx.navigation:navigation-ui:2.8.6'
-    implementation group: 'org.yaml', name: 'snakeyaml', version: '2.4'
+    implementation 'androidx.appcompat:appcompat:1.7.1'
+    implementation 'com.google.android.material:material:1.14.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.2.1'
+    implementation 'androidx.navigation:navigation-fragment:2.9.8'
+    implementation 'androidx.navigation:navigation-ui:2.9.8'
+    implementation group: 'org.yaml', name: 'snakeyaml', version: '2.6'
     implementation 'com.google.android.gms:play-services-cronet:18.1.0'
 }
